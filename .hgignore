@@ -1,2 +1,11 @@
 syntax:glob
 *.o
+aclocal.m4
+autom4te.cache
+config.h.in
+depcomp
+install-sh
+missing
+ylwrap
+configure
+
