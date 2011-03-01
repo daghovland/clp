@@ -4,6 +4,8 @@ Executable: prover
 
 Takes a theory in geolog-format from standard input
 
+Requires recent versions of bison and flex. I use bison 2.4.3 and flex 2.5.4. It does e.g. not work with bison 1
+
 To build, first run
 
 autoreconf --install
