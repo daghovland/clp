@@ -1,0 +1,19 @@
+A prover for coherent logic
+
+Executable: prover
+
+Takes a theory in geolog-format from standard input
+
+To build, first run
+
+autoreconf --install
+
+then
+
+./configure
+
+and finally 
+
+make 
+
+the executable is src/prover
