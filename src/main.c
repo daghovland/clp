@@ -97,10 +97,21 @@ void print_help(char* exec){
   printf("\t-a, --pdf\t\tGives output of proof in adobe pdf format\n");
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
+  printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
   printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not implemented\n");
   printf("\t-c, --clpl\t\t Tries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\nReport bugs to: hovland@ifi.uio.no\n");
+}
+
+
+void print_version(){
+  printf("Prover for coherent logic\n"); 
+  printf("This is free software.  You may redistribute copies of it under the terms of");
+  printf("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
+  printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+  printf("Written by Dag Hovland, 2011. Copyright is probably University of Oslo. Licensed under GPLv 3\n");
+
 }
 
 int main(int argc, char *argv[]){
@@ -109,8 +120,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {0,0,0,0}};
-  char shortargs[] = "vphgdaecm:";
+  const struct option longargs[] = {{"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {0,0,0,0}};
+  char shortargs[] = "vVphgdaecm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -145,6 +156,9 @@ int main(int argc, char *argv[]){
       print_help(argv[0]);
       exit(EXIT_SUCCESS);
       break;
+    case 'V':
+      print_version();
+      exit(EXIT_SUCCESS);
     case 'e':
       existdom = true;
       break;
