@@ -34,7 +34,7 @@
 
 extern char * optarg;
 extern int optind, optopt, opterr;
-bool verbose, debug, proof, dot, text, pdf, existdom;
+bool verbose, debug, proof, dot, text, pdf, existdom, factset;
 strategy strat;
 unsigned long maxsteps;
 
@@ -48,24 +48,24 @@ int file_prover(FILE* f, const char* prefix){
   th = geolog_parser(f);
 
   assert(test_theory(th));
-
-  net = create_rete_net(th, maxsteps, existdom, strat);
+  if(!factset){
+    net = create_rete_net(th, maxsteps, existdom, strat);
   
-  if(debug){
-    fp = fopen("rete.dot", "w");
-    if(fp == NULL){
-      perror("file_prover: Could not open \"rete.dot\" for writing\n");
-      exit(EXIT_FAILURE);
-    } else {
-      print_dot_rete_net(net, fp);
-      if(fclose(fp) != 0)
-	perror("file_prover: Could not close \"rete.dot\"\n");
+    if(debug && !factset){
+      fp = fopen("rete.dot", "w");
+      if(fp == NULL){
+	perror("file_prover: Could not open \"rete.dot\" for writing\n");
+	exit(EXIT_FAILURE);
+      } else {
+	print_dot_rete_net(net, fp);
+	if(fclose(fp) != 0)
+	  perror("file_prover: Could not close \"rete.dot\"\n");
+      }
     }
+    assert(test_rete_net(net));
+    
+    init_proof_dot_writer(prefix);
   }
-  assert(test_rete_net(net));
-  
-  init_proof_dot_writer(prefix);
-  
   steps = prover(net);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
@@ -74,10 +74,10 @@ int file_prover(FILE* f, const char* prefix){
     if(verbose)
       printf("Could not find proof\n");
   }
-
-  end_proof_dot_writer(prefix);
-  delete_rete_net(net);
-
+  if(!factset){
+    end_proof_dot_writer(prefix);
+    delete_rete_net(net);
+  }
   delete_theory(th);
   //if(brk(mem_break) != 0)
   //  perror("Error with resetting memory after proving file\n");
@@ -86,31 +86,33 @@ int file_prover(FILE* f, const char* prefix){
 }
 void print_help(char* exec){
   printf("Usage: %s [OPTION...] [FILE...]\n\n", exec);
-  printf("Reads a coherent theory given in the format supported by John Fisher's geolog prover. There is also partial support for reading the format supported by CL.pl. ");
+  printf("Reads a coherent theory given in the format supported by John Fisher's geolog prover <http://johnrfisher.net/GeologUI/index.html> or in the format supported by Marc Bezem\& Dimitri Hendriks CL.pl <http://www.few.vu.nl/~diem/research/ht/#tool>. The strategy information in the latter format is not used, only the axioms. ");
   printf("The program searches for a model of the given theory, or a proof that there is no finite model of the theory. ");
   printf("If no file name is given, a single theory is read from standard input. ");
   printf("Several file names can be given, each will then be parsed as a single theory and a proof search done for each of them.\n\n");
   printf(" Explanation of options:\n");
   printf("\t-p, --proof\t\tOutput a proof if one is found\n");
   printf("\t-g, --debug \t\tGives (lots of) extra output useful for debugging or understanding the prover\n");
-  printf("\t-d, --dot\t\t Gives output of proof in dot format\n");
+  printf("\t-d, --dot\t\tGives output of proof in dot format\n");
   printf("\t-a, --pdf\t\tGives output of proof in adobe pdf format\n");
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
   printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not implemented\n");
-  printf("\t-c, --clpl\t\t Tries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
+  printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
+  printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
-  printf("\nReport bugs to: hovland@ifi.uio.no\n");
+  printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
 
 
 void print_version(){
-  printf("Prover for coherent logic\n"); 
-  printf("This is free software.  You may redistribute copies of it under the terms of");
+  printf("clp (coherent logic prover) 0.10\n"); 
+  printf("Copyright (C) 2011 University of Oslo and/or Dag Hovland.\n");
+  printf("This is free software.  You may redistribute copies of it under the terms of\n");
   printf("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
   printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-  printf("Written by Dag Hovland, 2011. Copyright is probably University of Oslo. Licensed under GPLv 3\n");
+  printf("Written by Dag Hovland.\n");
 
 }
 
@@ -120,8 +122,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {0,0,0,0}};
-  char shortargs[] = "vVphgdaecm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdaecm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -132,6 +134,7 @@ int main(int argc, char *argv[]){
   dot = false;
   pdf = false;
   existdom = false;
+  factset = false;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
 
@@ -145,6 +148,9 @@ int main(int argc, char *argv[]){
       break;
     case 'c':
       strat = clpl_strategy;
+      break;
+    case 'f':
+      factset = true;
       break;
     case 'g':
       debug = true;

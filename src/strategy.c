@@ -83,13 +83,13 @@ rule_instance* normal_next_instance(rete_net_state* state){
 	if(rule->rhs->n_args == 1){
 	  has_non_splitting = true;
 	  non_splitting_rule = axiom_no;
-	  weight /= 2;
+	  weight /= 20;
 	}
 	if(weight < min_weight){
 	  min_weight = weight;
 	  lightest_rule = i;
 	}
-	assert(min_weight <  2 * get_global_step_no(state) + RAND_RULE_WEIGHT);
+	assert(min_weight <  2 * get_global_step_no(state) * (1 +  RAND_RULE_WEIGHT));
       } // end not definite rule
     } // end if rule queue not empty
   } // end for all axioms
@@ -98,7 +98,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
   if(has_definite)
      return pop_axiom_rule_queue(state, definite_rule);
   assert(has_next_rule);
-  assert(min_weight <  2 * get_global_step_no(state) + RAND_RULE_WEIGHT);
+  assert(min_weight <  2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT));
   return pop_axiom_rule_queue(state, lightest_rule);
 }
   

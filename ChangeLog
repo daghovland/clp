@@ -1,0 +1,10 @@
+2011-03-02
+Added a rudimentary info file
+
+Added functionality to the check target of make
+	
+Changed name of executable from "prover" to "clp", to be inline with project name
+	
+Changed the standard strategy to absolutely prioritize also existential non-splitting rules. 
+	
+Started adding support for not using the RETE algorithm. Necessary for testing efficiency of RETE

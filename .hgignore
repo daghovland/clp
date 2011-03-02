@@ -1,5 +1,6 @@
 syntax:glob
 *.o
+*~
 autom4te.cache
 config.h.in
 depcomp
@@ -8,3 +9,9 @@ missing
 ylwrap
 configure
 Makefile.in
+compile
+clp
+texinfo.tex
+src/geolog.c
+src/geolog_parser.h
+src/geolog_parser.c

@@ -402,4 +402,8 @@ void print_dot_rule_instance(const rule_instance *ri, FILE* f){
 void print_rule_instance(const rule_instance *ri, FILE* f){
   print_fol_axiom(ri->rule, f);
   print_substitution(ri->substitution, f);
+  if(ri->rule->is_existential)
+    fprintf(f, " - existential");
+  else
+    fprintf(f, " - definite");
 }

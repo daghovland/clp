@@ -375,14 +375,15 @@ unsigned int prover(const rete_net* rete){
   unsigned int i, j, retval;
   bool foundproof;
   rete_net_state* state = create_rete_state(rete, verbose);
+  const theory* th = rete->th;
 #ifdef HAVE_PTHREAD
   num_threads = 0;
 #endif
   srand(1000);
-  for(i=0; i < rete->th->n_axioms; i++){
-    if(rete->th->axioms[i]->type == fact){
-      assert(rete->th->axioms[i]->axiom_no == i);
-      add_rule_to_queue(rete->th->axioms[i],  create_substitution(state->net->th), state);
+  for(i=0; i < th->n_axioms; i++){
+    if(th->axioms[i]->type == fact){
+      assert(th->axioms[i]->axiom_no == i);
+      add_rule_to_queue(th->axioms[i],  create_substitution(th), state);
     }
   }
   foundproof =  run_prover(state);

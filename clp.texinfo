@@ -1,0 +1,65 @@
+\input texinfo
+@setfilename clp.info
+@settitle COHERENT LOGIC PROVER (clp)
+
+@copying
+This manual if for clp (coherent logic prover) version 0.10
+
+Copyright @copyright{} 2011 Dag Hovland
+@end copying
+
+@titlepage
+@title Manual for Coherent Logic Prover (clp) 
+@author Dag Hovland
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top Usage
+
+@insertcopying
+@end ifnottex
+
+@menu
+* First Chapter:: Invoking clp
+* Second Chapter:: The format
+* Third Chapter:: Coherent Logic
+* Index:: Index
+@end menu
+
+@node First Chapter, Second Chapter, Top, Top
+@chapter First Chapter
+
+
+@cindex first chapter
+@cindex chapter, first 
+
+A coherent theory can be given on standard input, or you can provide the file names of one or more text files containing coherent theories
+
+@node Second Chapter, Third Chapter, First Chapter, Top
+@chapter Second Chapter
+
+@cindex second chapter
+@cindex chapter, second
+
+See CL.pl documentation or John Fisher's documentation
+
+
+@node Third Chapter, Index, Second Chapter, Top
+@chapter Third Chapter
+
+@cindex third chapter
+@cindex chapter, third
+
+@node Index,, Third Chapter, Top
+@unnumbered Index
+@cindex index
+
+@printindex cp
+
+@bye

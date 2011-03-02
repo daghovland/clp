@@ -43,10 +43,11 @@
 #undef HAVE_PTHREAD
 
 /**
-   Comment this line to get assertions, which are used for a sort of 
-   run-time unit testing
+   Uncomment this line to get assertions, which are used for a sort of 
+   run-time unit testing. You can also change this in Makefile.am, if you 
+   have autotools installed
 **/
-#define NDEBUG
+//#define NDEBUG
 
 /**
    To get loads of debugging output about the rete state, uncomment this

@@ -40,9 +40,6 @@ substitution* create_substitution(const theory* t){
   substitution* ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*) );
   ret_val->allvars = t->vars;
   ret_val->n_subs = 0;
-#ifndef NDEBUG
-  ret_val->frozen = false;
-#endif
   for(i = 0; i < t->vars->n_vars; i++)
     ret_val->values[i] = NULL;
   return ret_val;
@@ -54,9 +51,6 @@ substitution* copy_substitution(const substitution* orig){
   substitution* copy = malloc_tester(size );
   memcpy(copy, orig, size);
 
-#ifndef NDEBUG
-  copy->frozen = false;
-#endif
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -88,7 +82,6 @@ bool _add_substitution_no(substitution* sub, size_t var_no, const term* value){
   assert(test_term(value));
 
   if(orig_val == NULL){
-    assert(!sub->frozen);
     sub->n_subs++;
     sub->values[var_no] = value;
     
@@ -115,7 +108,6 @@ bool add_substitution(substitution* sub, variable* var, const term* value){
 void insert_substitution_value(substitution* sub, variable* var, const term* value){
   size_t var_no = var->var_no;
   assert(test_term(value));
-  assert(!sub->frozen);
   if(sub->values[var_no] == NULL)
     sub->n_subs++;
   sub->values[var_no] = value;
@@ -137,7 +129,6 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
   assert(test_substitution(sub));
   assert(test_term(value));
   assert(test_term(argument));
-  assert(!sub->frozen);
 
   free_term_variables(argument, free_arg_vars);
   switch(argument->type){
@@ -163,7 +154,6 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
   unsigned int i;
 
   assert(test_substitution(sub));
-  assert(!sub->frozen);
 
   if(value->n_args != arg->n_args)
     return false;
@@ -183,10 +173,6 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2)
   assert(test_substitution(sub1));
   assert(test_substitution(sub2));
 
-#ifndef NDEBUG
-  sub1->frozen = true;
-  sub2->frozen = true;
-#endif
 
   for(i = 0; i < sub1->allvars->n_vars; i++){
     const term* val1 = sub1->values[i];

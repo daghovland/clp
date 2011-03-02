@@ -39,9 +39,6 @@
 **/
 typedef struct substitution_t {
   unsigned int n_subs;
-#ifndef NDEBUG
-  bool frozen;
-#endif
   const freevars* allvars;
   const term* values[];
 } substitution;

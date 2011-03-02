@@ -1,21 +1,15 @@
 A prover for coherent logic
 
-Executable: prover
+Executable: clp
 
-Takes a theory in geolog-format from standard input
+Takes a theory in geolog-format or CL.pl-format from standard input or files
 
 Requires recent versions of bison and flex. I use bison 2.4.3 and flex 2.5.4. It does e.g. not work with bison 1
 
-To build, first run
+If you are building from mercurial repository (not from tarball) remember to first run:
 
 autoreconf --install
 
-then
+See INSTALL for the rest of installation and building procedures
 
-./configure
 
-and finally 
-
-make 
-
-the executable is src/prover
