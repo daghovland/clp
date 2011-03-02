@@ -196,7 +196,8 @@ void add_rete_child(rete_node* parent, const rete_node* new_child);
 
 void delete_rete_net(rete_net*);
 
-unsigned int prover(const rete_net*);
+// In prover.c
+unsigned int prover(const rete_net*, bool);
 
 
 bool test_rete_net(const rete_net*);

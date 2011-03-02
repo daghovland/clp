@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([prover], [0.1], [hovland@ifi.uio.no])
+AC_INIT([clp], [0.1], [hovland@ifi.uio.no])
 AC_COPYRIGHT([Copyright (C) 2011 University of Oslo, Norway. Author: Dag Hovland])
 AM_INIT_AUTOMAKE([parallel-tests -Wall  -Werror dist-bzip2])
 AC_CONFIG_SRCDIR([src/prover.c])

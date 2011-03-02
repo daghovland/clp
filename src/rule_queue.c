@@ -197,6 +197,26 @@ bool test_rule_instance(const rule_instance* ri, const rete_net_state* state){
   return true;
 }
 
+
+/**
+   External function for creating a rule instance
+   
+   Only used when commandline option fact-set is on, 
+   that is, when RETE is not used
+**/
+rule_instance* create_rule_instance(const axiom* rule, substitution* sub){
+  rule_instance* ins = malloc_tester(sizeof(rule_instance));
+
+  assert(test_substitution(sub));
+  
+  // The timestamp on rule instances is only used by RETE. Otherwise, rule instances are immediately added to the factset
+  ins->timestamp = 0;
+  ins->rule = rule;
+  ins->substitution = sub;
+  return ins;
+}
+  
+
 /**
    External function for adding and popping instances of a rule
    to/from the axiom queue and the normal queueu

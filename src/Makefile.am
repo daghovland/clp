@@ -16,9 +16,17 @@ clp_CFLAGS=-DNDEBUG #${PTHREAD_CFLAGS}
 
 
 check_PROGRAMS = clpdebug
-clpdebug_SOURCES = $(clp_SOURCES)
-TESTS = ./clpdebug < echo "p->q.p.q->goal."
+clpdebug_SOURCES = $(clp_SOURCES) 
+check_SCRIPTS = check_clp_anl.sh
+check_DATA = anl.gl
+TESTS = $(check_SCRIPTS)
+check_clp_anl.sh:
+	echo "./clpdebug $(srcdir)/anl.gl" > check_clp_anl.sh
+	chmod +x check_clp_anl.sh
+
+CLEANFILES = $(check_SCRIPTS)
+
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 
-clpdebug_CFLAGS = -g
+clpdebug_CFLAGS = -g -lduma
 
 

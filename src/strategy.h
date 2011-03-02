@@ -22,7 +22,12 @@
 #ifndef __INCLUDE_STRATEGY_H
 #define  __INCLUDE_STRATEGY_H
 
+#include "theory.h"
+#include "rule_queue.h"
+#include "fact_set.h"
+
 typedef enum strategy_t { clpl_strategy, normal_strategy } strategy;
 
+rule_instance* factset_next_instance(const theory*, const fact_set*);
 
 #endif

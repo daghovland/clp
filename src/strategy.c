@@ -126,6 +126,10 @@ rule_instance* clpl_next_instance(rete_net_state* state){
 }
 
 
+rule_instance* factset_next_instance(const theory* th, const fact_set* fs){
+  return create_rule_instance(th->axioms[0], create_substitution(th));
+}
+
 rule_instance* choose_next_instance(rete_net_state* state, strategy strat){
   switch(strat){
   case clpl_strategy:

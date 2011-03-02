@@ -48,9 +48,9 @@ int file_prover(FILE* f, const char* prefix){
   th = geolog_parser(f);
 
   assert(test_theory(th));
-  if(!factset){
-    net = create_rete_net(th, maxsteps, existdom, strat);
-  
+  net = create_rete_net(th, maxsteps, existdom, strat);
+
+  if(!factset){  
     if(debug && !factset){
       fp = fopen("rete.dot", "w");
       if(fp == NULL){
@@ -66,7 +66,7 @@ int file_prover(FILE* f, const char* prefix){
     
     init_proof_dot_writer(prefix);
   }
-  steps = prover(net);
+  steps = prover(net, factset);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
     retval = EXIT_SUCCESS;
@@ -76,8 +76,9 @@ int file_prover(FILE* f, const char* prefix){
   }
   if(!factset){
     end_proof_dot_writer(prefix);
-    delete_rete_net(net);
   }
+  delete_rete_net(net);
+    
   delete_theory(th);
   //if(brk(mem_break) != 0)
   //  perror("Error with resetting memory after proving file\n");

@@ -273,10 +273,14 @@ clp_LDADD = -ll -lfl
 AM_LDFLAGS = -L. #${PTHREAD_LIBS}
 #These flags (especially NDEBUG) are important for performance, and turned on here by default
 clp_CFLAGS = -DNDEBUG #${PTHREAD_CFLAGS} 
-clpdebug_SOURCES = $(clp_SOURCES)
-TESTS = ./clpdebug < echo "p->q.p.q->goal."
+clpdebug_SOURCES = $(clp_SOURCES) 
+check_SCRIPTS = check_clp_anl.sh
+check_DATA = anl.gl
+TESTS = $(check_SCRIPTS)
+CLEANFILES = $(check_SCRIPTS)
+
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 
-clpdebug_CFLAGS = -g
+clpdebug_CFLAGS = -g -lduma
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1284,14 +1288,8 @@ recheck recheck-html:
 	        else echo $$f; fi;					\
 	      done | tr '\012\015' '  '`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
-./clpdebug.log: ./clpdebug
-	@p='./clpdebug'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
-<.log: <
-	@p='<'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
-echo.log: echo
-	@p='echo'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
-"p->q.p.q->goal.".log: "p->q.p.q->goal."
-	@p='"p->q.p.q->goal."'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
+check_clp_anl.sh.log: check_clp_anl.sh
+	@p='check_clp_anl.sh'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 .test.log:
 	@p='$<'; $(am__check_pre) $(TEST_LOG_COMPILE) "$$tst" $(am__check_post)
 @am__EXEEXT_TRUE@.test$(EXEEXT).log:
@@ -1328,7 +1326,8 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
+	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS) $(check_SCRIPTS) \
+	  $(check_DATA)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
@@ -1359,6 +1358,7 @@ mostlyclean-generic:
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -1458,6 +1458,9 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic pdf pdf-am ps ps-am recheck recheck-html \
 	tags uninstall uninstall-am uninstall-binPROGRAMS
 
+check_clp_anl.sh:
+	echo "./clpdebug $(srcdir)/anl.gl" > check_clp_anl.sh
+	chmod +x check_clp_anl.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -43,7 +43,7 @@ pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
 #endif
 
 
-bool insert_rete_net_disj_rule_instance(rete_net_state*, const rule_instance*);
+bool insert_rete_net_disj_rule_instance(rete_net_state*, const rule_instance*, bool);
 
 #ifdef HAVE_PTHREAD
 /**
@@ -60,7 +60,8 @@ void pthread_error_test(int retno, const char* msg){
 
 bool insert_rete_net_conjunction(rete_net_state* state, 
 				 conjunction* con, 
-				 substitution* sub){
+				 substitution* sub, 
+				 bool factset){
   unsigned int i;
 
   
@@ -90,9 +91,11 @@ bool insert_rete_net_conjunction(rete_net_state* state,
 #endif
     
     insert_state_fact_set(state, ground);
-    assert( test_rule_queue_sums(state));
-    insert_rete_net_fact(state, ground);
-    assert( test_rule_queue_sums(state));
+    if(!factset){
+      assert( test_rule_queue_sums(state));
+      insert_rete_net_fact(state, ground);
+      assert( test_rule_queue_sums(state));
+    }
   } // end for
   return true;
 }
@@ -104,13 +107,18 @@ bool insert_rete_net_conjunction(rete_net_state* state,
    Uses a RETE state, but does not allocate or delete it
 **/
 
-bool run_prover(rete_net_state* state){
-  while(state->rule_queue->n_queue != 0){
-    rule_instance* next;
-
-    assert(test_rule_queue_sums(state));
-    next = choose_next_instance(state, state->net->strat);
-    assert(test_rule_queue_sums(state));
+bool run_prover(rete_net_state* state, bool factset){
+  bool empty_queue;
+  rule_instance* next;
+  while(( factset 
+	  &&  ( next = factset_next_instance(state->net->th, state->facts), next != NULL) )
+	|| state->rule_queue->n_queue != 0){
+    
+    if(!factset){
+      assert(test_rule_queue_sums(state));
+      next = choose_next_instance(state, state->net->strat);
+      assert(test_rule_queue_sums(state));
+    }
 
     assert(test_rule_instance(next, state));
     
@@ -125,6 +133,9 @@ bool run_prover(rete_net_state* state){
       return true;
     }
     if(state->net->existdom && next->rule->is_existential){
+      // This is inspired by Hans de Nivelle's treatment of existential quantifiers.
+      // At the moment it is not working and the commandline option -e should probably not be used
+      
       unsigned int i, s = 0;
       bool finished = false;
       rete_net_state* copy_state;
@@ -174,20 +185,20 @@ bool run_prover(rete_net_state* state){
 	  add_substitution(next->substitution, next->rule->exist_vars->vars[i], terms[i]);
 	copy_state = split_rete_state(state, s++);
 	write_proof_edge(state, copy_state);  
-	if(!insert_rete_net_disj_rule_instance(copy_state, next)){
+	if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
 	  return false;
 	}
 	delete_rete_state(copy_state);
       }// end while(!finished)
       return true;
     } else {
-      // if not existential rule 
+      // if not existential rule or not existdom. This is usually used
       if(next->rule->rhs->n_args > 1){
-	bool retval = insert_rete_net_disj_rule_instance(state,next);
+	bool retval = insert_rete_net_disj_rule_instance(state,next, factset);
 	return retval;
       } else {
 	write_proof_edge(state, state);
-	insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
+	insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, factset);
       }
     } // end if existential rule
   } // end while queue not empty
@@ -340,7 +351,7 @@ bool mt_insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_ins
    Note that goal rules should never be inserted (This does not make sense, as no facts would be inserted)
 
   **/
-bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instance* ri){
+bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instance* ri, bool factset){
   unsigned int i, j;
   const disjunction* dis = ri->rule->rhs;
   bool thread_can_run;
@@ -353,9 +364,9 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
   for(i = 0; i < dis->n_args; i++){
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
-    insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution);
+    insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
     
-    if(!run_prover(copy_states[i]))
+    if(!run_prover(copy_states[i], factset))
       return false;
     delete_rete_state(copy_states[i]);
   }
@@ -368,10 +379,12 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
    The main prover function
 
    Creates and deletes a RETE state on the heap
+   
+   If factset is true, it does not use a rete network
 
    Returns 0 if no proof found, otherwise, the number of steps
 **/
-unsigned int prover(const rete_net* rete){
+unsigned int prover(const rete_net* rete, bool factset){
   unsigned int i, j, retval;
   bool foundproof;
   rete_net_state* state = create_rete_state(rete, verbose);
@@ -383,10 +396,13 @@ unsigned int prover(const rete_net* rete){
   for(i=0; i < th->n_axioms; i++){
     if(th->axioms[i]->type == fact){
       assert(th->axioms[i]->axiom_no == i);
-      add_rule_to_queue(th->axioms[i],  create_substitution(th), state);
+      if(factset)
+	insert_rete_net_disj_rule_instance(state, create_rule_instance(th->axioms[i], create_substitution(th)), factset);
+      else
+	add_rule_to_queue(th->axioms[i],  create_substitution(th), state);
     }
   }
-  foundproof =  run_prover(state);
+  foundproof =  run_prover(state, factset);
   retval = get_global_step_no(state);
   delete_rete_state(state);
   if(foundproof)
