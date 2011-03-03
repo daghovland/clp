@@ -46,8 +46,10 @@ void detract_rete_beta_sub(rete_net_state* state,
   assert(node->type == beta_not || node->type == rule);
 
   iter = get_state_sub_list_iter(state, 
-				 (node->type == beta_not) ? node->val.beta.a_store_no : node->val.rule.store_no
+				 (node->type == beta_not) ? node->val.beta.b_store_no : node->val.rule.store_no
 				 );
+  fprintf(stdout, "\nRetracting: ");
+  print_substitution(sub, stdout);
   while(has_next_sub_list(iter)){
     substitution* sub2 = get_next_sub_list(iter);
     if(subs_equal_intersection(sub, sub2))
@@ -198,14 +200,19 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     } else {
       iter = get_state_sub_list_iter(state, node->val.beta.b_store_no);
       while(has_next_sub_list(iter)){
-	substitution* join = union_substitutions(sub, get_next_sub_list(iter));
+	substitution* join = union_substitutions(get_next_sub_list(iter), sub);
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }
     }
     break;
   case beta_not: 
-    if(!insert_substitution(state, node->val.beta.a_store_no, sub, node->free_vars)){
+    if(insert_substitution(state, 
+			   node->val.beta.a_store_no, 
+			   sub, node->free_vars
+			   ))
+      detract_rete_beta_sub(state, node->children[0], sub);
+    else {
       delete_substitution(sub);
       return false;
     }
@@ -230,6 +237,6 @@ void insert_rete_net_fact(rete_net_state* state,
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
   assert(test_atom(fact));
   assert(sel != NULL && sel->val.selector == fact->pred);
-  substitution* a = create_substitution(state->net->th);
+  substitution* a = create_substitution(state->net->th, get_global_step_no(state));
   insert_rete_alpha_fact(state, sel, fact, a);
 }

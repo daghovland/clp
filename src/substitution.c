@@ -35,11 +35,17 @@ bool unify_substitution_term_lists(const term_list*, const term_list*, substitut
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t){
+substitution* create_substitution(const theory* t, unsigned int timestamp){
   unsigned int i;
   substitution* ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*) );
   ret_val->allvars = t->vars;
   ret_val->n_subs = 0;
+
+  ret_val->size_timestamps = t->max_lhs_conjuncts;
+  ret_val->timestamps = calloc_tester(sizeof(unsigned int), ret_val->size_timestamps);
+  ret_val->timestamps[0] = timestamp;
+  ret_val->n_timestamps = 1;
+
   for(i = 0; i < t->vars->n_vars; i++)
     ret_val->values[i] = NULL;
   return ret_val;
@@ -50,7 +56,9 @@ substitution* copy_substitution(const substitution* orig){
 
   substitution* copy = malloc_tester(size );
   memcpy(copy, orig, size);
-
+  
+  copy->timestamps = calloc_tester(sizeof(unsigned int), copy->size_timestamps);
+  memcpy(copy->timestamps, orig->timestamps, copy->size_timestamps * sizeof(unsigned int));
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -230,7 +238,12 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
   assert(sub1->allvars == sub2->allvars);
 
   retval = copy_substitution(sub1);
-  
+  for(i = 0; i < sub2->n_timestamps; i++)
+    retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
+
+  assert(retval->n_timestamps <= retval->size_timestamps);
+
+
   for(i = 0; i < retval->allvars->n_vars; i++){
     const term* val1 = retval->values[i];
     const term* val2 = sub2->values[i];
@@ -296,10 +309,21 @@ void delete_substitution_list_below(substitution_list* list, substitution_list* 
 
    An iterator is just a pointer to a substitution_list. 
    A pointer to an iterator therefore a pointer to a pointer to a substitution_list
+
+   The substitutions must be returned in order: The oldest first. Therefore the
+   prev pointer is used. This is not thread safe!!!
 **/
 sub_list_iter* get_sub_list_iter(substitution_list* sub){
   sub_list_iter* i = malloc_tester(sizeof(sub_list_iter));
-  *i = sub;
+  substitution_list* prev = NULL;
+
+  while(sub != NULL){
+    sub->prev = prev;
+    prev = sub;    
+    sub = sub->next;
+  }
+  *i = prev;
+    
   return i;
 }
 
@@ -308,11 +332,19 @@ bool has_next_sub_list(const sub_list_iter*i){
   return *i != NULL;
 }
 
+/**
+   As mentioned above, this is not thread safe, since
+   subsitution lists could be shared between threads, and
+   prev can be different. prev is set to NULL as soon as possible 
+   to ensure early segfaults on erroneous usage
+**/
 substitution* get_next_sub_list(sub_list_iter* i){
   substitution *retval;
+  substitution_list * sl = *i;
   assert(*i != NULL);
-  retval = (*i)->sub;
-  (*i) = (*i)->next;
+  retval = sl->sub;
+  (*i) = sl->prev;
+  sl->prev = NULL;
   return retval;
 }
 
@@ -343,7 +375,7 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
   state->subs[sub_no] = malloc_tester(sizeof(substitution_list));
   state->subs[sub_no]->sub = a;
   state->subs[sub_no]->next = sub_list;
-  
+
   assert(test_substitution(a));
   
   return true;
@@ -368,7 +400,9 @@ void print_substitution(const substitution* sub, FILE* f){
       }
     }
   }
-  fprintf(f, "]");
+  fprintf(f, "] from steps ");
+  for(i = 0; i < sub->n_timestamps; i++)
+    fprintf(f, "%u, ", sub->timestamps[i]);
 }
 
 void print_substitution_list(const substitution_list* sublist, FILE* f){

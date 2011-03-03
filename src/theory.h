@@ -27,6 +27,12 @@
 #include "term.h"
 #include "atom.h"
 
+
+/**
+   max_lhs_conjuncts is the maximum number of conjuncts in the left hand side
+   of any axiom. This is nice to have for the subsitution timestamp lists, since we
+   then know the exact size
+**/
 typedef struct theory_t {
   const axiom** axioms;
   unsigned int n_axioms;
@@ -38,6 +44,7 @@ typedef struct theory_t {
   size_t n_func_names;
   size_t size_func_names;
   const char** func_names;
+  unsigned int max_lhs_conjuncts;
   size_t n_constants;
   size_t size_constants;
   const char** constants;

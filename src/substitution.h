@@ -35,12 +35,16 @@
 
    The pointer allvars points to the freevar of _all_ variables in the theory. 
 
-   The timestamp is used to know when substitutions were inserted into the rete network.
+   The timestamps are used to know when substitutions were inserted into the rete network.
    This is necessary for the emulation of the prolog search strategy in CL.pl
+   The timestamps are a list of the timestamps when each conjunct in the precedent was 
+   matched by the factset
 **/
 typedef struct substitution_t {
   unsigned int n_subs;
-  const unsigned int timestamp;
+  unsigned int * timestamps;
+  unsigned int n_timestamps;
+  size_t size_timestamps;
   const freevars* allvars;
   const term* values[];
 } substitution;
@@ -52,10 +56,16 @@ typedef struct substitution_t {
    The last elements are common between more threads, while
    the first ones are more specific for single threads
    
+   prev is set when creating a sub_list_iter 
+   prev is not threadsafe!
+   
    The last element has next = NULL
 **/
 typedef struct substitution_list_t {
   struct substitution_list_t * next;
+#ifndef HAVE_PTHREAD
+  struct substitution_list_t * prev;
+#endif
   substitution * sub;
 } substitution_list;
 
@@ -64,7 +74,7 @@ typedef struct substitution_list_t {
 **/
 typedef substitution_list* sub_list_iter;
 
-substitution* create_substitution(const theory*);
+substitution* create_substitution(const theory*, unsigned int);
 substitution* copy_substitution(const substitution*);
 
 bool test_substitution(const substitution*);

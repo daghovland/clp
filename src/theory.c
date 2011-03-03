@@ -51,6 +51,8 @@ theory* create_theory(void){
 
   ret_val->vars = init_freevars();
 
+  ret_val->max_lhs_conjuncts = 0;
+
   return ret_val;
 }
 
@@ -62,6 +64,8 @@ void extend_theory(theory *th, axiom *ax){
     th->axioms = realloc_tester(th->axioms, th->size_axioms * sizeof(axiom));
   }
   th->axioms[th->n_axioms-1] = ax;
+  if(ax->lhs->n_args > th->max_lhs_conjuncts)
+    th->max_lhs_conjuncts = ax->lhs->n_args;
 }
 
 void delete_theory(theory* t){

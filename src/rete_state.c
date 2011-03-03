@@ -251,7 +251,9 @@ const term* get_fresh_constant(rete_net_state* state, variable* var){
 void print_rete_state(const rete_net_state* state, FILE*  f){
   unsigned int i;
   fprintf(f, "State of RETE net\n");
-  print_rule_queue(state->rule_queue, f);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    print_rule_queue(state->axiom_inst_queue[i], f);
+  //  print_rule_queue(state->rule_queue, f);
   fprintf(f, "\nBranch: %s, Step: %i", state->proof_branch_id,state->step_no);
   fprintf(f, "\nSubstitution Lists:");
   for(i = 0; i < state->net->n_subs; i++){

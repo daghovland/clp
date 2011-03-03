@@ -139,6 +139,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
   FILE *fp2;
   char fname2[100];
 #endif
+  unsigned int i;
 
   if(proof || pdf || dot){
 #ifdef HAVE_PTHREAD
@@ -167,8 +168,12 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
   } // proof etc. 
 
 #ifdef RETE_STATE_DEBUG_TXT
-  printf("\nRule Queue in step: %i: \n", get_global_step_no(s));
-  print_rule_queue(s->rule_queue, stdout);
+  printf("\nRule Queues in step: %i: \n", get_global_step_no(s));
+  for(i = 0; i < s->net->th->n_axioms; i++){
+    if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first)
+      print_rule_queue(s->axiom_inst_queue[i], stdout);
+  }
+  //  print_rule_queue(s->rule_queue, stdout);
 #endif
 
   if(proof || dot || pdf){

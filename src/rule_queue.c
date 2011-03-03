@@ -91,11 +91,30 @@ bool test_rule_queue(const rule_queue* rq, const rete_net_state* state){
 }
 
 /**
+   Internal function for comparing timestamps on a substition
+
+   They correspond to the times at which the matching for each conjunct
+   was introduced to the factset
+
+   Returns positive if first is larger(newer) than last, negative if first is smaller(newer) than last,
+   and 0 if they are equal
+**/
+int compare_timestamps(const substitution* first, const substitution* last){
+  assert(first->n_timestamps == last->n_timestamps);
+  unsigned int i;
+  for(i = 0; i < first->n_timestamps; i++){
+    if(first->timestamps[i] != last->timestamps[i])
+      return first->timestamps[i] - last->timestamps[i];
+  }
+  return 0;
+}
+
+/**
    Internal function for adding a rule instance to a queue
 
    The queue must be returned, since realloc might change the address
 **/
-rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq){
+rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq, bool clpl_sorted){
   size_t orig_size = rq->size_queue;
 
   rq->n_queue++;
@@ -110,10 +129,20 @@ rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq){
       rq->end += orig_size;
     }
   }
-  rq->queue[rq->end] = ri;
+  if(clpl_sorted){
+    int i = rq->end;
+    int j = (rq->end + rq->size_queue - 1) % rq->size_queue;
+    while(i != rq->first && compare_timestamps(rq->queue[j]->substitution, ri->substitution) > 0){
+      rq->queue[i] = rq->queue[j];
+      i = j;
+      j = (i + rq->size_queue - 1) % rq->size_queue;
+    }
+    rq->queue[i] = ri;
+  } else {
+    rq->queue[rq->end] = ri;
+  }
   rq->end++;
   rq->end %= rq->size_queue;
-
   return rq;
 }
 
@@ -237,12 +266,12 @@ void add_rule_to_queue(const axiom* rule, substitution* sub, rete_net_state* sta
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(test_rule_instance(ins, state));
 
-  state->rule_queue = _add_rule_to_queue(ins, state->rule_queue);
+  state->rule_queue = _add_rule_to_queue(ins, state->rule_queue, false);
 
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(state->axiom_inst_queue[rule->axiom_no] != NULL);
 
-  state->axiom_inst_queue[rule->axiom_no] = _add_rule_to_queue(ins, state->axiom_inst_queue[rule->axiom_no]);
+  state->axiom_inst_queue[rule->axiom_no] = _add_rule_to_queue(ins, state->axiom_inst_queue[rule->axiom_no], state->net->strat == clpl_strategy);
   assert(test_rule_queue_sums(state));
 }
 rule_instance* _peek_rule_queue(const rule_queue* rq){

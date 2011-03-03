@@ -86,6 +86,9 @@ typedef struct rete_node_t rete_node;
    The root also contains the lists of substitutions for each alpha and beta store. 
    the value "store" in a store node is an index to subs in the root. This is to make 
    copying the substitutions easy when splitting into trees
+
+   clpl is true if the commandline option --clpl is given. Leads to rule queues being sorted
+   in the same way they would be by prolog
 **/
 typedef struct rete_net_t {
   size_t n_subs;

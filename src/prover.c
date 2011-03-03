@@ -397,9 +397,9 @@ unsigned int prover(const rete_net* rete, bool factset){
     if(th->axioms[i]->type == fact){
       assert(th->axioms[i]->axiom_no == i);
       if(factset)
-	insert_rete_net_disj_rule_instance(state, create_rule_instance(th->axioms[i], create_substitution(th)), factset);
+	insert_rete_net_disj_rule_instance(state, create_rule_instance(th->axioms[i], create_substitution(th, 1)), factset);
       else
-	add_rule_to_queue(th->axioms[i],  create_substitution(th), state);
+	add_rule_to_queue(th->axioms[i],  create_substitution(th,1), state);
     }
   }
   foundproof =  run_prover(state, factset);
