@@ -42,9 +42,9 @@ conjunction* create_conjunction(const atom *at){
   ret_val->n_args = 1;
   (ret_val->args)[0] = at;
   ret_val->free_vars = init_freevars();
-  free_atom_variables(at, ret_val->free_vars);
+  ret_val->free_vars = free_atom_variables(at, ret_val->free_vars);
   ret_val->bound_vars =  init_freevars();
-  free_atom_variables(at, ret_val->bound_vars);
+  ret_val->bound_vars = free_atom_variables(at, ret_val->bound_vars);
   ret_val->has_domain_pred  = at->pred->is_domain;
   return ret_val;
 }
@@ -68,8 +68,8 @@ conjunction* extend_conjunction(conjunction *conj, const atom* at){
   }
   conj->args[conj->n_args - 1] = at;
 
-  free_atom_variables(at, conj->free_vars);
-  free_atom_variables(at, conj->bound_vars);
+  conj->free_vars = free_atom_variables(at, conj->free_vars);
+  conj->bound_vars = free_atom_variables(at, conj->bound_vars);
   conj->has_domain_pred = conj->has_domain_pred || at->pred->is_domain;
 
   return conj;
@@ -176,7 +176,7 @@ rete_node * create_rete_conj_node(rete_net* net,
   for(i = 0; i < con->n_args; i++){
     freevars* copy = copy_freevars(vars);
     for(j = i; j < con->n_args; j++)
-      free_atom_variables(con->args[j], copy);
+      copy = free_atom_variables(con->args[j], copy);
     right_parent = create_rete_atom_node(net, con->args[i], copy);
     left_parent = create_beta_and_node(net, left_parent, right_parent, copy);
   } // end for(i = 0; i < con->n_args; i++){

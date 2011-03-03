@@ -76,7 +76,7 @@ const term_list* instantiate_term_list(const term_list* orig,
 **/
 bool test_is_atom_instantiation(const atom* a, const substitution* sub){
   freevars* fv = init_freevars();
-  free_atom_variables(a, fv);
+  fv = free_atom_variables(a, fv);
   assert(test_is_instantiation(fv, sub));
   del_freevars(fv);
   return true;

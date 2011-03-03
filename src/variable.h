@@ -38,17 +38,17 @@ typedef struct freevars_iter_t {
 } freevars_iter;
 
 freevars* init_freevars(void);
-void add_freevars(freevars*, variable*);
+freevars* add_freevars(freevars*, variable*);
 void remove_freevars(freevars*, const freevars*);
 int num_freevars(const freevars*);
 void del_freevars(freevars*);
-void plus_freevars(freevars*, const freevars*);
+freevars* plus_freevars(freevars*, const freevars*);
 freevars* copy_freevars(const freevars*);
 void reset_freevars(freevars*);
 freevars_iter get_freevars_iter(const freevars*);
 variable* next_freevars_iter(freevars_iter*);
 bool has_next_freevars_iter(const freevars_iter*);
-variable* parser_new_variable(freevars*, const char*);
+variable* parser_new_variable(freevars**, const char*);
 bool empty_intersection(const freevars*, const freevars*);
 
 bool test_variable(const variable*);

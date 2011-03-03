@@ -138,7 +138,7 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
   assert(test_term(value));
   assert(test_term(argument));
 
-  free_term_variables(argument, free_arg_vars);
+  free_arg_vars = free_term_variables(argument, free_arg_vars);
   switch(argument->type){
   case variable_term: 
     return add_substitution(sub, argument->var, value);

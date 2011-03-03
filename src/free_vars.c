@@ -30,7 +30,7 @@
 
 
 freevars* init_freevars(){
-  size_t size = 100;
+  size_t size = 2;
   freevars* ret_val = malloc_tester(sizeof(freevars) + size * sizeof(variable*));
   ret_val->n_vars = 0;
   ret_val->size_vars = size;
@@ -68,17 +68,18 @@ bool is_empty_free_vars(const freevars* fv){
 /*
   Variables in "add" are added to "orig", which is modified in place
 */
-void plus_freevars(freevars* orig, const freevars* add){
+freevars* plus_freevars(freevars* orig, const freevars* add){
   unsigned int i;
   for(i = 0; i < add->n_vars; i++)
-    add_freevars(orig, add->vars[i]);
+    orig = add_freevars(orig, add->vars[i]);
+  return orig;
 }
 
-void add_freevars(freevars* orig, variable* new){
+freevars* add_freevars(freevars* orig, variable* new){
   int i;
   for(i = 0; i < orig->n_vars; i++){
     if(orig->vars[i]->var_no == new->var_no)
-      return;
+      return orig;
   }
   if(orig->n_vars+1 >= orig->size_vars){
     orig->size_vars *= 2;
@@ -89,7 +90,7 @@ void add_freevars(freevars* orig, variable* new){
   assert(orig->vars[orig->n_vars]->var_no == new->var_no);
   
   orig->n_vars++;
-  return;
+  return orig;
 }
 
 /**
@@ -97,8 +98,8 @@ void add_freevars(freevars* orig, variable* new){
 
    Identity of variables is based on the string name
 **/
-variable* parser_new_variable(freevars* vars, const char* new){
-  freevars_iter iter = get_freevars_iter(vars);
+variable* parser_new_variable(freevars** vars, const char* new){
+  freevars_iter iter = get_freevars_iter(*vars);
   variable * next;
   while(has_next_freevars_iter(&iter)){
     next = next_freevars_iter(&iter);
@@ -107,8 +108,8 @@ variable* parser_new_variable(freevars* vars, const char* new){
   }
   next = malloc(sizeof(variable));
   next->name = new;
-  next->var_no = vars->n_vars;
-  add_freevars(vars, next);
+  next->var_no = (*vars)->n_vars;
+  *vars = add_freevars(*vars, next);
   return next;
 }
 

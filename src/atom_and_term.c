@@ -56,13 +56,7 @@ atom* prover_create_atom(const predicate* pred, const term_list * args){
   return ret_val;
 }
 
-/**
-   Used as a key when searching
-   a list of substitutions
-**/
-atom* create_bogus_atom(const char* name, size_t n_args){
-  
-}
+
 
 atom* create_prop_variable(const char* name, theory* th){
   return parser_create_atom(name, _create_term_list(0), th);
@@ -126,7 +120,9 @@ term* prover_create_constant_term(const char* name){
 }
 
 term * create_variable(const char* name, theory* th){
-  variable* var_name = parser_new_variable(th->vars, name);
+  freevars* fv = th->vars;
+  variable* var_name = parser_new_variable(&fv, name);
+  th->vars = fv;
   return _create_term(name, var_name, variable_term, _create_term_list(0));
 }
 
@@ -254,25 +250,25 @@ void delete_term_list(term_list* tl){
 /**
    The free variables are returned, and a list of its strings is given in the second argument
 **/
-void free_term_list_variables(const term_list * tl, freevars* vars){
+freevars* free_term_list_variables(const term_list * tl, freevars* vars){
   int i;
   assert(tl->n_args < tl->size_args || (tl->size_args == 0 && tl->n_args == 0));
   for(i = 0; i < tl->n_args; i++)
-    free_term_variables(tl->args[i], vars);
-  return;
+    vars = free_term_variables(tl->args[i], vars);
+  return vars;
 }
 
-void free_atom_variables(const atom *at, freevars* vars){
+freevars* free_atom_variables(const atom *at, freevars* vars){
   return free_term_list_variables(at->args, vars);
 }
 
-void free_term_variables(const term *t, freevars* vars){
+freevars* free_term_variables(const term *t, freevars* vars){
   if(t->type == variable_term){
     assert(t->args->n_args == 0);
-    add_freevars(vars, t->var);
+    return add_freevars(vars, t->var);
   } else if (t->type == function_term) 
-    free_term_list_variables(t->args, vars);
-  return;
+    return free_term_list_variables(t->args, vars);
+  return vars;
 }
 /**
    Comparators

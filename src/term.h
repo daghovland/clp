@@ -68,8 +68,8 @@ bool test_term_list(const term_list*);
 void delete_term_list(term_list*);
 void delete_term(term*);
 
-void free_term_variables(const term*, freevars*);
-void free_term_list_variables(const term_list*, freevars*);
+freevars* free_term_variables(const term*, freevars*);
+freevars* free_term_list_variables(const term_list*, freevars*);
 
 void print_fol_term(const term*, FILE*);
 void print_fol_term_list(const term_list*, FILE*);

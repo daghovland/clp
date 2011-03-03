@@ -49,10 +49,10 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   for(i = 0; i < rhs->n_args; i++){
     remove_freevars(rhs->args[i]->bound_vars, lhs->free_vars);
     remove_freevars(rhs->args[i]->free_vars, rhs->args[i]->bound_vars);
-    plus_freevars(rhs->free_vars, rhs->args[i]->free_vars);
+    rhs->free_vars = plus_freevars(rhs->free_vars, rhs->args[i]->free_vars);
     if(rhs->args[i]->bound_vars->n_vars > 0){
       ret_val->is_existential = true;
-      plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
+      ret_val->exist_vars = plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
     }
     if(rhs->args[i]->has_domain_pred)
       ret_val->has_domain_pred = true;
@@ -73,7 +73,7 @@ axiom* create_fact(disjunction *rhs){
     reset_freevars(rhs->args[i]->free_vars);
     if(rhs->args[i]->bound_vars->n_vars > 0){
       ret_val->is_existential = true;
-      plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
+      ret_val->exist_vars = plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
     }	  
   }
   return ret_val;
