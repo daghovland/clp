@@ -35,10 +35,12 @@
 
    The pointer allvars points to the freevar of _all_ variables in the theory. 
 
-   
+   The timestamp is used to know when substitutions were inserted into the rete network.
+   This is necessary for the emulation of the prolog search strategy in CL.pl
 **/
 typedef struct substitution_t {
   unsigned int n_subs;
+  const unsigned int timestamp;
   const freevars* allvars;
   const term* values[];
 } substitution;

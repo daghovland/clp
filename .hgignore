@@ -10,6 +10,7 @@ ylwrap
 configure
 Makefile.in
 compile
+aclocal.m4
 clp
 texinfo.tex
 src/geolog.c
