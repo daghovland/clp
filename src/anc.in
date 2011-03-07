@@ -1,0 +1,27 @@
+:- dynamic parent/2,ancestor/2.
+name(anc).
+
+dom(berta). dom(ada). dom(cyril). dom(cecilie). dom(david). dom(eve).
+
+_ axiom goal_ax: (ancestor(david,ada) => goal).
+
+_ axiom par_b_a:(true => parent(berta,ada)).
+_ axiom par_c1b:(true => parent(cyril,berta)).
+_ axiom par_c2b:(true => parent(cecilie,berta)).
+_ axiom par_dc1:(true => parent(david,cyril)).
+_ axiom anc_eve(X) :(dom(X) => ancestor(eve,X)).
+_ axiom par_anc(X,Y):(parent(X,Y) => ancestor(X,Y)).
+_ axiom trAns(X,Y,Z):(ancestor(X,Y),ancestor(Y,Z)=>ancestor(X,Z)).
+
+/*
+-------------------------------------------------------------
+log(number,context,rule(instantiation),antecedent,consequent)
+-------------------------------------------------------------
+
+This is an example of a bottom-up derivation of a goal.
+If one does this systematically one gets the minimal Herbrand
+model. Prolog itself builds top-down derivations.
+Soundness and completeness theorems ensure that *systematic*
+top-down gives proves the same closed atoms as *systematic* bottom-up.
+*/
+

@@ -230,7 +230,7 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
    different values, then NULL is returned
 **/
 substitution* union_substitutions(const substitution* sub1, const substitution* sub2){
-  unsigned int i;
+  unsigned int i, new_size;
   substitution *retval;
 
   assert(test_substitution(sub1));
@@ -238,6 +238,12 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
   assert(sub1->allvars == sub2->allvars);
 
   retval = copy_substitution(sub1);
+  new_size = retval->n_timestamps + sub2->n_timestamps;
+  if(retval->size_timestamps <= new_size){
+    while(retval->size_timestamps <= new_size)
+      retval->size_timestamps *= 2;
+    retval->timestamps = realloc_tester(retval->timestamps, retval->size_timestamps * sizeof(unsigned int));
+  }
   for(i = 0; i < sub2->n_timestamps; i++)
     retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
 
