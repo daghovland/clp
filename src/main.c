@@ -189,6 +189,7 @@ int main(int argc, char *argv[]){
     }
   } 
   if(optind < argc){
+    retval = EXIT_SUCCESS;
     while( optind < argc ) {
       FILE* f = fopen(argv[optind], "r");
       if(f == NULL){
@@ -198,7 +199,8 @@ int main(int argc, char *argv[]){
       }
       printf("%s\n", argv[optind]);
 
-      file_prover(f, basename(argv[optind]));
+      if(file_prover(f, basename(argv[optind])) == EXIT_FAILURE)
+	retval = EXIT_FAILURE;
 
       
       if(fclose(f) != 0){
@@ -210,9 +212,9 @@ int main(int argc, char *argv[]){
     } // end for
     } else {
   //    assert(optind == argc);
-    file_prover(stdin, "STDIN");
+    retval =  file_prover(stdin, "STDIN");
   }
 
-  return EXIT_SUCCESS;
+  return retval;
 }
 

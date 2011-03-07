@@ -60,7 +60,7 @@ bool test_axiom(const axiom*, size_t);
 
 void delete_axiom(axiom*);
 
-void free_axiom_variables(const axiom*, freevars*);
+freevars* free_axiom_variables(const axiom*, freevars*);
 
 void print_fol_axiom(const axiom*, FILE*);
 void print_dot_axiom(const axiom*, FILE*);

@@ -134,9 +134,8 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax){
 /**
    The  free variables 
 **/
-void free_axiom_variables(const axiom* axm, freevars* vars){
-  free_conj_variables(axm->lhs, vars);
-  return;
+freevars* free_axiom_variables(const axiom* axm, freevars* vars){
+  return free_conj_variables(axm->lhs, vars);
 }
 
 /**
@@ -152,7 +151,7 @@ bool test_axiom(const axiom* a, size_t no){
   case goal:
     assert(a->rhs->n_args == 0);
     test_conjunction(a->lhs);
-    free_conj_variables(a->lhs, fv);
+    fv = free_conj_variables(a->lhs, fv);
     break;
   case fact:
     assert(a->lhs->n_args == 0);
@@ -161,7 +160,7 @@ bool test_axiom(const axiom* a, size_t no){
   case normal:
     test_conjunction(a->lhs);
     test_disjunction(a->rhs);
-    free_conj_variables(a->lhs, fv);
+    fv = free_conj_variables(a->lhs, fv);
     break;
   default:
     assert(false);

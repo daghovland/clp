@@ -29,7 +29,7 @@
 **/
 bool test_is_conj_instantiation(const conjunction* a, const substitution* sub){
   freevars* fv = init_freevars();
-  free_conj_variables(a, fv);
+  fv = free_conj_variables(a, fv);
   assert(test_is_instantiation(fv, sub));
   del_freevars(fv);
   return true;

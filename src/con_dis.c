@@ -198,11 +198,11 @@ rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const d
 /**
    The free variables are returned
 **/
-void free_conj_variables(const conjunction * con, freevars* vars){
+freevars* free_conj_variables(const conjunction * con, freevars* vars){
   int i;
   for(i = 0; i < con->n_args; i++)
-    free_atom_variables(con->args[i], vars);
-  return;
+    vars = free_atom_variables(con->args[i], vars);
+  return vars;
 }
 
 

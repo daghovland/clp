@@ -48,8 +48,12 @@ void detract_rete_beta_sub(rete_net_state* state,
   iter = get_state_sub_list_iter(state, 
 				 (node->type == beta_not) ? node->val.beta.b_store_no : node->val.rule.store_no
 				 );
+
+#ifdef __DEBUG_RETE_STATE
   fprintf(stdout, "\nRetracting: ");
   print_substitution(sub, stdout);
+#endif
+
   while(has_next_sub_list(iter)){
     substitution* sub2 = get_next_sub_list(iter);
     if(subs_equal_intersection(sub, sub2))

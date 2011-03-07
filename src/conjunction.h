@@ -39,7 +39,7 @@ conjunction* create_empty_conjunction(void);
 conjunction* extend_conjunction(conjunction*, const atom*);
 
 void delete_conjunction(conjunction*);
-void free_conj_variables(const conjunction*, freevars*);
+freevars* free_conj_variables(const conjunction*, freevars*);
 
 bool test_conjunction(const conjunction*);
 
