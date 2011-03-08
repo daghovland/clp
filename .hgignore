@@ -16,3 +16,4 @@ texinfo.tex
 src/geolog.c
 src/geolog_parser.h
 src/geolog_parser.c
+clp.info
