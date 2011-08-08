@@ -47,9 +47,12 @@
 
  beta_and and beta_not nodes have a right-parent (two-input-nodes)
  
+ beta_or nodes are a new, experimental, not finished node type. 
+ Used to possibly support arbitraritly complex formulas (but without negation) on the left hand side
+ 
  alpha nodes test argument number being unifiable with the term at that position
 **/
-enum rete_node_type { alpha, beta_and, beta_root, beta_not, selector, rule };
+enum rete_node_type { alpha, beta_and, beta_root, beta_not, beta_or, selector, rule };
 
 struct rete_node_t {
   enum rete_node_type type;
