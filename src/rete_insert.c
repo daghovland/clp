@@ -191,7 +191,15 @@ bool insert_rete_alpha_fact(rete_net_state* state,
       delete_substitution(sub);
       return false;
     }
-    insert_rete_alpha_fact_children(state, node, fact, sub);
+#ifdef LAZY_RETE
+    if(node->val.alpha.propagate){
+#endif
+      insert_rete_alpha_fact_children(state, node, fact, sub);
+#ifdef LAZY_RETE
+    } else {
+      insert_in_sub_alpha_queue(state, node->axiom_no, sub, node);
+    }
+#endif
     break;
   case beta_and:
     assert(node->n_children == 1);

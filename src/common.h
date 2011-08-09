@@ -38,6 +38,11 @@
 //#undef __GNUC__
 
 /**
+  If defined, the lazy variant of the RETE algorithm is used. 
+  As of Aug 9, 2011, this is not finished.
+**/
+#undef LAZY_RETE
+/**
   Uncomment to prevent threading functionality from being built in
 **/
 #undef HAVE_PTHREAD

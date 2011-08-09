@@ -32,6 +32,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   rete_net_state* state = malloc_tester(sizeof(rete_net_state) 
 					+ (net->th->n_axioms * sizeof(rule_queue*)));
   state->subs = calloc_tester(sizeof(substitution_list*), net->n_subs);
+  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
 					  
   state->verbose = verbose;
   for(i = 0; i < net->n_subs; i++){

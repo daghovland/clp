@@ -87,7 +87,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps);
   for(i = 0; i < th->n_axioms; i++)
-    create_rete_axiom_node(net, th->axioms[i]);
+    create_rete_axiom_node(net, th->axioms[i], i);
   net->th = th;
   net->existdom = existdom;
   net->strat = strat;

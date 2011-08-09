@@ -106,8 +106,11 @@ void delete_axiom(axiom* a){
    Facts are just added to the fact queue at the beginning
 
    The rule_freevars is created and not deleted, as it is passed on to the rete nodes
+
+   axiom_no is a unique number assigned to each axiom. This is passed on to the rete nodes, 
+   and is used in the lazy RETE version.
 **/
-void create_rete_axiom_node(rete_net* net, const axiom* ax){
+void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
   rete_node* node;
   if(ax->type != fact){
     const freevars* rule_free_vars;
@@ -120,13 +123,15 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax){
     node = create_rete_conj_node(net, 
 				 ax->lhs, 
 				 rule_free_vars,
-				 true);
+				 false,
+				 axiom_no);
     if(ax->type == normal) {
       node = create_rete_disj_node(net, 
 				   node, 
-				   ax->rhs);
+				   ax->rhs,
+				   axiom_no);
     }
-    create_rule_node(net, node, ax, rule_free_vars);
+    create_rule_node(net, node, ax, rule_free_vars, axiom_no);
   }
 }
     
