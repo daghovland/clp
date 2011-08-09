@@ -162,10 +162,14 @@ bool test_disjunction(const disjunction* d){
    This is passed to the rete node constructors and not touched afterwards
 
    Assumes that the given vars is a valid freevars structure which is not touched and not deleted
+
+   The value "propagate" is false if the constructed alpha nodes should be "lazy" and not 
+   pass on the substituions, but rather put them in a queue for the rule node to use if necessary
 **/
 rete_node * create_rete_conj_node(rete_net* net, 
 				  const conjunction* con,  
-				  const freevars* vars){
+				  const freevars* vars,
+				  bool propagate){
   unsigned int i, j;
   rete_node * right_parent, *left_parent;
 
@@ -177,7 +181,7 @@ rete_node * create_rete_conj_node(rete_net* net,
     freevars* copy = copy_freevars(vars);
     for(j = i; j < con->n_args; j++)
       copy = free_atom_variables(con->args[j], copy);
-    right_parent = create_rete_atom_node(net, con->args[i], copy);
+    right_parent = create_rete_atom_node(net, con->args[i], copy, propagate);
     left_parent = create_beta_and_node(net, left_parent, right_parent, copy);
   } // end for(i = 0; i < con->n_args; i++){
   return left_parent;
@@ -188,7 +192,7 @@ rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const d
   rete_node* right_parent;
   assert(dis->n_args > 0);
   for(i = 0; i < dis->n_args; i++){
-    right_parent = create_rete_conj_node(net, dis->args[i], copy_freevars(dis->free_vars));
+    right_parent = create_rete_conj_node(net, dis->args[i], copy_freevars(dis->free_vars), false);
     left_parent = create_beta_not_node(net, left_parent, right_parent, copy_freevars(dis->free_vars));
   } // end for(i = 0; i < dis->n_args; i++)
   return left_parent;

@@ -119,7 +119,8 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax){
     }
     node = create_rete_conj_node(net, 
 				 ax->lhs, 
-				 rule_free_vars);
+				 rule_free_vars,
+				 true);
     if(ax->type == normal) {
       node = create_rete_disj_node(net, 
 				   node, 

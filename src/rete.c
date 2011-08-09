@@ -116,12 +116,21 @@ rete_node* create_beta_left_root(void){
 }
 
 
+/**
+   Constructs an alpha node in a rete network. 
+   There is one alpha node for each atom (a predicate applied to some terms) 
+   in the left hand side.
+   There is also "negative" alpha nodes for the atoms on the right hand sides, 
+   used to inhibit construction of already used rule instances.
 
+   propagate set to true is the standard "non-lazy" approach
+**/
 
-rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const term* val, const freevars* free_vars){
+rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const term* val, const freevars* free_vars, bool propagate){
   rete_node* node = _create_rete_node(alpha, left_parent, free_vars);
   node->val.alpha.argument_no = arg_no;
   node->val.alpha.value = val;
+  node->val.alpha.propagate = propagate;
   return node;
 }
 
@@ -134,21 +143,28 @@ rete_node* _create_beta_node(rete_net* net, rete_node* left_parent, rete_node* r
   assert(right_parent->n_children > 0);
 
   node->val.beta.b_store_no = net->n_subs++;
+  node->val.beta.a_store_used_no = net->n_subs++;
   node->val.beta.a_store_no = net->n_subs++;
-  assert(node->val.beta.b_store_no == net->n_subs-2);
+  assert(node->val.beta.b_store_no == net->n_subs-3);
   return node;
 }
 
 
 rete_node* create_beta_and_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars){
-  assert(left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root);
-  assert(right_parent->type == alpha || right_parent->type == beta_not || right_parent->type == beta_and || right_parent->type == selector);
+  assert(left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  assert(right_parent->type == alpha || right_parent->type == beta_not  || left_parent->type == beta_or || right_parent->type == beta_and || right_parent->type == selector);
   return  _create_beta_node(net, left_parent, right_parent, beta_and, free_vars);
 }
 
+rete_node* create_beta_or_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars){
+  assert(left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  assert(right_parent->type == alpha || right_parent->type == beta_not || right_parent->type == beta_and || left_parent->type == beta_or || right_parent->type == selector);
+  return  _create_beta_node(net, left_parent, right_parent, beta_or, free_vars);
+}
+
 rete_node* create_beta_not_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars){
-  assert(left_parent->type == beta_and  ||left_parent->type == beta_not  ||  left_parent->type == alpha);
-  assert(right_parent->type == alpha || right_parent->type == beta_and);
+  assert(left_parent->type == beta_and  ||left_parent->type == beta_not   || left_parent->type == beta_or ||  left_parent->type == alpha);
+  assert(right_parent->type == alpha || right_parent->type == beta_and || left_parent->type == beta_or);
   return  _create_beta_node(net, left_parent, right_parent, beta_not, free_vars);
 }
 
@@ -288,6 +304,9 @@ const char* get_rete_node_type_name(const rete_node* node){
       break;
     case beta_and:
       return "beta_and";
+      break;
+    case beta_or:
+      return "beta_or";
       break;
     case beta_not:
       return "beta_not";

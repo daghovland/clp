@@ -51,6 +51,20 @@
  Used to possibly support arbitraritly complex formulas (but without negation) on the left hand side
  
  alpha nodes test argument number being unifiable with the term at that position
+
+ a_store_no, b_store_no are indexes into the subsititution_list array "subs" in the rete_state.
+ They represent the caches/stores of already treated substitutions in the alpha and beta node, respectively.
+ 
+ a_store_used_no is also an index into subs, 
+ but points to the last used substitution_list entry for the alpha store.
+ The latter is used by the "lazy" extension of rete.
+
+ The value propagate is true if an alpha node should pass on all inserted substitutions. 
+ This is the standard "non-lazy" approach, and should also be the approach in the alpha nodes 
+ above a beta_not node. 
+ Propagate can be false in alpha nodes not above beta_not. Then inserted values will not be 
+ automatically passed on, but rather put in a queue on the rule node, which then will
+ ask for it when more rule instances are needed.
 **/
 enum rete_node_type { alpha, beta_and, beta_root, beta_not, beta_or, selector, rule };
 
@@ -61,10 +75,12 @@ struct rete_node_t {
     struct alpha_t {
       const term* value;
       unsigned int argument_no;
+      bool propagate;
     } alpha;
     struct beta_t {
       const struct rete_node_t* right_parent;
       size_t a_store_no;
+      size_t a_store_used_no;
       size_t b_store_no;
     } beta;
     struct rule_t {
@@ -111,7 +127,7 @@ typedef struct rete_net_t {
    The state of the rete net changes during the run of the prover
    It is not completely shared between threads
    
-   The substitution lists are the contents of the beta stores
+   The substitution lists are the contents of the alpha and beta stores
    The val.beta.a_store_no,  val.beta.b_store_no, and val.rule.store_no in rete_node are 
    indices into this list
    
@@ -173,9 +189,10 @@ bool inc_proof_step_counter(rete_net_state*);
 
 rete_node* create_beta_left_root(void);
 
-rete_node* create_alpha_node(rete_node*, unsigned int, const term*, const freevars*);
+rete_node* create_alpha_node(rete_node*, unsigned int, const term*, const freevars*, bool propagate);
 /*rete_node* create_store_node(rete_net*, rete_node*, const freevars*);*/
 rete_node* create_beta_and_node(rete_net*, rete_node*, rete_node*, const freevars*);
+rete_node* create_beta_or_node(rete_net*, rete_node*, rete_node*, const freevars*);
 rete_node* create_beta_not_node(rete_net*, rete_node*, rete_node*, const freevars*);
 rete_node* create_selector_node(rete_net*, const char*, unsigned int, const freevars*);
 void create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*);
@@ -189,10 +206,10 @@ rete_node* get_selector(size_t, rete_net*);
 const rete_node* get_const_selector(size_t, const rete_net*);
 
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
-rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*);
+rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate);
 void create_rete_axiom_node(rete_net*, const axiom*);
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy);
-rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*);
+rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*);
 
 // Defined in strategy.c
