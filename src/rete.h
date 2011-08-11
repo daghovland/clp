@@ -35,73 +35,8 @@
 #include "strategy.h"
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
+#include "rete_net.h"
 
-/**
-   The root of the rete network is an array of rete_node's of type selector
-   They must be sorted according to (1) the predicate name, (2) the arity
-   There must be no duplicates in this sorting
-   
-   The root also contains the lists of substitutions for each alpha and beta store. 
-   the value "store" in a store node is an index to subs in the root. This is to make 
-   copying the substitutions easy when splitting into trees
-
-   clpl is true if the commandline option --clpl is given. Leads to rule queues being sorted
-   in the same way they would be by prolog
-**/
-typedef struct rete_net_t {
-  size_t n_subs;
-  size_t n_selectors;
-  const theory* th;
-  bool existdom;
-  bool lazy;
-  strategy strat;
-  unsigned long maxsteps;
-  rete_node selectors[];
-} rete_net;
-
-
-
-
-
-/**
-   The state of the rete net changes during the run of the prover
-   It is not completely shared between threads
-   
-   The substitution lists are the contents of the alpha and beta stores
-   The val.beta.a_store_no,  val.beta.b_store_no, and val.rule.store_no in rete_node are 
-   indices into this list
-   
-   The rule_queue and axiom_inst_queue[] is the queue of applicable rule instances
-
-   There is also a queue of pointers for each axiom
-
-   thread_id is a string describing the branch in the proof tree.
-   With a branch is here meant a part of the tree that is a path. 
-   step_no is the step number along this branch
-
-   old_fact_set is used to print out only the newly inserted facts
-**/
-typedef struct rete_net_state_t {
-  const char* proof_branch_id;
-  unsigned int step_no;
-  substitution_list ** subs;
-  sub_alpha_queue ** sub_alpha_queues;
-  rule_queue* rule_queue;
-  const rete_net* net;
-  unsigned int * global_step_counter;
-  fresh_const_counter fresh;
-  fact_set* facts;
-  fact_set* old_fact_set;
-  const term** domain;
-  size_t size_domain;
-  unsigned int n_domain;
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-  bool verbose;
-  rule_queue* axiom_inst_queue[];
-} rete_net_state;
-  
 typedef unsigned int domain_iter;
 typedef unsigned int constants_iter;
 void insert_domain_elem(rete_net_state*, const term*);
@@ -145,6 +80,9 @@ rete_net_state* create_rete_state(const rete_net*, bool);
 
 // state is deleted. orig is the "split point" above state, which should be kept.
 void delete_rete_state(rete_net_state* state, rete_net_state* orig);
+
+// In sub_alpha_queue.c, called from strategy.c
+bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state);
 
 sub_list_iter* get_state_sub_list_iter(rete_net_state*, size_t);
 

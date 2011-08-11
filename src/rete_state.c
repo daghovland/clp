@@ -32,12 +32,16 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   rete_net_state* state = malloc_tester(sizeof(rete_net_state) 
 					+ (net->th->n_axioms * sizeof(rule_queue*)));
   state->subs = calloc_tester(sizeof(substitution_list*), net->n_subs);
-  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
 					  
   state->verbose = verbose;
   for(i = 0; i < net->n_subs; i++){
     state->subs[i] = NULL;
   }
+  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
+  for(i = 0; i < net->th->n_axioms; i++){
+    state->sub_alpha_queues[i] = NULL;
+  }
+
   state->net = net;
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
@@ -68,8 +72,9 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
 **/
 void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   unsigned int i;
-  for(i = 0; i < state->net->n_subs; i++)
-    delete_substitution_list_below(state->subs[i], orig->subs[i]);
+  for(i = 0; i < state->net->n_subs; i++){
+      delete_substitution_list_below(state->subs[i], orig->subs[i]);
+  }
   delete_fact_set(state->facts);
   delete_rule_queue(state->rule_queue);
   for(i = 0; i < state->net->th->n_axioms; i++){
@@ -103,8 +108,15 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
 
+  
   copy->sub_alpha_queues = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
   memcpy(copy->sub_alpha_queues, orig->sub_alpha_queues, sizeof(sub_alpha_queue*) * n_axioms);
+  for(i = 0; i < n_axioms; i++){
+    if(copy->sub_alpha_queues[i] != NULL){
+      copy->sub_alpha_queues[i]->is_splitting_point = true;
+      assert(orig->sub_alpha_queues[i]->is_splitting_point);
+    }
+  }
 
   assert(copy->n_domain == orig->n_domain);
   copy->domain = calloc_tester(orig->size_domain, sizeof(term*));

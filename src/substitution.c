@@ -300,9 +300,7 @@ void delete_substitution_list(substitution_list* sub_list){
 }
 
 void delete_substitution_list_below(substitution_list* list, substitution_list* limit){
-  assert(limit != NULL);
   while(list != limit){
-    assert(list != NULL);
     substitution_list* next = list->next;
     delete_substitution(list->sub);
     free(list);

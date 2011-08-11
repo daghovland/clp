@@ -24,7 +24,7 @@
 #include "rete.h"
 #include "theory.h"
 #include "rule_queue.h"
-#include "lazy_rule_queue.h"
+#include "sub_alpha_queue.h"
 #include "fresh_constants.h"
 #include "proof_writer.h"
 

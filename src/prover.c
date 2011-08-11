@@ -198,7 +198,7 @@ bool run_prover(rete_net_state* state, bool factset){
     } else {
       // if not existential rule or not existdom. This is usually used
       if(next->rule->rhs->n_args > 1){
-	bool retval = insert_rete_net_disj_rule_instance(state,next, factset);
+	bool retval = insert_rete_net_disj_rule_instance(state, next, factset);
 	return retval;
       } else {
 	write_proof_edge(state, state);

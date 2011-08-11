@@ -26,6 +26,7 @@
 #include "fresh_constants.h"
 #include "rete.h"
 #include "substitution.h"
+#include "sub_alpha_queue.h"
 
 bool insert_rete_alpha_fact(rete_net_state*, const rete_node*,  const atom* , substitution*, bool);
 /**
@@ -155,6 +156,8 @@ void insert_rete_beta_sub(rete_net_state* state,
    
    propagate is true when called from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate
+
+   The substitution is not modified or deleted, the calling function must delete it.
 **/
 void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* node, const atom* fact, substitution* sub, bool propagate){
   unsigned int i;
@@ -167,7 +170,8 @@ void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* nod
 /**
    The substitution sub is a pointer to heap memory which will
    be deallocated or stored in a substitution list. The calling
-   function must not touch sub after passing it to this function
+   function must not touch sub after passing it to this function, as it
+   is stored or deleted as it is.
 
    propagate is true when call originates from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate
@@ -202,9 +206,10 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     if(propagate || node->val.alpha.propagate){
 #endif
       insert_rete_alpha_fact_children(state, node, fact, sub, false);
+      delete_substitution(sub);
 #ifdef LAZY_RETE
     } else {
-      insert_in_sub_alpha_queue(state, node->axiom_no, fact, sub, node);
+      insert_in_sub_alpha_queue(& (state->sub_alpha_queues[node->axiom_no]), fact, sub, node);
     }
 #endif
     break;
