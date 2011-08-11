@@ -24,6 +24,7 @@
 #include "rete.h"
 #include "theory.h"
 #include "rule_queue.h"
+#include "lazy_rule_queue.h"
 #include "fresh_constants.h"
 #include "proof_writer.h"
 
@@ -56,17 +57,15 @@ rule_instance* normal_next_instance(rete_net_state* state){
   
 
   
-  assert(state->rule_queue->n_queue > 0);
-
   for(i = 0; i < th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
-    rule_queue* rq = state->axiom_inst_queue[i];
+    size_t rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
     size_t axiom_no = rule->axiom_no;
  
 
-    if(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+    if(axiom_has_new_instance(axiom_no, state)){
       rule_instance* ri = peek_axiom_rule_queue(state, i);
-      unsigned int weight = (ri->timestamp + rq->previous_appl) * (1 + rand() / RAND_DIV);
+      unsigned int weight = (ri->timestamp + rule_previously_applied) * (1 + rand() / RAND_DIV);
       has_next_rule = true;
 
       if(rule->type == goal || rule->type == fact)
@@ -97,9 +96,11 @@ rule_instance* normal_next_instance(rete_net_state* state){
     return pop_axiom_rule_queue(state, definite_non_splitting_rule);
   if(has_definite)
      return pop_axiom_rule_queue(state, definite_rule);
-  assert(has_next_rule);
-  assert(min_weight <  2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT));
-  return pop_axiom_rule_queue(state, lightest_rule);
+  if(has_next_rule){
+    assert(min_weight <  2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT));
+    return pop_axiom_rule_queue(state, lightest_rule);
+  }
+  return NULL;
 }
   
 /**
@@ -109,11 +110,9 @@ rule_instance* clpl_next_instance(rete_net_state* state){
   unsigned int i;
   const theory* th = state->net->th;
   for(i = 0; i < th->n_axioms; i++){
-    const axiom* rule = th->axioms[i];
-    rule_queue* rq = state->axiom_inst_queue[i];
-    size_t axiom_no = rule->axiom_no;
+    size_t axiom_no = th->axioms[i]->axiom_no;
     assert(i == axiom_no);
-    if(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+    if(axiom_has_new_instance(axiom_no, state)){
       rule_instance* retval;
       assert(test_rule_queue_sums(state));
       retval = pop_axiom_rule_queue(state, axiom_no);
@@ -121,8 +120,7 @@ rule_instance* clpl_next_instance(rete_net_state* state){
       return retval;
     }
   } // end for i -- n_axioms
-  fprintf(stderr, "clpl_next_instance could not find any axiom instances. Probably a programming error. \n");
-  exit(EXIT_FAILURE);
+  return NULL;
 }
 
 
@@ -130,6 +128,9 @@ rule_instance* factset_next_instance(const theory* th, const fact_set* fs){
   return create_rule_instance(th->axioms[0], create_substitution(th, 1));
 }
 
+/**
+   Returns next rule instance, or NULL if there is no more instances
+**/
 rule_instance* choose_next_instance(rete_net_state* state, strategy strat){
   switch(strat){
   case clpl_strategy:

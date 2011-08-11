@@ -32,6 +32,14 @@
 #include <errno.h>
 #include <string.h>
 
+/**
+   The boolean lazy leads to the opposite value for propagate in the 
+   alpha nodes representing atoms on the left hand side. It first sets 
+   the value of net->lazy, then this is used once, in the function create_rete_axiom_node
+   in axiom.c
+**/
+bool lazy;
+
 extern char * optarg;
 extern int optind, optopt, opterr;
 bool verbose, debug, proof, dot, text, pdf, existdom, factset;
@@ -48,7 +56,7 @@ int file_prover(FILE* f, const char* prefix){
   th = geolog_parser(f);
 
   assert(test_theory(th));
-  net = create_rete_net(th, maxsteps, existdom, strat);
+  net = create_rete_net(th, maxsteps, existdom, strat, lazy);
 
   if(!factset){  
     if(debug && !factset){
@@ -99,9 +107,10 @@ void print_help(char* exec){
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
+  printf("\t-l, --lazy\t\tTries the (unfinished) lazy version of RETE.\n");
   printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not implemented\n");
   printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
-  printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm.\n");
+  printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
@@ -123,8 +132,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdaecm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdaeclm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -136,6 +145,7 @@ int main(int argc, char *argv[]){
   pdf = false;
   existdom = false;
   factset = false;
+  lazy = false;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
 
@@ -158,6 +168,9 @@ int main(int argc, char *argv[]){
       break;
     case 'd':
       dot = true;
+      break;
+    case 'l':
+      lazy = true;
       break;
     case 'h':
       print_help(argv[0]);

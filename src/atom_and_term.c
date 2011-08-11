@@ -76,10 +76,11 @@ rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* v
   p = get_selector(a->pred->pred_no, net);
   assert(p->size_children > 0);
   for(i = 0; i < a->args->n_args; i++){
-    rete_node* child = create_alpha_node(p, i, a->args->args[i], vars, propagate, axiom_no);
+    rete_node* child = create_alpha_node(p, i, a->args->args[i], vars, true, axiom_no);
     assert(child->size_children > 0);
     p = child;
   }
+  p->val.alpha.propagate = propagate;
   return p;
 }
 

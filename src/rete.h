@@ -53,6 +53,7 @@ typedef struct rete_net_t {
   size_t n_selectors;
   const theory* th;
   bool existdom;
+  bool lazy;
   strategy strat;
   unsigned long maxsteps;
   rete_node selectors[];
@@ -112,12 +113,15 @@ constants_iter get_constants_iter(rete_net_state*);
 bool constants_iter_has_next(rete_net_state*, constants_iter*);
 const char* constants_iter_get_next(rete_net_state*, constants_iter*);
 
+// Called from prover.c
 void insert_rete_net_fact(rete_net_state*, const atom*);
 
+//Called from lazy_rule_queue.c
+void insert_rete_alpha_fact_children(rete_net_state*, const rete_node*, const atom*, substitution*, bool);
 
 // Creates root of network
 // Initializes the rete_net_state structure
-rete_net* init_rete(const theory*, unsigned long);
+rete_net* init_rete(const theory*, unsigned long, bool lazy);
 
 /** 
     Creates a "copy" of a rete net state
@@ -138,7 +142,9 @@ rete_node* create_selector_node(rete_net*, const char*, unsigned int, const free
 void create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*, size_t axiom_no);
 
 rete_net_state* create_rete_state(const rete_net*, bool);
-void delete_rete_state(rete_net_state*);
+
+// state is deleted. orig is the "split point" above state, which should be kept.
+void delete_rete_state(rete_net_state* state, rete_net_state* orig);
 
 sub_list_iter* get_state_sub_list_iter(rete_net_state*, size_t);
 
@@ -148,7 +154,7 @@ const rete_node* get_const_selector(size_t, const rete_net*);
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
 rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, size_t axiom_no);
 void create_rete_axiom_node(rete_net*, const axiom*, size_t axiom_no);
-rete_net* create_rete_net(const theory*, unsigned long, bool, strategy);
+rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool);
 rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, size_t axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, size_t axiom_no);
 

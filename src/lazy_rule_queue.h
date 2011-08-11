@@ -1,4 +1,4 @@
-/* substitution.h
+/* lazy_rule_queue.h
 
    Copyright 2011 
 
@@ -18,34 +18,12 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+#ifndef __INCLUDED_LAZY_RULE_QUEUE_H
+#define __INCLUDED_LAZY_RULE_QUEUE_H
 
-#ifndef __INCLUDE_SUB_ALPHA_QUEUE_H
-#define __INCLUDE_SUB_ALPHA_QUEUE_H
+#include "common.h"
+#include "rete.h"
 
-#include "substitution.h"
-#include "rete_node.h"
-
-/**
-   
-   Stores a linked list where each element has a substitution and an alpha node.
-
-   Each rule node has such a queue, used for the "lazy" insertion of substitutions
-   The last elements are common between more threads, while
-   the first ones are more specific for single threads
-   
-   prev is set when creating a sub_list_iter 
-   prev is not threadsafe!
-   
-   The last element has next = NULL
-**/
-typedef struct sub_alpha_queue_t {
-  struct sub_alpha_queue_t * next;
-#ifndef HAVE_PTHREAD
-  struct sub_alpha_queue_t * prev;
-#endif
-  substitution * sub;
-  rete_node * alpha_node;
-  const atom * fact;
-} sub_alpha_queue;
+bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state);
 
 #endif

@@ -83,9 +83,9 @@ void delete_theory(theory* t){
 /**
    Creates new rete network for the whole theory
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy){
   unsigned int i;
-  rete_net* net = init_rete(th, maxsteps);
+  rete_net* net = init_rete(th, maxsteps, lazy);
   for(i = 0; i < th->n_axioms; i++)
     create_rete_axiom_node(net, th->axioms[i], i);
   net->th = th;

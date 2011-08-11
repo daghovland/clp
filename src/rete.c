@@ -97,12 +97,13 @@ const rete_node* get_const_selector(size_t pred_no, const rete_net* net){
    Note that is is safe to have selectors as an array of structures, since
    the array is never realloced
 **/
-rete_net* init_rete(const theory* th, unsigned long maxsteps){
+rete_net* init_rete(const theory* th, unsigned long maxsteps, bool lazy){
   unsigned int i;
   rete_net* net = malloc_tester(sizeof(rete_net) + th->n_predicates * sizeof(rete_node));
   net->n_selectors = th->n_predicates;
   net->th = th;
   net->maxsteps = maxsteps;
+  net->lazy = lazy;
 
   net->n_subs = 0;
   for(i = 0; i < net->n_selectors; i++)

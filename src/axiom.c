@@ -109,6 +109,9 @@ void delete_axiom(axiom* a){
 
    axiom_no is a unique number assigned to each axiom. This is passed on to the rete nodes, 
    and is used in the lazy RETE version.
+
+   This is the only place where net->lazy is used, and it leads to setting the
+   propagate value of alpha nodes in the left hand side to the opposite value
 **/
 void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
   rete_node* node;
@@ -123,7 +126,7 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
     node = create_rete_conj_node(net, 
 				 ax->lhs, 
 				 rule_free_vars,
-				 false,
+				 !(net->lazy),
 				 axiom_no);
     if(ax->type == normal) {
       node = create_rete_disj_node(net, 

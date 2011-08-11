@@ -27,7 +27,7 @@
 #include "rete.h"
 #include "substitution.h"
 
-bool insert_rete_alpha_fact(rete_net_state*, const rete_node*,  const atom* , substitution*);
+bool insert_rete_alpha_fact(rete_net_state*, const rete_node*,  const atom* , substitution*, bool);
 /**
    Removing a substitution from a rete network
    Happens when inserting new facts
@@ -152,12 +152,15 @@ void insert_rete_beta_sub(rete_net_state* state,
 /**
    Inserting fact into all alpha children 
    Called from insert_rete_alpha_fact on selectors and alpha nodes
+   
+   propagate is true when called from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
+   true propagate overrides the value of node->propagate
 **/
-void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* node, const atom* fact, substitution* sub){
+void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* node, const atom* fact, substitution* sub, bool propagate){
   unsigned int i;
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++)
-    insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub));
+    insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub), propagate);
   //  delete_substitution(sub);
 }
 
@@ -165,11 +168,15 @@ void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* nod
    The substitution sub is a pointer to heap memory which will
    be deallocated or stored in a substitution list. The calling
    function must not touch sub after passing it to this function
+
+   propagate is true when call originates from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
+   true propagate overrides the value of node->propagate
 **/
 bool insert_rete_alpha_fact(rete_net_state* state, 
 			    const rete_node* node, 
 			    const atom* fact, 
-			    substitution* sub)
+			    substitution* sub,
+			    bool propagate)
 {
   unsigned int i;
   const term *arg;
@@ -181,7 +188,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
   switch(node->type){
   case selector:
     assert(node->val.selector == fact->pred);
-    insert_rete_alpha_fact_children(state, node, fact, sub);
+    insert_rete_alpha_fact_children(state, node, fact, sub, false);
     break;
   case alpha:
     assert(node->val.alpha.argument_no < fact->args->n_args);
@@ -192,12 +199,12 @@ bool insert_rete_alpha_fact(rete_net_state* state,
       return false;
     }
 #ifdef LAZY_RETE
-    if(node->val.alpha.propagate){
+    if(propagate || node->val.alpha.propagate){
 #endif
-      insert_rete_alpha_fact_children(state, node, fact, sub);
+      insert_rete_alpha_fact_children(state, node, fact, sub, false);
 #ifdef LAZY_RETE
     } else {
-      insert_in_sub_alpha_queue(state, node->axiom_no, sub, node);
+      insert_in_sub_alpha_queue(state, node->axiom_no, fact, sub, node);
     }
 #endif
     break;
@@ -250,5 +257,5 @@ void insert_rete_net_fact(rete_net_state* state,
   assert(test_atom(fact));
   assert(sel != NULL && sel->val.selector == fact->pred);
   substitution* a = create_substitution(state->net->th, get_global_step_no(state));
-  insert_rete_alpha_fact(state, sel, fact, a);
+  insert_rete_alpha_fact(state, sel, fact, a, false);
 }

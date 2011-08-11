@@ -61,13 +61,21 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   return state;
 }
 
-void delete_rete_state(rete_net_state* state){
+/**
+   Deletes "state" and much of the linked infromation.
+   Uses "orig", which _must_ be above state in the tree, 
+   to find out how much to delete.
+**/
+void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   unsigned int i;
-  free(state->subs);
+  for(i = 0; i < state->net->n_subs; i++)
+    delete_substitution_list_below(state->subs[i], orig->subs[i]);
   delete_fact_set(state->facts);
   delete_rule_queue(state->rule_queue);
-  for(i = 0; i < state->net->th->n_axioms; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++){
     free(state->axiom_inst_queue[i]);
+    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], orig->sub_alpha_queues[i]);
+  }
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
   free(state->domain);
@@ -86,6 +94,7 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   unsigned int i;
   size_t orig_size = sizeof(rete_net_state) + orig->net->th->n_axioms * sizeof(rule_queue*);
   size_t n_subs = orig->net->n_subs;
+  size_t n_axioms = orig->net->th->n_axioms;
   size_t branch_id_len;
 
   rete_net_state* copy = malloc_tester(orig_size);
@@ -93,6 +102,9 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   memcpy(copy, orig, orig_size);
   copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
+
+  copy->sub_alpha_queues = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
+  memcpy(copy->sub_alpha_queues, orig->sub_alpha_queues, sizeof(sub_alpha_queue*) * n_axioms);
 
   assert(copy->n_domain == orig->n_domain);
   copy->domain = calloc_tester(orig->size_domain, sizeof(term*));

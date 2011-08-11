@@ -164,7 +164,7 @@ bool test_disjunction(const disjunction* d){
    Assumes that the given vars is a valid freevars structure which is not touched and not deleted
 
    The value "propagate" is false if the constructed alpha nodes should be "lazy" and not 
-   pass on the substituions, but rather put them in a queue for the rule node to use if necessary
+   pass on the substitutions, but rather put them in a queue for the rule node to use if necessary
 **/
 rete_node * create_rete_conj_node(rete_net* net, 
 				  const conjunction* con,  

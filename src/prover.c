@@ -110,13 +110,17 @@ bool insert_rete_net_conjunction(rete_net_state* state,
 bool run_prover(rete_net_state* state, bool factset){
   bool empty_queue;
   rule_instance* next;
-  while(( factset 
-	  &&  ( next = factset_next_instance(state->net->th, state->facts), next != NULL) )
-	|| state->rule_queue->n_queue != 0){
+  while(true){
+    /* For factset based search: ( factset 
+      &&  ( next = factset_next_instance(state->net->th, state->facts), next != NULL) )*/
+
     
     if(!factset){
       assert(test_rule_queue_sums(state));
       next = choose_next_instance(state, state->net->strat);
+      if(next == NULL){
+	break;
+      }
       assert(test_rule_queue_sums(state));
     }
 
@@ -188,7 +192,7 @@ bool run_prover(rete_net_state* state, bool factset){
 	if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
 	  return false;
 	}
-	delete_rete_state(copy_state);
+	delete_rete_state(copy_state, state);
       }// end while(!finished)
       return true;
     } else {
@@ -368,7 +372,7 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
     
     if(!run_prover(copy_states[i], factset))
       return false;
-    delete_rete_state(copy_states[i]);
+    delete_rete_state(copy_states[i], state);
   }
   //write_proof_edge(state, state);
   //insert_rete_net_conjunction(state, dis->args[dis->n_args - 1], ri->substitution);
@@ -404,7 +408,7 @@ unsigned int prover(const rete_net* rete, bool factset){
   }
   foundproof =  run_prover(state, factset);
   retval = get_global_step_no(state);
-  delete_rete_state(state);
+  delete_rete_state(state, state);
   if(foundproof)
     return retval;
   else
