@@ -67,6 +67,7 @@ substitution* copy_substitution(const substitution* orig){
 }
 
 void delete_substitution(substitution* a){
+  free(a->timestamps);
   free(a);
 }
 
@@ -129,23 +130,30 @@ void insert_substitution_value(substitution* sub, variable* var, const term* val
 
    value comes from the inserted fact, 
    while argument comes from the rule / rete node
+
+   TODO:
+   11 Aug 2011: The freevars are commented because they seem not to be used. 
+   I cannot remember now what they are used for, and they were not deleted elsewhere
 **/
 
 bool unify_substitution_terms(const term* value, const term* argument, substitution* sub){
-  freevars* free_arg_vars = init_freevars();
+  //  freevars* free_arg_vars = init_freevars();
 
   assert(test_substitution(sub));
   assert(test_term(value));
   assert(test_term(argument));
 
-  free_arg_vars = free_term_variables(argument, free_arg_vars);
+  //free_arg_vars = free_term_variables(argument, free_arg_vars);
   switch(argument->type){
   case variable_term: 
+    //del_freevars(free_arg_vars);
     return add_substitution(sub, argument->var, value);
   case constant_term:
+    //del_freevars(free_arg_vars);
     return (value->type == constant_term && strcmp(value->name, argument->name) == 0);
     break;
   case function_term:
+    //del_freevars(free_arg_vars);
     return (value->type == function_term 
 	    && value->name == argument->name 
 	    && unify_substitution_term_lists(value->args, argument->args, sub
@@ -155,6 +163,7 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
     fprintf(stderr, "Unknown term type %i occurred\n", argument->type);
     abort();
   }
+  //del_freevars(free_arg_vars);
   return false;
 } 
 

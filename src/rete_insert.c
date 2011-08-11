@@ -66,6 +66,8 @@ void detract_rete_beta_sub(rete_net_state* state,
 	assert(test_rule_queue_sums(state));
       }
   } // end   while(has_next_sub_list(iter)){
+  delete_substitution(sub);
+  free(iter);
 }
 
 /**
@@ -138,7 +140,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 			       node->val.beta.a_store_no, 
 			       sub, node->free_vars
 			       ))
-	  detract_rete_beta_sub(state, node->children[0], sub);
+	  detract_rete_beta_sub(state, node->children[0], copy_substitution(sub));
 	else
 	  delete_substitution(sub);
       break;
@@ -157,14 +159,14 @@ void insert_rete_beta_sub(rete_net_state* state,
    propagate is true when called from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate
 
-   The substitution is not modified or deleted, the calling function must delete it.
+   The substitution is deleted, the calling function must not touch it after passing to this function.
 **/
 void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* node, const atom* fact, substitution* sub, bool propagate){
   unsigned int i;
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++)
     insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub), propagate);
-  //  delete_substitution(sub);
+  delete_substitution(sub);
 }
 
 /**
@@ -206,7 +208,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     if(propagate || node->val.alpha.propagate){
 #endif
       insert_rete_alpha_fact_children(state, node, fact, sub, false);
-      delete_substitution(sub);
 #ifdef LAZY_RETE
     } else {
       insert_in_sub_alpha_queue(& (state->sub_alpha_queues[node->axiom_no]), fact, sub, node);
@@ -228,6 +229,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }
+      free(iter);
     }
     break;
   case beta_not: 

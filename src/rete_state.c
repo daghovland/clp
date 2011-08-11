@@ -75,12 +75,14 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   for(i = 0; i < state->net->n_subs; i++){
       delete_substitution_list_below(state->subs[i], orig->subs[i]);
   }
+  free(state->subs);
   delete_fact_set(state->facts);
   delete_rule_queue(state->rule_queue);
   for(i = 0; i < state->net->th->n_axioms; i++){
     free(state->axiom_inst_queue[i]);
     delete_sub_alpha_queue_below(state->sub_alpha_queues[i], orig->sub_alpha_queues[i]);
   }
+  free(state->sub_alpha_queues);
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
   free(state->domain);

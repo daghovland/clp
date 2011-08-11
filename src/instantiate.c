@@ -60,6 +60,31 @@ const term* instantiate_term(const term* orig, const substitution* sub){
   return t;
 }
 
+/**
+   Deletes a term instantiated by the function above
+   called from the similar function for term lists below
+**/
+void delete_instantiated_term(const term* orig, term* copy){
+  switch(copy->type){
+  case constant_term:
+    assert(orig == copy);
+    break;
+  case variable_term:
+    break;
+  case function_term:
+    delete_instantiated_term_list(orig->args, (term_list*) copy->args);
+    free(copy);
+    break;
+  default:
+    fprintf(stderr, "Unknown term type %i occurred\n", orig->type);
+    assert(false);
+  }
+}
+
+/**
+   Deletes a term list instantiated by the function above
+   called from the similar function for atoms below
+**/
 const term_list* instantiate_term_list(const term_list* orig, 
 				       const substitution* sub){
   unsigned int i;
@@ -69,6 +94,18 @@ const term_list* instantiate_term_list(const term_list* orig,
     extend_term_list(retval, instantiate_term(orig->args[i], sub));
   assert(test_term_list(retval));
   return retval;
+}
+
+void delete_instantiated_term_list(const term_list* orig, term_list* copy){
+  unsigned int i;
+  if(copy->args != NULL){
+    for(i = 0; i < copy->n_args; i++){
+      if(copy->args[i] != NULL)
+	delete_instantiated_term(orig->args[i], (term*) copy->args[i]);
+    }
+    free(copy->args);
+  }
+  free(copy);
 }
 
 /**
@@ -82,7 +119,7 @@ bool test_is_atom_instantiation(const atom* a, const substitution* sub){
   return true;
 }
 
-const atom* instantiate_atom(const atom* orig, const substitution* sub){
+atom* instantiate_atom(const atom* orig, const substitution* sub){
   assert(test_atom(orig));
   assert(test_substitution(sub));
   if (orig->args->n_args > 0){
@@ -91,11 +128,23 @@ const atom* instantiate_atom(const atom* orig, const substitution* sub){
     assert(test_term_list(ground_args));
     retval = prover_create_atom(orig->pred, ground_args);
     assert(test_atom(retval));
-    return retval;
+    return (atom*) retval;
   } else 
     return (atom*) orig;
 }
 
+/**
+   Deletes the atom "copy" instantiated by the function above. 
+   Called from prover. 
+**/
+void delete_instantiated_atom(const atom* orig, atom* copy){
+  if(copy->args->n_args > 0){
+    if(copy->args != NULL){
+      delete_instantiated_term_list(orig->args, copy->args);
+    }
+    free(copy);
+  }
+}
 /**
    Extends the substitution with fresh constants for the
    existentially bound variables

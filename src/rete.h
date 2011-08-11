@@ -131,9 +131,12 @@ void add_rule_to_queue(const axiom*, substitution*, rete_net_state*);
 const term* find_substitution(const substitution*, const variable*);
 
 // In instantiate.c
-const atom* instantiate_atom(const atom*, const substitution*);
+atom* instantiate_atom(const atom*, const substitution*);
+void delete_instantiated_atom(const atom*, atom*);
 const term_list* instantiate_term_list(const term_list*, const substitution*);
+void delete_instantiated_term_list(const term_list*, term_list*);
 const term* instantiate_term(const term*, const substitution*);
+void delete_instantiated_term(const term*, term*);
 
 const term* get_fresh_constant(rete_net_state*, variable*);
 

@@ -62,7 +62,7 @@ bool insert_rete_net_conjunction(rete_net_state* state,
 				 conjunction* con, 
 				 substitution* sub, 
 				 bool factset){
-  unsigned int i;
+  unsigned int i, j;
 
   
   assert(test_conjunction(con));
@@ -74,7 +74,7 @@ bool insert_rete_net_conjunction(rete_net_state* state,
   assert(test_is_conj_instantiation(con, sub));
 
   for(i = 0; i < con->n_args; i++){
-    const atom* ground = instantiate_atom(con->args[i], sub);
+    atom* ground = instantiate_atom(con->args[i], sub);
     
     assert(test_ground_atom(ground));
     
@@ -96,6 +96,7 @@ bool insert_rete_net_conjunction(rete_net_state* state,
       insert_rete_net_fact(state, ground);
       assert( test_rule_queue_sums(state));
     }
+    delete_instantiated_atom(con->args[i], ground);
   } // end for
   return true;
 }
@@ -370,8 +371,10 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
     write_proof_edge(state, copy_states[i]);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
     
-    if(!run_prover(copy_states[i], factset))
+    if(!run_prover(copy_states[i], factset)){
+      delete_rete_state(copy_states[i], state);
       return false;
+    }
     delete_rete_state(copy_states[i], state);
   }
   //write_proof_edge(state, state);
