@@ -30,8 +30,8 @@
 rule_queue* initialize_queue(void){
   unsigned int i;
   size_t size_queue = 10;
-  rule_queue* rq = malloc_tester(sizeof(rule_queue) 
-				 + (size_queue * sizeof(rule_instance*)));
+  rule_queue* rq = malloc_tester(sizeof(rule_queue) + size_queue * sizeof(rule_instance*));
+
   rq->n_queue = 0;
   rq->first = 0;
   rq->end = 0;
@@ -42,10 +42,22 @@ rule_queue* initialize_queue(void){
   return rq;
 }
 
+/**
+   Called from split_rete_state
+**/
 rule_queue* copy_rule_queue(const rule_queue* rq){
   rule_queue* copy = malloc_tester(sizeof(rule_queue) + (rq->size_queue * sizeof(rule_instance*)));
   memcpy(copy, rq, sizeof(rule_queue) + (rq->size_queue * sizeof(rule_instance*)));
   return copy;
+}
+
+
+/**
+   Destructor of copied rule queue. 
+   Called when a split is finished, from strategy.c
+**/
+void delete_rule_queue(rule_queue* rq){
+  free(rq);
 }
 
 /**
@@ -186,6 +198,8 @@ rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
    Removes the rule instance ri from queue rq. 
    Called only when you _know_ that ri is in rq, 
    for example after taking it from one of the axiom rule queues
+
+   Does not free ri, the caller function must do this afterwards
 **/
 void _remove_rule_instance(rule_instance* ri, rule_queue* rq){
   unsigned int i;
@@ -343,6 +357,8 @@ rule_instance* pop_rule_queue(rete_net_state* state){
 
    Will return NULL if there is no rule instance with substitution sub. 
    Therefore more complex and different than "_remove_rule_instance" above
+
+   In profiling (gprof, 40k steps with COM008+1.1), uses, accumulated, 0.1 % of prover time
 **/
 rule_instance* _remove_substitution_rule_instance(rule_queue* rq, const substitution* sub){
   unsigned int i;
@@ -406,12 +422,14 @@ void remove_rule_instance(rete_net_state* state, const substitution* sub, size_t
 }
 
 /**
-   Destructor
+   Called from delete_full_rete_state in rete_state.c
+   Only used when prover in prover.c is at the end
 **/
-void delete_rule_queue(rule_queue* rq){
+void delete_full_rule_queue(rule_queue* rq){
   unsigned int i;
-  /*  for(i =rq->first; i < rq->end; i = (i+1) % rq->size_queue)
-      free(rq->queue[i]);*/
+  /*  for(i = rq->first; i != rq->end; i = (i+1) % rq->size_queue){
+    free(rq->queue[i]);
+    }*/
   free(rq);
 }
 

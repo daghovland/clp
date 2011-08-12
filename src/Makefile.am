@@ -23,8 +23,8 @@ TESTS = $(check_SCRIPTS)
 check_clp.sh:
 	echo "./clpdebug $(srcdir)/anl.gl" > check_clp.sh
 	echo "./clpdebug -l $(srcdir)/anl.gl" >> check_clp.sh
-	echo "./clpdebug -cl $(srcdir)/anl.gl" >> check_clp.sh
-	echo "./clpdebug -c $(srcdir)/anl.gl" >> check_clp.sh
+	echo "./clpdebug -clm 60 $(srcdir)/anl.gl" >> check_clp.sh
+	echo "./clpdebug -cm 60 $(srcdir)/anl.gl" >> check_clp.sh
 	echo "./clpdebug -c $(srcdir)/anc.in" >> check_clp.sh
 	echo "./clpdebug -l $(srcdir)/anc.in" >> check_clp.sh
 	chmod +x check_clp.sh

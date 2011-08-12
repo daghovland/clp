@@ -117,6 +117,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 	    if(join != NULL) 
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
+	  free(iter);
 	} else
 	delete_substitution(sub);
       break;
@@ -129,9 +130,12 @@ void insert_rete_beta_sub(rete_net_state* state,
 	  {
 	    iter = get_state_sub_list_iter(state, node->val.beta.a_store_no);
 	    while(has_next_sub_list(iter)){
-	      if(subs_equal_intersection(sub, get_next_sub_list(iter)))
+	      if(subs_equal_intersection(sub, get_next_sub_list(iter))){
+		free(iter);
 		return;
+	      }
 	    }
+	    free(iter);
 	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
 	  } else 
 	  delete_substitution(sub);
@@ -189,7 +193,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
   sub_list_iter* iter;
 
   assert(test_substitution(sub));
-  assert(test_term_list(fact->args));
 
   switch(node->type){
   case selector:

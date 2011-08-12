@@ -213,8 +213,8 @@ void delete_rete_node(rete_node* node){
     rete_node* child = (rete_node*) node->children[i];
     if(child != NULL){
       assert(node->size_children > 0);
-      delete_rete_node((rete_node*) node->children[i]);
-      free((rete_node*) node->children[i]);
+      delete_rete_node((rete_node*) child);
+      free((rete_node*) child);
     }
   }
   free(node->children);
@@ -234,7 +234,7 @@ void delete_rete_net(rete_net* net){
 
 void test_rete_node(const rete_node* node, void (*child_test)(const rete_node*)){
   unsigned int i;
-  assert(node->type == selector || node->type == alpha || node->type == beta_root || node->type == beta_and || node->type == beta_not || node->type == rule);
+  assert(node->type == selector || node->type == alpha || node->type == beta_root || node->type == beta_and || node->type == beta_not || node->type == rule || node->type == beta_or);
   assert(node->size_children > 0);
   assert(node->n_children < node->size_children);
   assert(node->n_children > 0 || node->type == rule || node->type == selector);

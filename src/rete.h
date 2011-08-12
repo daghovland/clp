@@ -81,6 +81,9 @@ rete_net_state* create_rete_state(const rete_net*, bool);
 // state is deleted. orig is the "split point" above state, which should be kept.
 void delete_rete_state(rete_net_state* state, rete_net_state* orig);
 
+// Called at the end of prover in prover.c
+void delete_full_rete_state(rete_net_state* state);
+
 // In sub_alpha_queue.c, called from strategy.c
 bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state);
 

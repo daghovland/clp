@@ -135,7 +135,7 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
 				   axiom_no);
     }
     create_rule_node(net, node, ax, rule_free_vars, axiom_no);
-  }
+  }  
 }
     
     

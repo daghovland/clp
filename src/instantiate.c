@@ -67,7 +67,6 @@ const term* instantiate_term(const term* orig, const substitution* sub){
 void delete_instantiated_term(const term* orig, term* copy){
   switch(copy->type){
   case constant_term:
-    assert(orig == copy);
     break;
   case variable_term:
     break;

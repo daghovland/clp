@@ -6,6 +6,8 @@
 
 #include "common.h"
 #include "theory.h"
+#include "predicate.h"
+#include "rete.h"
 
 
 predicate* _create_predicate(const char* name, size_t arity, size_t pred_no, bool is_domain){

@@ -22,6 +22,8 @@
 #ifndef __INCLUDE_PREDICATE_H
 #define __INCLUDE_PREDICATE_H
 
+#include "common.h"
+
 
 typedef struct predicate_t {
   const char* name;

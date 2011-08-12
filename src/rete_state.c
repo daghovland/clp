@@ -69,6 +69,8 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
    Deletes "state" and much of the linked infromation.
    Uses "orig", which _must_ be above state in the tree, 
    to find out how much to delete.
+
+   Called during proof
 **/
 void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   unsigned int i;
@@ -87,6 +89,30 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
     free((char *) state->proof_branch_id);
   free(state->domain);
   free(state->constants);
+  free(state);
+}
+
+/**
+   Completely deletes rete state. Called at the end of prover() in prover.c
+**/
+void delete_full_rete_state(rete_net_state* state){
+  unsigned int i;
+  for(i = 0; i < state->net->n_subs; i++){
+      delete_substitution_list(state->subs[i]);
+  }
+  free(state->subs);
+  delete_fact_set(state->facts);
+  delete_full_rule_queue(state->rule_queue);
+  for(i = 0; i < state->net->th->n_axioms; i++){
+    delete_full_rule_queue(state->axiom_inst_queue[i]);
+    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], NULL);
+  }
+  free(state->sub_alpha_queues);
+  if(strlen(state->proof_branch_id) > 0)
+    free((char *) state->proof_branch_id);
+  free(state->domain);
+  free(state->constants);
+  free(state->global_step_counter);
   free(state);
 }
 

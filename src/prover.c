@@ -90,8 +90,9 @@ bool insert_rete_net_conjunction(rete_net_state* state,
     printf("\n");
 #endif
     
-    insert_state_fact_set(state, ground);
-    if(!factset){
+    if(factset)
+      insert_state_fact_set(state, ground);
+    else {
       assert( test_rule_queue_sums(state));
       insert_rete_net_fact(state, ground);
       assert( test_rule_queue_sums(state));
@@ -124,17 +125,19 @@ bool run_prover(rete_net_state* state, bool factset){
       }
       assert(test_rule_queue_sums(state));
     }
-
+    
     assert(test_rule_instance(next, state));
     
     if(!inc_proof_step_counter(state)){
       printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
+      //free(next);
       return false;
     }
     
     write_proof_node(state, next);
     
     if(next->rule->type == goal || next->rule->rhs->n_args == 0){
+      //free(next);
       return true;
     }
     if(state->net->existdom && next->rule->is_existential){
@@ -191,15 +194,18 @@ bool run_prover(rete_net_state* state, bool factset){
 	copy_state = split_rete_state(state, s++);
 	write_proof_edge(state, copy_state);  
 	if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
+	  //free(next);
 	  return false;
 	}
 	delete_rete_state(copy_state, state);
       }// end while(!finished)
+      //free(next);
       return true;
     } else {
       // if not existential rule or not existdom. This is usually used
       if(next->rule->rhs->n_args > 1){
 	bool retval = insert_rete_net_disj_rule_instance(state, next, factset);
+	// free(next);
 	return retval;
       } else {
 	write_proof_edge(state, state);
@@ -209,6 +215,7 @@ bool run_prover(rete_net_state* state, bool factset){
   } // end while queue not empty
   fprintf(stdout, "Found a model of the theory: \n");
   print_fact_set(state->facts, stdout);
+  //free(next);
   return false;
 }  
 
@@ -411,7 +418,7 @@ unsigned int prover(const rete_net* rete, bool factset){
   }
   foundproof =  run_prover(state, factset);
   retval = get_global_step_no(state);
-  delete_rete_state(state, state);
+  delete_full_rete_state(state);
   if(foundproof)
     return retval;
   else
