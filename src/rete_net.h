@@ -84,7 +84,6 @@ typedef struct rete_net_state_t {
   unsigned int step_no;
   substitution_list ** subs;
   sub_alpha_queue ** sub_alpha_queues;
-  rule_queue* rule_queue;
   const rete_net* net;
   unsigned int * global_step_counter;
   fresh_const_counter fresh;

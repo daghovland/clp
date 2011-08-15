@@ -111,7 +111,6 @@ unsigned int prover(const rete_net*, bool);
 
 
 bool test_rete_net(const rete_net*);
-bool test_rule_queue_sums(const rete_net_state*);
 bool test_rule_instance(const rule_instance*, const rete_net_state*);
 bool test_rule_queue(const rule_queue*, const rete_net_state*);
 
@@ -123,8 +122,6 @@ void print_state_new_facts(rete_net_state*, FILE*);
 void print_rete_node_type(const rete_node*, FILE*);
 
 
-rule_instance* pop_rule_queue(rete_net_state*);
-rule_instance* peek_rule_queue(const rete_net_state*);
 rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t);
 rule_instance* pop_youngest_axiom_rule_queue(rete_net_state*, size_t);
 rule_instance* peek_axiom_rule_queue(const rete_net_state*, size_t);

@@ -61,7 +61,7 @@ rule_queue* initialize_queue(void);
 rule_queue* copy_rule_queue(const rule_queue*);
 
 void delete_rule_instance(rule_instance*);
-void delete_rule_queue(rule_queue*);
+void delete_rule_queue_before(rule_queue*, rule_queue*);
 void delete_full_rule_queue(rule_queue*);
 rule_instance* create_rule_instance(const axiom*, substitution*);
 

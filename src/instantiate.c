@@ -139,7 +139,7 @@ atom* instantiate_atom(const atom* orig, const substitution* sub){
 void delete_instantiated_atom(const atom* orig, atom* copy){
   if(copy->args->n_args > 0){
     if(copy->args != NULL){
-      delete_instantiated_term_list(orig->args, copy->args);
+      delete_instantiated_term_list(orig->args, (term_list*) copy->args);
     }
     free(copy);
   }

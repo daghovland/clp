@@ -70,9 +70,9 @@ bool insert_rete_net_conjunction(rete_net_state* state,
 
   if(!state->net->existdom)
     fresh_exist_constants(state, con, sub);
-
+  
   assert(test_is_conj_instantiation(con, sub));
-
+  
   for(i = 0; i < con->n_args; i++){
     atom* ground = instantiate_atom(con->args[i], sub);
     
@@ -93,9 +93,7 @@ bool insert_rete_net_conjunction(rete_net_state* state,
     if(factset)
       insert_state_fact_set(state, ground);
     else {
-      assert( test_rule_queue_sums(state));
       insert_rete_net_fact(state, ground);
-      assert( test_rule_queue_sums(state));
     }
     delete_instantiated_atom(con->args[i], ground);
   } // end for
@@ -118,26 +116,24 @@ bool run_prover(rete_net_state* state, bool factset){
 
     
     if(!factset){
-      assert(test_rule_queue_sums(state));
       next = choose_next_instance(state, state->net->strat);
       if(next == NULL){
 	break;
       }
-      assert(test_rule_queue_sums(state));
     }
     
     assert(test_rule_instance(next, state));
     
     if(!inc_proof_step_counter(state)){
       printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
-      //free(next);
+      free(next);
       return false;
     }
     
     write_proof_node(state, next);
     
     if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-      //free(next);
+      free(next);
       return true;
     }
     if(state->net->existdom && next->rule->is_existential){
@@ -194,12 +190,12 @@ bool run_prover(rete_net_state* state, bool factset){
 	copy_state = split_rete_state(state, s++);
 	write_proof_edge(state, copy_state);  
 	if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
-	  //free(next);
+	  free(next);
 	  return false;
 	}
 	delete_rete_state(copy_state, state);
       }// end while(!finished)
-      //free(next);
+      free(next);
       return true;
     } else {
       // if not existential rule or not existdom. This is usually used
@@ -215,7 +211,7 @@ bool run_prover(rete_net_state* state, bool factset){
   } // end while queue not empty
   fprintf(stdout, "Found a model of the theory: \n");
   print_fact_set(state->facts, stdout);
-  //free(next);
+  free(next);
   return false;
 }  
 
@@ -232,9 +228,7 @@ bool run_prover(rete_net_state* state){
     fprintf(stdout, "Started iteration in thread %li \n", (long) pthread_self());
     print_rete_state(state, stdout);
 #endif
-    assert(test_rule_queue_sums(state));
     next = choose_next_instance(state);
-    assert(test_rule_queue_sums(state));
 
     assert(test_rule_instance(next, state));
     

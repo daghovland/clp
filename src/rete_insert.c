@@ -61,9 +61,7 @@ void detract_rete_beta_sub(rete_net_state* state,
       if(node->type == beta_not)
 	detract_rete_beta_sub(state, node->children[0], union_substitutions(sub, sub2));
       else {
-	assert(test_rule_queue_sums(state));
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
-	assert(test_rule_queue_sums(state));
       }
   } // end   while(has_next_sub_list(iter)){
   delete_substitution(sub);

@@ -46,7 +46,6 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
   state->facts = create_fact_set();
-  state->rule_queue = initialize_queue();
   for(i = 0; i < net->th->n_axioms; i++)
     state->axiom_inst_queue[i] = initialize_queue();
   state->step_no = 0;
@@ -79,7 +78,6 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   }
   free(state->subs);
   delete_fact_set(state->facts);
-  delete_rule_queue(state->rule_queue);
   for(i = 0; i < state->net->th->n_axioms; i++){
     free(state->axiom_inst_queue[i]);
     delete_sub_alpha_queue_below(state->sub_alpha_queues[i], orig->sub_alpha_queues[i]);
@@ -102,7 +100,6 @@ void delete_full_rete_state(rete_net_state* state){
   }
   free(state->subs);
   delete_fact_set(state->facts);
-  delete_full_rule_queue(state->rule_queue);
   for(i = 0; i < state->net->th->n_axioms; i++){
     delete_full_rule_queue(state->axiom_inst_queue[i]);
     delete_sub_alpha_queue_below(state->sub_alpha_queues[i], NULL);
@@ -155,7 +152,6 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   copy->constants = calloc_tester(orig->size_constants, sizeof(char*));
   memcpy(copy->constants, orig->constants, orig->size_constants * sizeof(char*));
 
-  copy->rule_queue = copy_rule_queue(orig->rule_queue);
   for(i = 0; i < orig->net->th->n_axioms; i++)
     copy->axiom_inst_queue[i] = copy_rule_queue(orig->axiom_inst_queue[i]);
   
@@ -170,7 +166,6 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
       exit(EXIT_FAILURE);
     }
   assert(strlen(copy->proof_branch_id) < branch_id_len);
-  assert(test_rule_queue(copy->rule_queue, copy));
   assert(orig->global_step_counter == copy->global_step_counter);
   split_fact_set(orig->facts);
   return copy;

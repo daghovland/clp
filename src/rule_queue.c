@@ -39,11 +39,13 @@ rule_queue* initialize_queue(void){
   rq->n_appl = 0;
   rq->size_queue = size_queue;
 
+  for(i = 0; i < rq->size_queue; i++)
+    rq->queue[i] = NULL;
   return rq;
 }
 
 /**
-   Called from split_rete_state
+   Called from split_rete_state in rete_state.c
 **/
 rule_queue* copy_rule_queue(const rule_queue* rq){
   rule_queue* copy = malloc_tester(sizeof(rule_queue) + (rq->size_queue * sizeof(rule_instance*)));
@@ -54,21 +56,15 @@ rule_queue* copy_rule_queue(const rule_queue* rq){
 
 /**
    Destructor of copied rule queue. 
-   Called when a split is finished, from strategy.c
+   Called when a split is finished, from delete_rete_state in rete_state.c
 **/
-void delete_rule_queue(rule_queue* rq){
+void delete_rule_queue_before(rule_queue* rq, rule_queue* orig){
+  unsigned int i;
+  for(i = rq->first; rq->first != orig->first && rq->first != rq->end; i = (i+1) % rq->size_queue){
+    free(rq->queue[i]);
+    rq->queue[i] = NULL;
+  }
   free(rq);
-}
-
-/**
-   Tests that the sum of each axiom rule queue
-   is the length of the total rule queue
-**/
-bool test_rule_queue_sums(const rete_net_state* state){
-  unsigned int i, sum = 0;
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    sum += state->axiom_inst_queue[i]->n_queue;
-  return sum == state->rule_queue->n_queue;
 }
 
 
@@ -270,7 +266,6 @@ rule_instance* create_rule_instance(const axiom* rule, substitution* sub){
 void add_rule_to_queue(const axiom* rule, substitution* sub, rete_net_state* state){
   rule_instance* ins = malloc_tester(sizeof(rule_instance));
 
-  assert(test_rule_queue(state->rule_queue, state));
   assert(test_substitution(sub));
   
   ins->timestamp = get_global_step_no(state);
@@ -280,13 +275,10 @@ void add_rule_to_queue(const axiom* rule, substitution* sub, rete_net_state* sta
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(test_rule_instance(ins, state));
 
-  state->rule_queue = _add_rule_to_queue(ins, state->rule_queue, false);
-
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(state->axiom_inst_queue[rule->axiom_no] != NULL);
 
   state->axiom_inst_queue[rule->axiom_no] = _add_rule_to_queue(ins, state->axiom_inst_queue[rule->axiom_no], state->net->strat == clpl_strategy);
-  assert(test_rule_queue_sums(state));
 }
 rule_instance* _peek_rule_queue(const rule_queue* rq){
   assert(rq->n_queue > 0);  
@@ -299,56 +291,40 @@ rule_instance* peek_axiom_rule_queue(const rete_net_state* state, size_t axiom_n
   return _peek_rule_queue(rq);
 }
 
-
-rule_instance* peek_rule_queue(const rete_net_state* state){
-  rule_queue* rq = state->rule_queue;
-  return _peek_rule_queue(rq);
-}
-
 /**
    Called from prover when using CL.pl emulation mode
 
    Uses the rule queue as a stack, by taking the most recently added rule instance
 **/
 rule_instance* pop_youngest_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
-  rule_queue* rq = state->rule_queue;
+  rule_queue* rq = state->axiom_inst_queue[axiom_no];
   assert(axiom_no < state->net->th->n_axioms);
-  assert(rq->n_queue > 0);
 
-  rq->n_appl++;
+  rq->n_appl ++;
   rq->previous_appl = get_global_step_no(state);
-  
-  rule_instance* retval = _pop_youngest_rule_queue(state->axiom_inst_queue[axiom_no]);
+
+  rule_instance* retval = _pop_youngest_rule_queue(rq);
 
   assert(test_rule_instance(retval, state));
 
-  _remove_rule_instance(retval, rq);
   return retval;
 }
   
 rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
-  rule_queue* rq = state->rule_queue;
+  rule_queue* rq = state->axiom_inst_queue[axiom_no];
   assert(axiom_no < state->net->th->n_axioms);
   assert(rq->n_queue > 0);
 
   rq->n_appl++;
   rq->previous_appl = get_global_step_no(state);
 
-  rule_instance* retval = _pop_rule_queue(state->axiom_inst_queue[axiom_no]);
+  rule_instance* retval = _pop_rule_queue(rq);
 
   assert(test_rule_instance(retval, state));
 
-  _remove_rule_instance(retval, rq);
   return retval;
 }
   
-rule_instance* pop_rule_queue(rete_net_state* state){
-  rule_instance* retval = _pop_rule_queue(state->rule_queue);
-  assert(test_rule_instance(retval, state));
-  assert(retval->rule->axiom_no < state->net->th->n_axioms);
-  _remove_rule_instance(retval, state->axiom_inst_queue[retval->rule->axiom_no]);
-  return retval;
-}
 
 /**
    Called from detrect_rete_beta_sub in prover.c
@@ -401,7 +377,6 @@ rule_instance* _remove_substitution_rule_instance(rule_queue* rq, const substitu
 
 void remove_rule_instance(rete_net_state* state, const substitution* sub, size_t axiom_no){
   assert(axiom_no < state->net->th->n_axioms);
-  assert(test_rule_queue_sums(state));
 #ifndef NDEBUG
   size_t size_before = state->axiom_inst_queue[axiom_no]->n_queue;
 #endif
@@ -410,15 +385,8 @@ void remove_rule_instance(rete_net_state* state, const substitution* sub, size_t
 
   if(remd != NULL){
     assert(size_before == state->axiom_inst_queue[axiom_no]->n_queue + 1);
-#ifndef NDEBUG
-    size_before = state->rule_queue->n_queue;
-#endif
-    _remove_rule_instance(remd, state->rule_queue);
-    assert(test_rule_queue(state->rule_queue, state));
-    assert(size_before == state->rule_queue->n_queue + 1);
   } else 
     assert(size_before == state->axiom_inst_queue[axiom_no]->n_queue);
-  assert(test_rule_queue_sums(state));
 }
 
 /**
@@ -427,9 +395,9 @@ void remove_rule_instance(rete_net_state* state, const substitution* sub, size_t
 **/
 void delete_full_rule_queue(rule_queue* rq){
   unsigned int i;
-  /*  for(i = rq->first; i != rq->end; i = (i+1) % rq->size_queue){
+  for(i = rq->first; i != rq->end; i = (i+1) % rq->size_queue){
     free(rq->queue[i]);
-    }*/
+  }
   free(rq);
 }
 

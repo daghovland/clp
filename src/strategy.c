@@ -114,9 +114,7 @@ rule_instance* clpl_next_instance(rete_net_state* state){
     assert(i == axiom_no);
     if(axiom_has_new_instance(axiom_no, state)){
       rule_instance* retval;
-      assert(test_rule_queue_sums(state));
       retval = pop_axiom_rule_queue(state, axiom_no);
-      assert(test_rule_queue_sums(state));
       return retval;
     }
   } // end for i -- n_axioms
