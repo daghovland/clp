@@ -38,6 +38,7 @@ typedef struct theory_t {
   unsigned int n_axioms;
   size_t size_axioms;
   freevars* vars;
+  char* name;
   size_t n_predicates;
   size_t size_predicates;
   predicate** predicates;
@@ -53,9 +54,14 @@ typedef struct theory_t {
 
 theory* create_theory(void);
 void extend_theory(theory*, axiom*);
+void set_theory_name(theory*, char*);
 
+void print_coq_proof(const theory*, FILE*);
+
+/* In atom_and_term.c */
 term* create_variable(const char*, theory*);
 atom* parser_create_atom(const char*, const term_list*, theory*);
+atom* create_dom_atom(const char*, theory*);
 term* parser_create_constant_term(theory*, const char*);
 atom* create_prop_variable(const char*, theory*);
 

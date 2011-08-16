@@ -106,8 +106,7 @@ theory:      theory_line theory {;}
 theory_line:    axiom PERIOD { extend_theory(th, $1); }
                      | COMMENT {;}
 ;
-axiom:    LPAREN axiom RPAREN { $$ = $2; }    
-              |  TRUE ARROW disjunction  {$$ = create_fact($3); }
+axiom:    TRUE ARROW disjunction  {$$ = create_fact($3); }
               | ARROW disjunction   {$$ = create_fact($2); }
               | disjunction   {$$ = create_fact($1); }
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
@@ -120,8 +119,8 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
                           ;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
-| NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
-| NAME {$$ = create_prop_variable($1, th);}
+           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
+           | NAME {$$ = create_prop_variable($1, th);}
                ;
 terms:         terms COMMA term
                     { $$ = extend_term_list($1, $3); }
@@ -146,7 +145,7 @@ disjunction:            conjunction  { $$ = create_disjunction($1);}
 
 				   
 
-void yyerror(char* s){
+void geolog_error(char* s){
   fprintf(stderr, "Error in parsing file: %s",s);
   fprintf(stderr, " line  %d\n", geolog_lineno);
   exit(2);

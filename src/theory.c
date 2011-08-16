@@ -50,7 +50,7 @@ theory* create_theory(void){
   ret_val->n_constants =  0;
 
   ret_val->vars = init_freevars();
-
+  ret_val->name = NULL;
   ret_val->max_lhs_conjuncts = 0;
 
   return ret_val;
@@ -77,9 +77,19 @@ void delete_theory(theory* t){
     free(t->predicates[i]);
   free(t->predicates);
   del_freevars(t->vars);
+  if(t->name != NULL)
+    free(t->name);
   free(t);
 }
 
+/**
+   From the "name" predicate in CL.pl format
+**/
+void set_theory_name(theory *th, char* name){
+  assert(th->name == NULL);
+  assert(strlen(name) >= 0);
+  th->name = name;
+}
 /**
    Creates new rete network for the whole theory
 **/
@@ -109,7 +119,22 @@ bool test_theory(const theory* t){
   return true;
 }
 
+/**
+   Prints a proof in coq format. Not finished.
+**/
+void print_coq_proof(const theory* th, FILE* stream){
+  fprintf(stream, "Section %s.\n\n", th->name);
+  fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
 
+  fprintf(stream, "Variable %s : Set.\n", DOMAIN_PREDICATE_NAME);
+  fprintf(stream, "Variable goal : Prop.\n");
+
+  fprintf(stream, "Theorem %s : goal.\n", th->name);
+  fprintf(stream, "Proof.");
+
+  fprintf(stream, "Qed.\n\n");
+  fprintf(stream, "End %s.\n", th->name);
+}
 /**
    Generic pretty printing function
 **/

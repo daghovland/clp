@@ -119,8 +119,8 @@ void print_help(char* exec){
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
-  printf("\t-l, --lazy\t\tTries the (unfinished) lazy version of RETE.\n");
-  printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not implemented\n");
+  printf("\t-l, --lazy\t\tUses the lazy version of RETE.\n");
+  printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not finished.\n");
   printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
   printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");

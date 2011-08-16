@@ -34,7 +34,7 @@ symbol     [\'\"_]
 <C_COMMENT>"*/"                BEGIN(INITIAL);
 <C_COMMENT>.                     { ;}
 <INITIAL>,                                            {  return COMMA;                   }
-<INITIAL>;|\|                                    {  return OR_SEPARATOR;  }
+<INITIAL>\|                                    {  return OR_SEPARATOR;  }
 <INITIAL>\(                                         {  return LPAREN;                  }
 <INITIAL>\)                                         {  return RPAREN;                 }
 <INITIAL>"."                                         {  return PERIOD;                   }
@@ -46,9 +46,6 @@ symbol     [\'\"_]
 <INITIAL>"true"                                  {  return TRUE;                       }
 <INITIAL>"false"                                 {  return FALSE;                     }
 <INITIAL>"goal"                                  {  return GOAL;                       }
-<INITIAL>"axiom"                                  { return AXIOM_NAME; }
-<INITIAL>"dynamic"                                { return DYNAMIC;                      }
-<INITIAL>^"%"+$                                   { return SECTION_MARKER; }
 <INITIAL>{Letter}({letter}|{digit}|{symbol})* {
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);

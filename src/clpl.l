@@ -34,7 +34,7 @@ symbol     [\'\"_]
 <C_COMMENT>"*/"                BEGIN(INITIAL);
 <C_COMMENT>.                     { ;}
 <INITIAL>,                                            {  return COMMA;                   }
-<INITIAL>;|\|                                    {  return OR_SEPARATOR;  }
+<INITIAL>;                                    {  return OR_SEPARATOR;  }
 <INITIAL>\(                                         {  return LPAREN;                  }
 <INITIAL>\)                                         {  return RPAREN;                 }
 <INITIAL>"."                                         {  return PERIOD;                   }
@@ -43,12 +43,19 @@ symbol     [\'\"_]
 <INITIAL>"/"                             { return SLASH; }
 <INITIAL>":"                                { return COLON; }
 <INITIAL>"-"                                { return DASH; }
+<INITIAL>\[                                         {  return LSQPAREN;                  }
+<INITIAL>\]                                         {  return RSQPAREN;                 }
+<INITIAL>\|                                          { return HOR_BAR; }
+<INITIAL>"next"                                { return STRING_NEXT;                      }
+<INITIAL>"enabled"                                { return STRING_ENABLED;                      }
 <INITIAL>"true"                                  {  return TRUE;                       }
+<INITIAL>"name"                                  {  return STRING_NAME;                       }
+<INITIAL>"dom"                                  {  return STRING_DOM;                       }
 <INITIAL>"false"                                 {  return FALSE;                     }
 <INITIAL>"goal"                                  {  return GOAL;                       }
 <INITIAL>"axiom"                                  { return AXIOM_NAME; }
 <INITIAL>"dynamic"                                { return DYNAMIC;                      }
-<INITIAL>^"%"+$                                   { return SECTION_MARKER; }
+<INITIAL>^%+                                { return SECTION_MARKER;                      }
 <INITIAL>{Letter}({letter}|{digit}|{symbol})* {
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);
@@ -61,7 +68,7 @@ symbol     [\'\"_]
                                                strcpy(yylval->str, yytext);
                                               return NAME;                   }
 [ \t]                            {                                                  }
-[\n\r]                            {                       clpl_lineno++;                          }
+[\n\r]                            {                                               }
 %[^\n]*$                        {                                                  }
 <INITIAL>.                                           { fprintf( stderr, "Error with symbol %s\n", yytext); exit( EXIT_FAILURE ); }
 %%
