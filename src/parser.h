@@ -26,5 +26,6 @@
 #include "theory.h"
 
 theory* geolog_parser(FILE*);
+theory* clpl_parser(FILE*);
 
 #endif

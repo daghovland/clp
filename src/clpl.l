@@ -1,6 +1,6 @@
 
-%option prefix="geolog_"
-%option outfile="lex.yy.c" header-file="geolog_scanner.h"
+%option prefix="clpl_"
+%option outfile="lex.yy.c" header-file="clpl_scanner.h"
 %option noyywrap
 %option 8bit
 %option bison-bridge
@@ -15,11 +15,11 @@
 #include "common.h"
 #include "fresh_constants.h"
 #include "rete.h"
-#include "geolog_parser.h"
+#include "clpl_parser.h"
 
 
 extern int fileno(FILE*);
-extern int geolog_lineno;
+extern int clpl_lineno;
 %}
 
 
@@ -61,7 +61,7 @@ symbol     [\'\"_]
                                                strcpy(yylval->str, yytext);
                                               return NAME;                   }
 [ \t]                            {                                                  }
-[\n\r]                            {                       geolog_lineno++;                          }
+[\n\r]                            {                       clpl_lineno++;                          }
 %[^\n]*$                        {                                                  }
 <INITIAL>.                                           { fprintf( stderr, "Error with symbol %s\n", yytext); exit( EXIT_FAILURE ); }
 %%

@@ -45,6 +45,8 @@ extern int optind, optopt, opterr;
 bool verbose, debug, proof, dot, text, pdf, existdom, factset;
 strategy strat;
 unsigned long maxsteps;
+typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
+input_format_type input_format;
 
 int file_prover(FILE* f, const char* prefix){
   theory* th;
@@ -53,7 +55,17 @@ int file_prover(FILE* f, const char* prefix){
   int retval;
   unsigned int steps;
   void * mem_break = sbrk(0);
-  th = geolog_parser(f);
+  switch(input_format){
+  case clpl_input:
+    th = clpl_parser(f);
+    break;
+  case geolog_input:
+    th = geolog_parser(f);
+    break;
+  default:
+    perror("Error in enum for file input type\n");
+    exit(EXIT_FAILURE);
+  }
 
   assert(test_theory(th));
   net = create_rete_net(th, maxsteps, existdom, strat, lazy);
@@ -95,7 +107,7 @@ int file_prover(FILE* f, const char* prefix){
 }
 void print_help(char* exec){
   printf("Usage: %s [OPTION...] [FILE...]\n\n", exec);
-  printf("Reads a coherent theory given in the format supported by John Fisher's geolog prover <http://johnrfisher.net/GeologUI/index.html> or in the format supported by Marc Bezem\& Dimitri Hendriks CL.pl <http://www.few.vu.nl/~diem/research/ht/#tool>. The strategy information in the latter format is not used, only the axioms. ");
+  printf("Reads a coherent theory given in the format supported by John Fisher's geolog prover <http://johnrfisher.net/GeologUI/index.html> or in the format supported by Marc Bezem and Dimitri Hendriks CL.pl <http://www.few.vu.nl/~diem/research/ht/#tool>. The strategy information in the latter format is not used, only the axioms. ");
   printf("The program searches for a model of the given theory, or a proof that there is no finite model of the theory. ");
   printf("If no file name is given, a single theory is read from standard input. ");
   printf("Several file names can be given, each will then be parsed as a single theory and a proof search done for each of them.\n\n");
@@ -112,6 +124,8 @@ void print_help(char* exec){
   printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
   printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
+  printf("\t-C, --CLpl\t\tParses the input file as in CL.pl. This is the default.\n");
+  printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
 
@@ -132,8 +146,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdaeclm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {"CLpl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdaecCGlm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -146,6 +160,7 @@ int main(int argc, char *argv[]){
   existdom = false;
   factset = false;
   lazy = false;
+  input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
 
@@ -187,6 +202,12 @@ int main(int argc, char *argv[]){
       break;
     case 'a':
       pdf = true;
+      break;
+    case 'C':
+      input_format = clpl_input;
+      break;
+    case 'G':
+      input_format = geolog_input;
       break;
     case 'm':
       errno = 0;

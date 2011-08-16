@@ -22,6 +22,7 @@
 
 
 %{
+
 #include "common.h"
 #include "term.h"
 #include "atom.h"
@@ -31,19 +32,21 @@
 #include "theory.h"
 #include "parser.h"
 
-  
-  extern int yylex();
+  extern int geolog_lex();
   extern int fileno(FILE*);
-
-  void yyerror(char*);
-  theory *th;
-
-  extern FILE* yyin;
-  int lineno = 1;
   
+  void geolog_error(char*);
+  theory *th;
+  
+  extern FILE* geolog_in;
+  extern int geolog_lineno;
+
+  
+
 %}
 
-%pure-parser
+%define api.pure
+%name-prefix "geolog_"
 %error-verbose
 %locations
 
@@ -88,7 +91,6 @@
 %type <disj> disjunction
 %type <conj> conjunction
 %type <axiom> axiom
-%type <axiom> axiomw
 
 
 %start file
@@ -100,50 +102,9 @@ file:          theory { ; }
 ;
 theory:      theory_line theory {;}
                 | theory_line {;}
-               | SECTION_MARKER prolog {;}
-;
-prolog:       prolog_line prolog {;}
-               |  {;}
-;
-prolog_line:      prolog_atom PERIOD {;} // To be able to read CL.pl format
-                       | prolog_atom COLON DASH prolog_atom_list PERIOD {;}
-                       | SECTION_MARKER {;}
-;
-prolog_atom_list:       prolog_atom COMMA prolog_atom_list {;}
-                                   | prolog_atom {;}
-;
-prolog_atom:          NAME {;}
-                             | NAME LPAREN prolog_arg_list RPAREN {;}
-;
-prolog_arg_list:     prolog_arg COMMA prolog_arg_list {;}
-                             | prolog_arg {;}
-;
-prolog_arg:         UNDERSCORE {;}
-                          | VARIABLE {;}
-                          | NAME {;}
-                          | INTEGER {;}
-                          | NAME LPAREN prolog_arg_list RPAREN {;}
-;
-theory_line:    axiomw { extend_theory(th, $1); }
-                     |  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
+
+theory_line:    axiom PERIOD { extend_theory(th, $1); }
                      | COMMENT {;}
-;
-axmdef:    NAME LPAREN varlist RPAREN {;}
-                      | NAME LPAREN RPAREN {;}
-                      | NAME {;}
-;
-predlist:   NAME SLASH INTEGER {;}
-           | NAME SLASH INTEGER COMMA predlist {;}
-;
-axiomw:  axmno AXIOM_NAME axmdef COLON axiom PERIOD { $$ = $5; }
-|     axiom PERIOD { $$ = $1; }
-;
-axmno:      INTEGER {;} 
-          | UNDERSCORE {;}
-//         | prolog_atom {;}
-;
-varlist:      VARIABLE { ; }
-            |  VARIABLE COMMA varlist { ; }
 ;
 axiom:    LPAREN axiom RPAREN { $$ = $2; }    
               |  TRUE ARROW disjunction  {$$ = create_fact($3); }
@@ -187,14 +148,14 @@ disjunction:            conjunction  { $$ = create_disjunction($1);}
 
 void yyerror(char* s){
   fprintf(stderr, "Error in parsing file: %s",s);
-  fprintf(stderr, " line  %d\n", lineno);
+  fprintf(stderr, " line  %d\n", geolog_lineno);
   exit(2);
 }
 
 theory* geolog_parser(FILE* f){
   th = create_theory();
-  yyin = f;
-  lineno = 1;
-  yyparse();
+  geolog_in = f;
+  geolog_lineno = 1;
+  geolog_parse();
   return th;
 }

@@ -18,9 +18,13 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-
+/**
+   Parses the format used by CL.pl
+**/
 
 %{
+
+
 #include "common.h"
 #include "term.h"
 #include "atom.h"
@@ -30,21 +34,23 @@
 #include "theory.h"
 #include "parser.h"
 
-  
-  
-  void yyerror(char*);
-  int yylex();
+ 
 
+  void clpl_error(char*);
+  int clpl_lex();
+  
   theory *th;
-
-  extern int fileno(FILE*);
-  int lineno = 1;
   
+  extern FILE* clpl_in;
+  
+  extern int fileno(FILE*);
+  extern int clpl_lineno;
+
 %}
-%pure-parser
-%name-prefix="clpl_"
+
+%define api.pure
+%name-prefix "clpl_"
 %locations
-%defines
 %error-verbose
 
 %union{
@@ -167,9 +173,9 @@ terms:         terms COMMA term
 term:         NAME LPAREN terms RPAREN 
                    { $$ = create_term($1, $3); }
                    | NAME
-                   { $$ = create_constant($1); }
+                   { $$ = parser_create_constant_term(th, $1); }
                    | INTEGER
-                   { $$ = create_constant($1); }
+                   { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 
                    { $$ = create_variable($1, th); }
                    ;
@@ -182,12 +188,14 @@ disjunction:            conjunction  { $$ = create_disjunction($1);}
 
 void yyerror(char* s){
   fprintf(stderr, "Error in parsing file: %s",s);
-  fprintf(stderr, " line  %d\n", lineno);
+  fprintf(stderr, " line  %d\n", clpl_lineno);
   exit(2);
 }
 
 theory* clpl_parser(FILE* f){
   th = create_theory();
-  yyparse();
+  clpl_in = f;
+  clpl_lineno = 1;
+  clpl_parse();
   return th;
 }
