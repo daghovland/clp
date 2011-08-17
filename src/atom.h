@@ -44,6 +44,7 @@ bool test_atom(const atom*);
 bool test_ground_atom(const atom*);
 
 void print_fol_atom(const atom*, FILE*);
+void print_coq_atom(const atom*, FILE*);
 void print_geolog_atom(const atom*, FILE*);
 
 bool equal_atoms(const atom*, const atom*);

@@ -251,9 +251,8 @@ void delete_term_list(term_list* tl){
    Used for CL.pl dom predicate instances in axioms
    Called from clpl_parser.y in atom rule
 **/
-atom* create_dom_atom(const char* var_name, theory* th){
+atom* create_dom_atom(const term* arg, theory* th){
   atom* ret_val;
-  term* arg;
   term_list* args; 
   size_t dom_pred_len;
   char* dom_name;
@@ -262,7 +261,6 @@ atom* create_dom_atom(const char* var_name, theory* th){
   dom_name = calloc_tester(dom_pred_len, 1);
   strncpy(dom_name, DOMAIN_PREDICATE_NAME, dom_pred_len);
 
-  arg = create_variable(var_name, th);
   args = create_term_list(arg);
   ret_val =  _common_create_atom(args);
   assert(args->n_args == 1);
@@ -338,16 +336,18 @@ bool equal_atoms(const atom* a1, const atom* a2){
 /**
    Generic printing facilities
 **/
-void print_term_list(const term_list *tl, FILE* stream, void (*print_term)(const term*, FILE*)){
+void print_term_list(const term_list *tl, FILE* stream, char* separator, bool parentheses, void (*print_term)(const term*, FILE*)){
   int i;
   if(tl->n_args > 0){
-    fprintf(stream, "(");
+    if(parentheses)
+      fprintf(stream, "(");
     for(i = 0; i+1 < tl->n_args; i++){
       print_fol_term(tl->args[i], stream);
-      fprintf(stream, ",");
+      fprintf(stream, "%s", separator);
     }
     print_term(tl->args[i], stream);
-    fprintf(stream, ")");
+    if(parentheses)
+      fprintf(stream, ")");
   }
 }
 void print_atom(const atom *at, FILE* stream, void (*print_term_list)(const term_list*, FILE*)){
@@ -370,7 +370,7 @@ void print_fol_atom(const atom *at, FILE* stream){
 }
 
 void print_fol_term_list(const term_list *tl, FILE* stream){
-  print_term_list(tl, stream, print_fol_term);
+  print_term_list(tl, stream, ",", true, print_fol_term);
 }
 
 void print_fol_term(const term *t, FILE* s){
@@ -384,9 +384,24 @@ void print_geolog_atom(const atom *at, FILE* stream){
 }
 
 void print_geolog_term_list(const term_list *tl, FILE* stream){
-  print_term_list(tl, stream, print_fol_term);
+  print_term_list(tl, stream, ",", true, print_fol_term);
 }
 
 void print_geolog_term(const term *t, FILE* s){
   print_term(t, s, print_fol_term_list);
+}
+
+/**
+   coq output
+**/
+void print_coq_term_list(const term_list *tl, FILE* stream){
+  print_term_list(tl, stream, " ", false, print_coq_term);
+}
+
+void print_coq_term(const term *t, FILE* stream){
+  print_term(t, stream, print_coq_term_list);
+}
+void print_coq_atom(const atom* a, FILE* stream){
+  fprintf(stream, "%s ", a->pred->name);
+  print_coq_term_list(a->args, stream);
 }

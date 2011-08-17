@@ -72,7 +72,9 @@ freevars* free_term_variables(const term*, freevars*);
 freevars* free_term_list_variables(const term_list*, freevars*);
 
 void print_fol_term(const term*, FILE*);
+void print_coq_term(const term*, FILE*);
 void print_fol_term_list(const term_list*, FILE*);
+void print_coq_term_list(const term_list*, FILE*);
 
 void print_geolog_term(const term*, FILE*);
 void print_geolog_term_list(const term_list*, FILE*);

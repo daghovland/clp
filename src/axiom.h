@@ -46,6 +46,7 @@ typedef struct axiom_t {
   bool has_domain_pred;
   const conjunction * lhs;
   const disjunction * rhs;
+  const char* name;
   bool is_existential;
   freevars* exist_vars;
 } axiom;
@@ -56,6 +57,8 @@ axiom* create_fact(disjunction*);
 axiom* create_goal(conjunction*);
 axiom* create_negative(conjunction*);
 
+void set_axiom_name(axiom*, const char*);
+
 bool test_axiom(const axiom*, size_t);
 
 void delete_axiom(axiom*);
@@ -64,6 +67,7 @@ freevars* free_axiom_variables(const axiom*, freevars*);
 
 void print_fol_axiom(const axiom*, FILE*);
 void print_dot_axiom(const axiom*, FILE*);
+void print_coq_axiom(const axiom*, FILE*);
 
 void print_geolog_axiom(const axiom*, FILE*);
 

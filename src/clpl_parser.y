@@ -104,7 +104,7 @@
 %type <axiom> axiom
 %type <axiom> axiomw
 %type <axiom> domain_line
-
+%type <str> axiom_name
 %start theory
 
 
@@ -114,7 +114,7 @@ theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th,
 ;
 dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
 ;
-domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom($3,th))));} // dom(constant).
+domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom(parser_create_constant_term(th, $3),th))));} // dom(constant).
 ;
 theory:   STRING_NEXT {;}
                 | STRING_ENABLED {;}
@@ -151,16 +151,17 @@ theory_line:    axiomw { extend_theory(th, $1); }
                | dynamicline { ; }
                | COMMENT { ; }
 ;
-axmdef:    NAME LPAREN varlist RPAREN {;}
-                      | NAME LPAREN RPAREN {;}
-                      | NAME {;}
-                      | UNDERSCORE {;}
-                      | INTEGER {;}
+axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
+                      | NAME LPAREN RPAREN { $$ = $1;}
+                      | NAME { $$ = $1;}
+;
+axmno:     INTEGER {;}
+| UNDERSCORE {;}
 ;
 predlist:   NAME SLASH INTEGER {;}
            | NAME SLASH INTEGER COMMA predlist {;}
 ;
-axiomw:     axmdef AXIOM_NAME axmdef COLON axiom PERIOD { $$ = $5; }
+axiomw:     axmno AXIOM_NAME axiom_name COLON axiom PERIOD { $$ = set_axiom_name($5,$3) ; }
 ;
 varlist:      VARIABLE { ; }
             |  VARIABLE COMMA varlist { ; }
@@ -179,6 +180,8 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
                           ;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
+| STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom(create_variable($3, th),th); }
+| STRING_DOM LPAREN NAME RPAREN { $$ = create_dom_atom(parser_create_constant_term(th, $3),th); }
            | STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom($3,th); }
            | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
            | NAME {$$ = create_prop_variable($1, th);}

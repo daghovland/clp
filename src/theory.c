@@ -118,16 +118,26 @@ bool test_theory(const theory* t){
   }
   return true;
 }
-
+   
 /**
    Prints a proof in coq format. Not finished.
 **/
-void print_coq_proof(const theory* th, FILE* stream){
+void print_coq_proof_theory(const theory* th, FILE* stream){
+  unsigned int i;
   fprintf(stream, "Section %s.\n\n", th->name);
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
 
   fprintf(stream, "Variable %s : Set.\n", DOMAIN_PREDICATE_NAME);
   fprintf(stream, "Variable goal : Prop.\n");
+
+  for(i = 0; i < th->n_predicates; i++)
+    print_coq_predicate(th->predicates[i], stream);
+
+  print_coq_constants(th, stream);
+  fprintf(stream, "\n");
+
+  for(i = 0; i < th->n_axioms; i++)
+    print_coq_axiom(th->axioms[i], stream);
 
   fprintf(stream, "Theorem %s : goal.\n", th->name);
   fprintf(stream, "Proof.");

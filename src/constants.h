@@ -11,5 +11,6 @@
 #include "theory.h"
 
 const char* parser_new_constant(theory*, const char*);
+void print_coq_constants(const theory*,FILE* stream);
 
 #endif

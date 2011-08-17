@@ -138,6 +138,9 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
   }  
 }
     
+void set_axiom_name(axiom* a, const char* name){
+  a->name = name;
+}
     
 
 /**
@@ -234,13 +237,31 @@ void print_geolog_axiom(const axiom* a, FILE* stream){
   fprintf(stream, " .");
 }
 
+void print_coq_axiom(const axiom* a, FILE* stream){
+  fprintf(stream, "Hypothesis %s : ", a->name);
+    freevars* f = a->lhs->bound_vars;
+  if(f->n_vars > 0){
+    fprintf(stream, "forall ");
+    for(i = 0; i < f->n_vars; i++)
+      fprintf(stream, "%s ", f->vars[i]->name);
+    fprintf(stream, ": dom,\n");
+  }
+  if(a->type != fact){
+    print_coq_conjunction(a->lhs, stream);
+    fprintf(stream, " -> ");
+  }
+  print_coq_disjunction(a->rhs, stream);
+  fprintf(".\n");
+}
+      
+
 /**
    Returns some properties of the axioms/rules
    A definite axiom/rule has no disjunction / splitting in the consequents/rhs
    An existential axiom/rule has at least one disjunct in the consequent with existentially bound variable(s)
 **/
 bool is_definite(axiom* a){
-  return(a->rhs->n_args > 1);
+  return(a->rhs->n_args <= 1);
 }
 bool is_existential(axiom* a){
   return(a->is_existential);

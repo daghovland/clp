@@ -39,6 +39,15 @@ const predicate* parser_new_predicate(theory* th, const char* new, size_t arity)
   return p;
 }
 
+
+void print_coq_predicate(const predicate* p, FILE* stream){
+  unsigned int j;
+  fprintf(stream, "Variable %s : ", p->name);
+  for(j = 0; j < p->arity; p++)
+    fprintf(stream, "dom -> ");
+  fprintf(stream, "Prop.\n");
+}
+
 bool test_predicate(const predicate* p){
   assert(strlen(p->name) > 0);
   return true;

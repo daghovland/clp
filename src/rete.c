@@ -189,24 +189,33 @@ void create_rule_node(rete_net* net, rete_node* parent, const axiom* ax, const f
 /**
    The pointer from the parent must be removed to prevent 
    duplicate traversal of the tree
+   
+   If this is a beta root, delete it
 **/
 void remove_parent_pointer(rete_node* node, rete_node* parent){
   unsigned int i;
-  for(i =  0; i < parent->n_children; i++)
+  for(i =  0; i < parent->n_children; i++) {
     if(parent->children[i] == node){
       parent->children[i] = NULL;
       return;
     }
+  }
+  if(parent->type == beta_root){
+    assert(parent->n_children == 1);
+    free(node->children);
+    free(node);
+  }
   assert(false);
 }
 
 
 void delete_rete_node(rete_node* node){
   unsigned int i;
+  assert(node->type != beta_root);
   if(node->left_parent != NULL)
     remove_parent_pointer(node, (rete_node*) node->left_parent);
   else 
-    assert(node->type == selector || node->type == beta_root);
+    assert(node->type == selector);
   if(node->type == beta_and || node->type == beta_not)
     remove_parent_pointer(node, (rete_node*) node->val.beta.right_parent);
   for(i = 0; i < node->n_children; i++){

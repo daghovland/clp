@@ -214,7 +214,7 @@ freevars* free_conj_variables(const conjunction * con, freevars* vars){
 /** 
     Generic printing function
 **/
-void print_disj(const disjunction *dis, FILE* stream, char* or_sign, bool print_bindings, void (*print_conj)(const conjunction*, FILE*)){
+void print_disj(const disjunction *dis, FILE* stream, char* or_sign, char* exist_sign, bool print_bindings, void (*print_conj)(const conjunction*, FILE*)){
   int i, j;
   bool print_parentheses;
   if(dis->n_args > 1 && print_bindings)
@@ -225,13 +225,13 @@ void print_disj(const disjunction *dis, FILE* stream, char* or_sign, bool print_
       fprintf(stream, "%s", or_sign);
     if(con->bound_vars->n_vars > 0){
       if(print_bindings){
-	fprintf(stream, " ∃");
+	fprintf(stream, exist_sign);
 	for(j = 0; j < con->bound_vars->n_vars; j++){
 	  fprintf(stream, "%s", con->bound_vars->vars[j]->name);
 	  if(j+1 < con->bound_vars->n_vars)
-	    fprintf(stream, ",");
+	    fprintf(stream, ", ");
 	}
-	fprintf(stream, ":");
+	fprintf(stream, ": ");
       }
     }
     print_parentheses =  print_bindings && 
@@ -268,7 +268,7 @@ void print_fol_conj(const conjunction *con, FILE* stream){
 }
 
 void print_fol_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, " \\/ ", true, print_fol_conj);
+  print_disj(dis, stream, " \\/ "," ∃",  true, print_fol_conj);
 }
 
 void print_dot_conj(const conjunction *con, FILE* stream){
@@ -276,9 +276,32 @@ void print_dot_conj(const conjunction *con, FILE* stream){
 }
 
 void print_dot_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, " ∨ ", true, print_dot_conj);
+  print_disj(dis, stream, " ∨ ", " ∃", true, print_dot_conj);
 }
 
+void print_coq_conj(const conjunction* con, FILE* stream){
+  print_disj(con, stream, " /\\ ", print_coq_atom);
+}
+void print_coq_disj(const disjunction* dis, FILE* stream){
+  freevars* ev;
+  unsigned int i, j;
+  for(i = 0; i < dis->n_args; i++){
+    conjunction* arg = dis->args[i];
+    if(arg->n_args > 0 || args->is_existential)
+      fprintf(stream, "(");
+    if(arg->is_existential){
+      fprintf(stream, "exists ");
+      ev = arg->bound_vars;
+      for(j = 0; j < ev->n_vars; j++)
+	fprintf(stream, "%s ", ev->vars[i]->name);
+      fprintf(stream, ", ");
+    }
+    print_coq_conj(arg, stream);
+    if(arg->n_args > 0 || args->is_existential)
+      fprintf(stream, ")");
+    if(i < dis->n_args - 1)
+      fprintf(stream, " \\/ ");
+}
 /**
    Print in geolog input format
 **/

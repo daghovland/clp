@@ -33,6 +33,6 @@ typedef struct predicate_t {
 } predicate;
 
 bool test_predicate(const predicate*);
-
+void print_coq_predicate(const predicate*, FILE*);
 
 #endif
