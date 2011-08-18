@@ -56,7 +56,8 @@ theory* create_theory(void);
 void extend_theory(theory*, axiom*);
 void set_theory_name(theory*, char*);
 
-void print_coq_proof(const theory*, FILE*);
+void print_coq_proof_intro(const theory*, FILE*);
+void print_coq_proof_ending(const theory*, FILE*);
 
 /* In atom_and_term.c */
 term* create_variable(const char*, theory*);

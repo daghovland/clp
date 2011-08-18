@@ -42,7 +42,7 @@ bool lazy;
 
 extern char * optarg;
 extern int optind, optopt, opterr;
-bool verbose, debug, proof, dot, text, pdf, existdom, factset;
+bool verbose, debug, proof, dot, text, pdf, existdom, factset, coq;
 strategy strat;
 unsigned long maxsteps;
 typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
@@ -51,7 +51,7 @@ input_format_type input_format;
 int file_prover(FILE* f, const char* prefix){
   theory* th;
   rete_net* net;
-  FILE* fp;
+  FILE *fp, *coq_proof_file;
   int retval;
   unsigned int steps;
   void * mem_break = sbrk(0);
@@ -97,6 +97,20 @@ int file_prover(FILE* f, const char* prefix){
   if(!factset){
     end_proof_dot_writer(prefix);
   }
+  if(coq && retval == EXIT_SUCCESS){
+    char* coq_file_name = malloc(strlen(net->th->name) + 5);
+    sprintf(coq_file_name, "%s.v", net->th->name);
+    
+    coq_proof_file = fopen(coq_file_name, "w");
+    if(coq_proof_file == NULL)
+      perror("clp, main.c, file_prover, Could not open file for coq proof");
+    else {
+      print_coq_proof_intro(net->th, coq_proof_file);
+      print_coq_proof_ending(net->th, coq_proof_file);
+      fclose(coq_proof_file);
+    }
+  }
+
   delete_rete_net(net);
     
   delete_theory(th);
@@ -120,6 +134,7 @@ void print_help(char* exec){
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
   printf("\t-l, --lazy\t\tUses the lazy version of RETE.\n");
+  printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory. The file has postfix 'v', and prefix equal to the value of the 'name' predicate in the theory file. If the file exists it is overwritten.\n");
   printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not finished.\n");
   printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
   printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
@@ -146,8 +161,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {"CLpl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdaecCGlm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {"CLpl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdaecCGlqm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -160,6 +175,7 @@ int main(int argc, char *argv[]){
   existdom = false;
   factset = false;
   lazy = false;
+  coq = false;
   input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
@@ -174,6 +190,9 @@ int main(int argc, char *argv[]){
       break;
     case 'c':
       strat = clpl_strategy;
+      break;
+    case 'q':
+      coq = true;
       break;
     case 'f':
       factset = true;

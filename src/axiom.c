@@ -49,6 +49,7 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   for(i = 0; i < rhs->n_args; i++){
     remove_freevars(rhs->args[i]->bound_vars, lhs->free_vars);
     remove_freevars(rhs->args[i]->free_vars, rhs->args[i]->bound_vars);
+    rhs->args[i]->is_existential = rhs->args[i]->bound_vars->n_vars > 0;
     rhs->free_vars = plus_freevars(rhs->free_vars, rhs->args[i]->free_vars);
     if(rhs->args[i]->bound_vars->n_vars > 0){
       ret_val->is_existential = true;
@@ -238,8 +239,9 @@ void print_geolog_axiom(const axiom* a, FILE* stream){
 }
 
 void print_coq_axiom(const axiom* a, FILE* stream){
+  unsigned int i;
   fprintf(stream, "Hypothesis %s : ", a->name);
-    freevars* f = a->lhs->bound_vars;
+    freevars* f = a->lhs->free_vars;
   if(f->n_vars > 0){
     fprintf(stream, "forall ");
     for(i = 0; i < f->n_vars; i++)
@@ -247,11 +249,14 @@ void print_coq_axiom(const axiom* a, FILE* stream){
     fprintf(stream, ": dom,\n");
   }
   if(a->type != fact){
-    print_coq_conjunction(a->lhs, stream);
-    fprintf(stream, " -> ");
+    if(print_coq_conj(a->lhs, stream))
+      fprintf(stream, " -> ");
   }
-  print_coq_disjunction(a->rhs, stream);
-  fprintf(".\n");
+  if(a->rhs->n_args == 0)
+    fprintf(stream, "goal");
+  else
+    print_coq_disj(a->rhs, stream);
+  fprintf(stream, ".\n");
 }
       
 

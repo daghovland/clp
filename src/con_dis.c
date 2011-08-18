@@ -225,7 +225,7 @@ void print_disj(const disjunction *dis, FILE* stream, char* or_sign, char* exist
       fprintf(stream, "%s", or_sign);
     if(con->bound_vars->n_vars > 0){
       if(print_bindings){
-	fprintf(stream, exist_sign);
+	fprintf(stream, "%s",  exist_sign);
 	for(j = 0; j < con->bound_vars->n_vars; j++){
 	  fprintf(stream, "%s", con->bound_vars->vars[j]->name);
 	  if(j+1 < con->bound_vars->n_vars)
@@ -279,15 +279,30 @@ void print_dot_disj(const disjunction *dis, FILE* stream){
   print_disj(dis, stream, " ∨ ", " ∃", true, print_dot_conj);
 }
 
-void print_coq_conj(const conjunction* con, FILE* stream){
-  print_disj(con, stream, " /\\ ", print_coq_atom);
+/**
+   Outputs in coq format. The domain predicate must then not be printed
+   Returns true iff there were some non-domain atoms. 
+   There is output iff return value is true.
+**/
+bool print_coq_conj(const conjunction* con, FILE* stream){
+  unsigned int i;
+  bool has_printed_one = false;
+  for(i = 0; i < con->n_args; i++){
+    if(!con->args[i]->pred->is_domain){
+      if(has_printed_one)
+	fprintf(stream, " /\\ ");
+      print_coq_atom(con->args[i], stream);
+      has_printed_one = true;
+    }
+  }
+  return has_printed_one;
 }
 void print_coq_disj(const disjunction* dis, FILE* stream){
   freevars* ev;
   unsigned int i, j;
   for(i = 0; i < dis->n_args; i++){
     conjunction* arg = dis->args[i];
-    if(arg->n_args > 0 || args->is_existential)
+    if(arg->n_args > 0 || arg->is_existential)
       fprintf(stream, "(");
     if(arg->is_existential){
       fprintf(stream, "exists ");
@@ -296,17 +311,19 @@ void print_coq_disj(const disjunction* dis, FILE* stream){
 	fprintf(stream, "%s ", ev->vars[i]->name);
       fprintf(stream, ", ");
     }
-    print_coq_conj(arg, stream);
-    if(arg->n_args > 0 || args->is_existential)
+    if(!print_coq_conj(arg, stream))
+      fprintf(stderr, "con_dis.c: print_coq_disj: Warning: A disjunct in an rhs contained only domain predicates. This might not make sense.");
+    if(arg->n_args > 0 || arg->is_existential)
       fprintf(stream, ")");
     if(i < dis->n_args - 1)
       fprintf(stream, " \\/ ");
-}
+  }
+} 
 /**
    Print in geolog input format
 **/
 void print_geolog_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, ";", false, print_geolog_conj);
+  print_disj(dis, stream, ";", " ∃", false, print_geolog_conj);
 }
 
 void print_geolog_conj(const conjunction *con, FILE* stream){

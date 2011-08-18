@@ -122,7 +122,7 @@ bool test_theory(const theory* t){
 /**
    Prints a proof in coq format. Not finished.
 **/
-void print_coq_proof_theory(const theory* th, FILE* stream){
+void print_coq_proof_intro(const theory* th, FILE* stream){
   unsigned int i;
   fprintf(stream, "Section %s.\n\n", th->name);
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
@@ -130,18 +130,26 @@ void print_coq_proof_theory(const theory* th, FILE* stream){
   fprintf(stream, "Variable %s : Set.\n", DOMAIN_PREDICATE_NAME);
   fprintf(stream, "Variable goal : Prop.\n");
 
-  for(i = 0; i < th->n_predicates; i++)
-    print_coq_predicate(th->predicates[i], stream);
-
+  for(i = 0; i < th->n_predicates; i++){
+    if((!th->predicates[i]->is_domain))
+      print_coq_predicate(th->predicates[i], stream);
+  }
   print_coq_constants(th, stream);
   fprintf(stream, "\n");
-
-  for(i = 0; i < th->n_axioms; i++)
-    print_coq_axiom(th->axioms[i], stream);
-
+  
+  for(i = 0; i < th->n_axioms; i++){
+    axiom* a = th->axioms[i];
+    if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[0]->pred->is_domain))
+      print_coq_axiom(th->axioms[i], stream);
+  }
   fprintf(stream, "Theorem %s : goal.\n", th->name);
-  fprintf(stream, "Proof.");
+  fprintf(stream, "Proof.\n");
+}
 
+/**
+   Prints a proof in coq format. Not finished.
+**/
+void print_coq_proof_ending(const theory* th, FILE* stream){
   fprintf(stream, "Qed.\n\n");
   fprintf(stream, "End %s.\n", th->name);
 }

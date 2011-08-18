@@ -161,7 +161,7 @@ axmno:     INTEGER {;}
 predlist:   NAME SLASH INTEGER {;}
            | NAME SLASH INTEGER COMMA predlist {;}
 ;
-axiomw:     axmno AXIOM_NAME axiom_name COLON axiom PERIOD { $$ = set_axiom_name($5,$3) ; }
+axiomw:     axmno AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 ;
 varlist:      VARIABLE { ; }
             |  VARIABLE COMMA varlist { ; }

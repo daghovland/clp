@@ -28,8 +28,10 @@ const char* parser_new_constant(theory* th, const char* new){
 
 void print_coq_constants(const theory* th, FILE* stream){
   unsigned int i;
-  fprintf(stream, "Variables ");
-  for(i = 0; i < th->n_constants; i++)
-    fprintf(stream, "%s ", th->constants[i]);
-  fprintf(stream, ": dom\n");
+  if(th->n_constants > 0){
+    fprintf(stream, "Variables ");
+    for(i = 0; i < th->n_constants; i++)
+      fprintf(stream, "%s ", th->constants[i]);
+    fprintf(stream, ": dom.\n");
+  }
 }

@@ -43,7 +43,7 @@ const predicate* parser_new_predicate(theory* th, const char* new, size_t arity)
 void print_coq_predicate(const predicate* p, FILE* stream){
   unsigned int j;
   fprintf(stream, "Variable %s : ", p->name);
-  for(j = 0; j < p->arity; p++)
+  for(j = 0; j < p->arity; j++)
     fprintf(stream, "dom -> ");
   fprintf(stream, "Prop.\n");
 }

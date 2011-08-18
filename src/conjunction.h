@@ -30,6 +30,7 @@ typedef struct conjunction_t {
   unsigned int n_args;
   size_t size_args;
   bool has_domain_pred;
+  bool is_existential;
   freevars *bound_vars;
   freevars *free_vars;
 } conjunction;
@@ -45,7 +46,7 @@ bool test_conjunction(const conjunction*);
 
 void print_fol_conj(const conjunction*, FILE*);
 void print_dot_conj(const conjunction*, FILE*);
-void print_coq_conj(const conjunction*, FILE*);
+bool print_coq_conj(const conjunction*, FILE*);
 void print_geolog_conj(const conjunction*, FILE*);
 
 #endif
