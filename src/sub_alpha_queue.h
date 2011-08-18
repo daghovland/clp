@@ -43,9 +43,6 @@
 **/
 typedef struct sub_alpha_queue_t {
   struct sub_alpha_queue_t * next;
-#ifndef HAVE_PTHREAD
-  struct sub_alpha_queue_t * prev;
-#endif
   substitution * sub;
   rete_node * alpha_node;
   const atom * fact;

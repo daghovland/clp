@@ -308,7 +308,7 @@ void print_coq_disj(const disjunction* dis, FILE* stream){
       fprintf(stream, "exists ");
       ev = arg->bound_vars;
       for(j = 0; j < ev->n_vars; j++)
-	fprintf(stream, "%s ", ev->vars[i]->name);
+	fprintf(stream, "%s ", ev->vars[j]->name);
       fprintf(stream, ", ");
     }
     if(!print_coq_conj(arg, stream))

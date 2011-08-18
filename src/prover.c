@@ -124,17 +124,19 @@ bool run_prover(rete_net_state* state, bool factset){
     
     assert(test_rule_instance(next, state));
     
-    if(!inc_proof_step_counter(state)){
-      printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
-      free(next);
-      return false;
-    }
-    
-    write_proof_node(state, next);
-    
-    if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-      free(next);
-      return true;
+    if(next->rule->type != fact || next->rule->rhs->n_args != 1){
+      if(!inc_proof_step_counter(state)){
+	printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
+	free(next);
+	return false;
+      }
+      
+      write_proof_node(state, next);
+      
+      if(next->rule->type == goal || next->rule->rhs->n_args == 0){
+	free(next);
+	return true;
+      }
     }
     if(state->net->existdom && next->rule->is_existential){
       // This is inspired by Hans de Nivelle's treatment of existential quantifiers.
@@ -153,17 +155,17 @@ bool run_prover(rete_net_state* state, bool factset){
 	iters[i] = get_domain_iter(state);
 	created_fresh_constant[i] = false;
       }
-
+      
       assert(n_exist_vars > 0);
-
+      
       if(!domain_iter_has_next(state, &iters[0])){
 	terms[0] = get_fresh_constant(state,  next->rule->exist_vars->vars[0]);
 	created_fresh_constant[0] = true;
       }
-	
+      
       for(i = 0; i < next->rule->exist_vars->n_vars; i++)
 	terms[i] = domain_iter_get_next(state, & iters[i]);
-
+      
       while(!finished){
 	next->substitution = copy_substitution(orig_sub);
 	for(i = next->rule->exist_vars->n_vars - 1; i >= 0; i--){
@@ -204,7 +206,8 @@ bool run_prover(rete_net_state* state, bool factset){
 	// free(next);
 	return retval;
       } else {
-	write_proof_edge(state, state);
+	if(next->rule->type != fact)
+	  write_proof_edge(state, state);
 	insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, factset);
       }
     } // end if existential rule

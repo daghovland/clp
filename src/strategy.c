@@ -88,7 +88,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
 	  min_weight = weight;
 	  lightest_rule = i;
 	}
-	assert(min_weight <  2 * get_global_step_no(state) * (1 +  RAND_RULE_WEIGHT));
+	assert(min_weight <  2 * (get_global_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT));
       } // end not definite rule
     } // end if rule queue not empty
   } // end for all axioms

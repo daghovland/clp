@@ -430,12 +430,16 @@ void print_dot_rule_queue(const rule_queue* rq, FILE* f){
    
 
 void print_dot_rule_instance(const rule_instance *ri, FILE* f){
+  fprintf(f, " %s (", ri->rule->name); 
   print_dot_axiom(ri->rule, f);
+  fprintf(f, ") ");
   print_substitution(ri->substitution, f);
 }
 
 void print_rule_instance(const rule_instance *ri, FILE* f){
+  fprintf(f, " %s (", ri->rule->name); 
   print_fol_axiom(ri->rule, f);
+  fprintf(f, ") ");
   print_substitution(ri->substitution, f);
   if(ri->rule->is_existential)
     fprintf(f, " - existential");

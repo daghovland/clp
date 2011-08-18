@@ -73,9 +73,11 @@ axiom* create_fact(disjunction *rhs){
   for(i = 0; i < rhs->n_args; i++){
     reset_freevars(rhs->args[i]->free_vars);
     if(rhs->args[i]->bound_vars->n_vars > 0){
+      rhs->args[i]->is_existential = true;
       ret_val->is_existential = true;
       ret_val->exist_vars = plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
-    }	  
+    } else 
+      rhs->args[i]->is_existential = false;
   }
   return ret_val;
 }
@@ -241,7 +243,7 @@ void print_geolog_axiom(const axiom* a, FILE* stream){
 void print_coq_axiom(const axiom* a, FILE* stream){
   unsigned int i;
   fprintf(stream, "Hypothesis %s : ", a->name);
-    freevars* f = a->lhs->free_vars;
+  freevars* f = a->lhs->free_vars;
   if(f->n_vars > 0){
     fprintf(stream, "forall ");
     for(i = 0; i < f->n_vars; i++)

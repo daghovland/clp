@@ -57,7 +57,6 @@ bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
   (*sub_list_ptr)->alpha_node = alpha_node;
   (*sub_list_ptr)->next = sub_list;
   (*sub_list_ptr)->is_splitting_point = false;
-  (*sub_list_ptr)->prev = NULL;
 
   assert(test_substitution(a));
   
@@ -83,7 +82,7 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
     return;
     }
   */
-  while(list != NULL && ( limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]) ){
+  while(list != NULL && list != limit && ( limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]) ){
     assert(limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]);
     assert(list != NULL);
     sub_alpha_queue* next = list->next;
@@ -108,25 +107,25 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
 
 bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
   sub_alpha_queue * sub_list = state->sub_alpha_queues[axiom_no];
+  sub_alpha_queue * sub_list_root = state->sub_alpha_queue_roots[axiom_no];
   if(state->axiom_inst_queue[axiom_no]->n_queue > 0)
     return true;
 
-  while(sub_list != NULL){
-    insert_rete_alpha_fact_children(state, sub_list->alpha_node, sub_list->fact, copy_substitution(sub_list->sub), true);
+  while(sub_list != sub_list_root && sub_list != NULL){
+    sub_alpha_queue* new_root;
 
-    assert(sub_list->prev == NULL);
+    for( new_root = sub_list; new_root->next != sub_list_root; new_root = new_root->next)
+      ;
+    
+    insert_rete_alpha_fact_children(state, 
+				    new_root->alpha_node, 
+				    new_root->fact, 
+				    copy_substitution(new_root->sub), 
+				    true);
 
-    state->sub_alpha_queues[axiom_no] = sub_list->next;
-      
-    if(! sub_list->is_splitting_point){
-      delete_substitution(sub_list->sub);
-      free(sub_list);
-    } else {
-      if(sub_list->next != NULL)
-	sub_list->next->is_splitting_point = true;
-    }
-
-    sub_list = state->sub_alpha_queues[axiom_no];
+    state->sub_alpha_queue_roots[axiom_no] = new_root;
+    
+    sub_list_root = new_root; 
 
     if(state->axiom_inst_queue[axiom_no]->n_queue > 0)
       return true;

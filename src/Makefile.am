@@ -25,7 +25,7 @@ check_clp.sh:
 	echo "./clpdebug -l $(srcdir)/anl.in" >> check_clp.sh
 	echo "./clpdebug -Gm 60 $(srcdir)/anl.gl" >> check_clp.sh
 	echo "./clpdebug -Gm 60 $(srcdir)/anl.gl" >> check_clp.sh
-	echo "./clpdebug -c $(srcdir)/anc.in" >> check_clp.sh
+	echo "./clpdebug -cq $(srcdir)/anc.in" >> check_clp.sh
 	echo "./clpdebug -l $(srcdir)/anc.in" >> check_clp.sh
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS)

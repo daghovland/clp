@@ -137,7 +137,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
 	  } else 
 	  delete_substitution(sub);
-      } else // right parent {
+      } else // right parent 
 	if(insert_substitution(state, 
 			       node->val.beta.a_store_no, 
 			       sub, node->free_vars
