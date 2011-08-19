@@ -114,6 +114,7 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
   while(sub_list != sub_list_root && sub_list != NULL){
     sub_alpha_queue* new_root;
 
+    // TODO: This might be a performance hit if the queues become very long. 
     for( new_root = sub_list; new_root->next != sub_list_root; new_root = new_root->next)
       ;
     
@@ -133,3 +134,30 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
   return false;
 }
 
+/**
+   Necessary for the efficiency of the lazy version of rete
+**/
+bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state){
+  return(state->axiom_inst_queue[axiom_no]->n_queue > 0 || state->sub_alpha_queues[axiom_no] != state->sub_alpha_queue_roots[axiom_no]);
+}
+
+/**
+   In the lazy version of rete, we calculuate the maximum age of any instance of a rule by taking either the oldest rule instance already in the queue, 
+   or if the queue is empty, the oldest substitution waiting to be inserted. 
+
+   This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
+**/
+unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state){
+  if(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+    rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
+    return ri->substitution->timestamps[0];
+  } else {
+    sub_alpha_queue *new_root, * root;
+    root = state->sub_alpha_queue_roots[axiom_no];
+    assert(state->sub_alpha_queues[axiom_no] != root);
+    // TODO: This might be a performance hit if the queues become very long. 
+    for( new_root = state->sub_alpha_queues[axiom_no]; new_root->next != root; new_root = new_root->next)
+      ;
+    return new_root->sub->timestamps[0];
+  }
+}

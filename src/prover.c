@@ -405,12 +405,12 @@ unsigned int prover(const rete_net* rete, bool factset){
 #endif
   srand(1000);
   for(i=0; i < th->n_axioms; i++){
-    if(th->axioms[i]->type == fact){
+    if(th->axioms[i]->type == fact && th->axioms[i]->rhs->n_args == 1){
       assert(th->axioms[i]->axiom_no == i);
-      if(factset)
-	insert_rete_net_disj_rule_instance(state, create_rule_instance(th->axioms[i], create_substitution(th, 1)), factset);
-      else
-	add_rule_to_queue(th->axioms[i],  create_substitution(th,1), state);
+      //      if(factset)
+	insert_rete_net_conjunction(state, th->axioms[i]->rhs->args[0], create_substitution(th, 1), factset);
+	//      else
+	//add_rule_to_queue(th->axioms[i],  create_substitution(th,1), state);
     }
   }
   foundproof =  run_prover(state, factset);

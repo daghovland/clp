@@ -128,7 +128,7 @@ void print_help(char* exec){
   printf(" Explanation of options:\n");
   printf("\t-p, --proof\t\tOutput a proof if one is found\n");
   printf("\t-g, --debug \t\tGives (lots of) extra output useful for debugging or understanding the prover\n");
-  printf("\t-d, --dot\t\tGives output of proof in dot format\n");
+  printf("\t-o, --dot\t\tGives output of proof in dot format\n");
   printf("\t-a, --pdf\t\tGives output of proof in adobe pdf format\n");
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
@@ -136,10 +136,10 @@ void print_help(char* exec){
   printf("\t-l, --lazy\t\tUses the lazy version of RETE.\n");
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory. The file has postfix 'v', and prefix equal to the value of the 'name' predicate in the theory file. If the file exists it is overwritten.\n");
   printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not finished.\n");
-  printf("\t-c, --clpl\t\tTries to emulate the strategy used by the prolog program CL.pl. The strategy is not exactly the same. \n");
+  printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. Without --lazy, it also tries to emulate the actual strategy used by CL.pl.\n");
   printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
-  printf("\t-C, --CLpl\t\tParses the input file as in CL.pl. This is the default.\n");
+  printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
@@ -161,8 +161,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'd'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"clpl", no_argument, NULL, 'c'}, {"lazy", no_argument, NULL, 'l'}, {"CLpl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdaecCGlqm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'o'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"depth-first", no_argument, NULL, 'd'}, {"lazy", no_argument, NULL, 'l'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdoaecCGlqm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]){
     case 'p':
       proof = true;
       break;
-    case 'c':
+    case 'd':
       strat = clpl_strategy;
       break;
     case 'q':
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
     case 'g':
       debug = true;
       break;
-    case 'd':
+    case 'o':
       dot = true;
       break;
     case 'l':

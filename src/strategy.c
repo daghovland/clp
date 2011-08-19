@@ -51,27 +51,30 @@ rule_instance* normal_next_instance(rete_net_state* state){
   bool has_definite_non_splitting = false;
   bool has_non_splitting = false;
   bool has_next_rule = false;
+  bool may_have_next_rule = false;
   size_t definite_non_splitting_rule, definite_rule, non_splitting_rule;
   size_t lightest_rule = th->n_axioms;
   unsigned int min_weight = 2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT);
-  
+  unsigned int axiom_weights[th->n_axioms];
+  unsigned int max_weight = 2 * (get_global_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT);
+  rule_instance* retval;
 
-  
   for(i = 0; i < th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
-    size_t rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
     size_t axiom_no = rule->axiom_no;
- 
-
-    if(axiom_has_new_instance(axiom_no, state)){
-      rule_instance* ri = peek_axiom_rule_queue(state, i);
-      unsigned int weight = (ri->timestamp + rule_previously_applied) * (1 + rand() / RAND_DIV);
-      has_next_rule = true;
-
-      if(rule->type == goal || rule->type == fact)
+    assert(axiom_no == i);
+    if(rule->type == fact && rule->rhs->n_args == 1)
+      continue;
+    if(axiom_may_have_new_instance(axiom_no, state)){
+      unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
+      axiom_weights[axiom_no] = (rule_queue_possible_age(axiom_no, state) + rule_previously_applied) * (1 + rand() / RAND_DIV);
+      
+      may_have_next_rule = true;
+      
+      if( (rule->type == goal || rule->type == fact) && axiom_has_new_instance(axiom_no, state))
 	return pop_axiom_rule_queue(state, axiom_no);
-
-      if(!rule->is_existential && !rule->has_domain_pred){
+      
+      if(!rule->is_existential && !rule->has_domain_pred && axiom_has_new_instance(axiom_no, state)){
 	has_definite = true;
 	definite_rule = axiom_no;
 	if(rule->rhs->n_args == 1){
@@ -82,23 +85,37 @@ rule_instance* normal_next_instance(rete_net_state* state){
 	if(rule->rhs->n_args == 1){
 	  has_non_splitting = true;
 	  non_splitting_rule = axiom_no;
-	  weight /= 20;
+	  axiom_weights[axiom_no] /= 20;
 	}
-	if(weight < min_weight){
-	  min_weight = weight;
-	  lightest_rule = i;
+	if(axiom_weights[axiom_no] < min_weight){
+	  min_weight = axiom_weights[axiom_no];
+	  lightest_rule = axiom_no;
 	}
-	assert(min_weight <  2 * (get_global_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT));
+	assert(min_weight <  max_weight);
       } // end not definite rule
+
     } // end if rule queue not empty
+    else 
+      axiom_weights[axiom_no] = max_weight;
   } // end for all axioms
+
   if(has_definite_non_splitting)
     return pop_axiom_rule_queue(state, definite_non_splitting_rule);
+
   if(has_definite)
-     return pop_axiom_rule_queue(state, definite_rule);
-  if(has_next_rule){
-    assert(min_weight <  2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT));
-    return pop_axiom_rule_queue(state, lightest_rule);
+    return pop_axiom_rule_queue(state, definite_rule);
+
+  while(may_have_next_rule){
+    if(may_have_next_rule && axiom_has_new_instance(lightest_rule, state))
+      return pop_axiom_rule_queue(state, lightest_rule);
+    axiom_weights[lightest_rule] = max_weight;
+    may_have_next_rule = false;
+    for(i = 0; i < th->n_axioms; i++){
+      if(axiom_weights[i] < axiom_weights[lightest_rule]){
+	lightest_rule = i;
+	may_have_next_rule = true;
+      }
+    }
   }
   return NULL;
 }

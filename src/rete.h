@@ -86,6 +86,8 @@ void delete_full_rete_state(rete_net_state* state);
 
 // In sub_alpha_queue.c, called from strategy.c
 bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state);
+bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state);
+unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state);
 
 sub_list_iter* get_state_sub_list_iter(rete_net_state*, size_t);
 
