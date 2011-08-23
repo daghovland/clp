@@ -93,9 +93,9 @@ void set_theory_name(theory *th, char* name){
 /**
    Creates new rete network for the whole theory
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq){
   unsigned int i;
-  rete_net* net = init_rete(th, maxsteps, lazy);
+  rete_net* net = init_rete(th, maxsteps, lazy, coq);
   for(i = 0; i < th->n_axioms; i++)
     create_rete_axiom_node(net, th->axioms[i], i);
   net->th = th;

@@ -32,15 +32,16 @@
 
 #include <errno.h>
 
-extern bool debug, verbose, proof, dot, text, pdf;
+extern bool debug, verbose, proof, dot, text, pdf, coq;
 
 static FILE* dot_fp = NULL;
+static FILE* coq_fp = NULL;
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dot_file_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-static bool file_open;
+static bool file_open, coq_file_open;
 
 #ifdef HAVE_PTHREAD
 /**
@@ -131,6 +132,14 @@ void init_proof_dot_writer(const char* filenameprefix){
     //    atexit(end_proof_dot_writer);
     file_open = true;
     free(dotfilename);
+  }
+  if(coq){
+    char* coqfilename;
+    coqfilename = malloc_tester(strlen(filenameprefix) + 3);
+    sprintf(coqfilename, "%s.v", filenameprefix);
+    coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
+    coq_file_open = true;
+    free(coqfilename);
   }
 }
 

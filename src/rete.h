@@ -56,7 +56,7 @@ void insert_rete_alpha_fact_children(rete_net_state*, const rete_node*, const at
 
 // Creates root of network
 // Initializes the rete_net_state structure
-rete_net* init_rete(const theory*, unsigned long, bool lazy);
+rete_net* init_rete(const theory*, unsigned long, bool lazy, bool coq);
 
 /** 
     Creates a "copy" of a rete net state
@@ -97,7 +97,7 @@ const rete_node* get_const_selector(size_t, const rete_net*);
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
 rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, size_t axiom_no);
 void create_rete_axiom_node(rete_net*, const axiom*, size_t axiom_no);
-rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool);
+rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool coq);
 rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, size_t axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, size_t axiom_no);
 

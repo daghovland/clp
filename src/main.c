@@ -68,7 +68,7 @@ int file_prover(FILE* f, const char* prefix){
   }
 
   assert(test_theory(th));
-  net = create_rete_net(th, maxsteps, existdom, strat, lazy);
+  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq);
 
   if(!factset){  
     if(debug && !factset){

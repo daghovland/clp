@@ -63,6 +63,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->size_constants = 2;
   state->constants = calloc_tester(state->size_constants, sizeof(char*));
   state->n_constants = 0;
+
   return state;
 }
 

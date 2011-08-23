@@ -45,8 +45,11 @@
    the value "store" in a store node is an index to subs in the root. This is to make 
    copying the substitutions easy when splitting into trees
 
-   clpl is true if the commandline option --clpl is given. Leads to rule queues being sorted
-   in the same way they would be by prolog
+   strat is depth-first if the commandline option --depth-first is given. Leads to rule queues being sorted
+   in the same way they would be by prolog in CL.pl
+
+   history is used when printing coq format proofs. 
+   Keeps track of used rule instances.
 **/
 typedef struct rete_net_t {
   size_t n_subs;
@@ -54,7 +57,13 @@ typedef struct rete_net_t {
   const theory* th;
   bool existdom;
   bool lazy;
+  bool coq;
   strategy strat;
+
+  unsigned int n_history;
+  unsigned int size_history;
+  rule_instance ** history;
+
   unsigned long maxsteps;
   rete_node selectors[];
 } rete_net;
@@ -78,6 +87,7 @@ typedef struct rete_net_t {
    step_no is the step number along this branch
 
    old_fact_set is used to print out only the newly inserted facts
+
 **/
 typedef struct rete_net_state_t {
   const char* proof_branch_id;
