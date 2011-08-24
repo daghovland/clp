@@ -126,7 +126,7 @@ bool run_prover(rete_net_state* state, bool factset){
     
     if(next->rule->type != fact || next->rule->rhs->n_args != 1){
       if(!inc_proof_step_counter(state)){
-	printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
+	printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
 	free(next);
 	return false;
       }
@@ -414,7 +414,7 @@ unsigned int prover(const rete_net* rete, bool factset){
     }
   }
   foundproof =  run_prover(state, factset);
-  retval = get_global_step_no(state);
+  retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   if(foundproof)
     return retval;

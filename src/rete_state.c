@@ -51,6 +51,8 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   for(i = 0; i < net->th->n_axioms; i++)
     state->axiom_inst_queue[i] = initialize_queue();
   state->step_no = 0;
+  state->cursteps = 0;
+  state->start_step_no = 0;
   state->global_step_counter = malloc_tester(sizeof(unsigned int));
   * state->global_step_counter = 0;
   state->proof_branch_id = "";
@@ -175,6 +177,9 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   assert(strlen(copy->proof_branch_id) < branch_id_len);
   assert(orig->global_step_counter == copy->global_step_counter);
   split_fact_set(orig->facts);
+
+  copy->start_step_no = orig->cursteps;
+
   return copy;
 }
 
@@ -263,24 +268,33 @@ const term* domain_iter_get_next(rete_net_state* state, domain_iter *iter){
    Registers increase in proof step counter
 
    Returns false if maximum number of steps 
+
+   Also sets s->cursteps to the current step.
+   The latter value is used by proof_writer.c:write_proof_edge for coq proofs
+
+   s->cursteps is also used by get_global_step_no
 **/
 bool inc_proof_step_counter(rete_net_state* s){
 #ifdef __GNUC__
-  unsigned int cursteps = __sync_add_and_fetch(s->global_step_counter, 1);
+  s->cursteps = __sync_add_and_fetch(s->global_step_counter, 1);
 #else
-  unsigned int cursteps = * s->global_step_counter;
+  s->cursteps = * s->global_step_counter;
   (* s->global_step_counter) ++;
 #endif
   s->step_no ++;
-  return (s->net->maxsteps == 0 || cursteps < s->net->maxsteps);
+  return (s->net->maxsteps == 0 || s->cursteps < s->net->maxsteps);
 }
 
 bool proof_steps_limit(rete_net_state* s){
   return (s->net->maxsteps == 0 || (* s->global_step_counter) < s->net->maxsteps);
 }
 
-unsigned int get_global_step_no(const rete_net_state* s){
-  return * s->global_step_counter;
+unsigned int get_current_state_step_no(const rete_net_state* s){
+  return s->cursteps;
+}
+
+unsigned int get_latest_global_step_no(const rete_net_state* s){
+  return * (s->global_step_counter);
 }
 
 /**

@@ -25,6 +25,9 @@
 #include "common.h"
 #include "proof_writer.h"
 #include "rete.h"
+#include "substitution.h"
+
+#include <string.h>
 
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
@@ -32,13 +35,15 @@
 
 #include <errno.h>
 
-extern bool debug, verbose, proof, dot, text, pdf, coq;
+extern bool debug, verbose, proof, dot, text, pdf;
 
 static FILE* dot_fp = NULL;
 static FILE* coq_fp = NULL;
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dot_file_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t history_array_lock = PTHREAD_MUTEX_INITIALIZER;
+history_array_lock
 #endif
 
 static bool file_open, coq_file_open;
@@ -67,7 +72,7 @@ void fp_err(int retval, const char* msg){
 }
 
 /**
-   Wrapper for calls like, system, 
+   Wrapper for calls like, system and fclose
    which return 0 on success
 **/
 void sys_err(int retval, const char* msg){
@@ -87,7 +92,7 @@ FILE* file_err(FILE* retval, const char* msg){
   return retval;
 }
 
-void end_proof_dot_writer(const char* filenameprefix){
+void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
   if(proof || dot || pdf){ 
     char *dotfilename, *pdffilename, *command;
     dotfilename = malloc_tester(strlen(filenameprefix) + 6);
@@ -100,10 +105,7 @@ void end_proof_dot_writer(const char* filenameprefix){
     if(file_open){
       assert(dot_fp != NULL);
       fp_err( fprintf(dot_fp, "\n}\n"), "Could not write proof graph dot info\n");
-      if (fclose(dot_fp) != 0){
-	perror("Could not close dot proof file\n");
-	exit(EXIT_FAILURE);
-      }
+      sys_err( fclose(dot_fp), "Could not close dot proof file\n");
       dot_fp = NULL;
       file_open = false;
     }
@@ -120,9 +122,14 @@ void end_proof_dot_writer(const char* filenameprefix){
     free(dotfilename);
     free(pdffilename);
   } // if proof etc. 
+  if(net->coq){
+    assert(coq_file_open);
+    print_coq_proof_ending(net->th, coq_fp);
+    sys_err( fclose(coq_fp), "Could not close coq .v proof file.");
+  }
 }
 
-void init_proof_dot_writer(const char* filenameprefix){
+void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
   if(proof || dot || pdf){
     char* dotfilename;
     dotfilename = malloc_tester(strlen(filenameprefix) + 5);
@@ -133,12 +140,23 @@ void init_proof_dot_writer(const char* filenameprefix){
     file_open = true;
     free(dotfilename);
   }
-  if(coq){
-    char* coqfilename;
+  if(net->coq){
+    char * coqfilename, * period_pos;
+    unsigned int i;
     coqfilename = malloc_tester(strlen(filenameprefix) + 3);
-    sprintf(coqfilename, "%s.v", filenameprefix);
+
+    for(i = 0; filenameprefix[i] != '.' && filenameprefix[i] != '\0'; i++)
+      coqfilename[i] = filenameprefix[i];
+    coqfilename[i] = '\0';
+
+    assert(i == strlen(coqfilename));
+
+    coqfilename = strcat(coqfilename, ".v");
+    printf("Writing coq format proof to file: \"%s\".\n", coqfilename);
+
     coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
     coq_file_open = true;
+    print_coq_proof_intro(net->th, coq_fp);
     free(coqfilename);
   }
 }
@@ -160,7 +178,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
       fp_err( fprintf(dot_fp, "\n n%ss%i [label=\"%i",  
 		      s->proof_branch_id,
 		      s->step_no, 
-		      get_global_step_no(s)
+		      get_current_state_step_no(s)
 		      ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT
       fp_err( fprintf(dot_fp, "(Branch:%s:%i)", s->proof_branch_id, s->step_no), "Could not write proof node dot info\n");
@@ -171,13 +189,13 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
     } // file open
   } // proof etc. 
   if( verbose || debug){
-    printf("In step: %i applied: ", get_global_step_no(s));
+    printf("In step: %i applied: ", get_current_state_step_no(s));
     print_rule_instance(ri, stdout);    
     printf("\n");
   } // proof etc. 
 
 #ifdef RETE_STATE_DEBUG_TXT
-  printf("\nRule Queues in step: %i: \n", get_global_step_no(s));
+  printf("\nRule Queues in step: %i: \n", get_current_state_step_no(s));
   for(i = 0; i < s->net->th->n_axioms; i++){
     if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first)
       print_rule_queue(s->axiom_inst_queue[i], stdout);
@@ -194,11 +212,11 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
       print_dot_rule_instance(ri, dot_fp);
       fp_err( fprintf(dot_fp, "\"] \n" ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT
-      sprintf(fname2, "rete_state_%i.dot", get_global_step_no(s));
+      sprintf(fname2, "rete_state_%i.dot", get_current_state_step_no(s));
       fp2 = file_err( fopen(fname2, "w"), "Could not create rete state dot file\n");
       print_dot_rete_state_net(s->net, s, fp2);
       fclose(fp2);
-      sprintf(fname2, "dot -Tpdf rete_state_%i.dot > rete_state_%i.pdf && rm rete_state_%i.dot",  get_global_step_no(s), get_global_step_no(s), get_global_step_no(s));
+      sprintf(fname2, "dot -Tpdf rete_state_%i.dot > rete_state_%i.pdf && rm rete_state_%i.dot",  get_current_state_step_no(s), get_current_state_step_no(s), get_current_state_step_no(s));
       sys_err( system(fname2), "Could not execute dot on rete state file. Maybe dot is not installed?\n");
       
 #endif
@@ -208,6 +226,44 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
     }// file open
   }// proof || dot
 
+  if(s->net->coq){
+    rete_net* net = (rete_net*) s->net;
+#ifdef HAVE_PTHREAD
+    if(s->cursteps >= net->size_history){
+      pt_err(pthread_mutex_lock(&history_array_lock), "Could not get lock on history array.\n");
+#endif
+      if(s->cursteps >= net->size_history - 1){
+	net->size_history *= 2;
+	net->history = realloc_tester(net->history, net->size_history);
+      }
+#ifdef HAVE_PTHREAD
+      pt_err(pthread_mutex_unlock(&history_array_lock), "Could not release lock on history array.\n");
+    } // end second if, avoiding unnecessary locking
+#endif
+    /**
+       Note that s->cursteps is set by inc_proof_step_counter to the current global step that is worked on
+
+       At the moment this leads to a memory crash, so it is disabled
+    **/
+    //net->history[s->cursteps] = ri;
+
+    // Proofs written at the leafs?
+
+
+    // Elimination of disjunction is done on the way.
+    if(ri->rule->rhs->n_args > 1){
+      unsigned int i, n_vars;
+      n_vars = ri->rule->lhs->free_vars->n_vars;
+      if(s->start_step_no > 0){
+	fp_err( fprintf(coq_fp, "(* Proving a branch from step #%i*)\n", s->start_step_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+	fp_err( fprintf(coq_fp, "intro H_or_%i.\n", s->start_step_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      }
+      fp_err( fprintf(coq_fp, "(* Disjunctive split at step #%i*)\n", get_current_state_step_no(s)), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      fp_err( fprintf(coq_fp, "elim ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      print_coq_rule_instance(ri, coq_fp);
+      fp_err( fprintf(coq_fp, ").\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    }
+  }
 }
 
 void write_proof_edge(const rete_net_state* s1, const rete_net_state* s2){

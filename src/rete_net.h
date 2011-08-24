@@ -98,6 +98,8 @@ typedef struct rete_net_state_t {
   bool * is_applied_fact;
   const rete_net* net;
   unsigned int * global_step_counter;
+  unsigned int cursteps;
+  unsigned int start_step_no;
   fresh_const_counter fresh;
   fact_set* facts;
   fact_set* old_fact_set;

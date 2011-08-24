@@ -100,6 +100,7 @@ void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);
 
 void print_substitution(const substitution*, FILE*);
+void print_coq_substitution(const substitution*, FILE*);
 void print_substitution_list(const substitution_list*, FILE*);
 
 #endif

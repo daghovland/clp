@@ -54,9 +54,9 @@ rule_instance* normal_next_instance(rete_net_state* state){
   bool may_have_next_rule = false;
   size_t definite_non_splitting_rule, definite_rule, non_splitting_rule;
   size_t lightest_rule = th->n_axioms;
-  unsigned int min_weight = 2 * get_global_step_no(state) * (1 + RAND_RULE_WEIGHT);
+  unsigned int min_weight = 2 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
-  unsigned int max_weight = 2 * (get_global_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT);
+  unsigned int max_weight = 2 * (get_current_state_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT);
   rule_instance* retval;
 
   for(i = 0; i < th->n_axioms; i++){

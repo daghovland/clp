@@ -264,6 +264,6 @@ void insert_rete_net_fact(rete_net_state* state,
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
   assert(test_atom(fact));
   assert(sel != NULL && sel->val.selector == fact->pred);
-  substitution* a = create_substitution(state->net->th, get_global_step_no(state));
+  substitution* a = create_substitution(state->net->th, get_current_state_step_no(state));
   insert_rete_alpha_fact(state, sel, fact, a, false);
 }

@@ -51,7 +51,7 @@ input_format_type input_format;
 int file_prover(FILE* f, const char* prefix){
   theory* th;
   rete_net* net;
-  FILE *fp, *coq_proof_file;
+  FILE *fp;
   int retval;
   unsigned int steps;
   void * mem_break = sbrk(0);
@@ -84,7 +84,7 @@ int file_prover(FILE* f, const char* prefix){
     }
     assert(test_rete_net(net));
     
-    init_proof_dot_writer(prefix);
+    init_proof_dot_writer(prefix, net);
   }
   steps = prover(net, factset);
   if(steps > 0){
@@ -95,22 +95,9 @@ int file_prover(FILE* f, const char* prefix){
       printf("Could not find proof\n");
   }
   if(!factset){
-    end_proof_dot_writer(prefix);
+    end_proof_dot_writer(prefix, net);
   }
-  if(coq && retval == EXIT_SUCCESS){
-    char* coq_file_name = malloc(strlen(net->th->name) + 5);
-    sprintf(coq_file_name, "%s.v", net->th->name);
-    
-    coq_proof_file = fopen(coq_file_name, "w");
-    if(coq_proof_file == NULL)
-      perror("clp, main.c, file_prover, Could not open file for coq proof");
-    else {
-      print_coq_proof_intro(net->th, coq_proof_file);
-      print_coq_proof_ending(net->th, coq_proof_file);
-      fclose(coq_proof_file);
-    }
-  }
-
+  
   delete_rete_net(net);
     
   delete_theory(th);

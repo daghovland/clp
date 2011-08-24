@@ -28,9 +28,9 @@
 #include "rete.h"
 #include "rule_queue.h"
 
-void init_proof_dot_writer(const char*);
+void init_proof_dot_writer(const char*, const rete_net*);
 void write_proof_node(rete_net_state*, const rule_instance*);
-void end_proof_dot_writer(const char*);
+void end_proof_dot_writer(const char*, const rete_net*);
 void write_proof_state(const rete_net_state*, const rete_net_state*);
 void write_proof_edge(const rete_net_state*, const rete_net_state*);
 #endif

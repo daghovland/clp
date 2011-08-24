@@ -224,7 +224,7 @@ bool test_rule_instance(const rule_instance* ri, const rete_net_state* state){
   assert(ri->substitution != NULL);
   assert(test_substitution(ri->substitution));
   assert(test_axiom(ri->rule, ri->rule->axiom_no));
-  if(ri->timestamp > get_global_step_no(state)){
+  if(ri->timestamp > get_latest_global_step_no(state)){
     fprintf(stderr, "Wrong timestamp %i on rule instance\n", ri->timestamp);
     return false;
   }  
@@ -268,7 +268,7 @@ void add_rule_to_queue(const axiom* rule, substitution* sub, rete_net_state* sta
 
   assert(test_substitution(sub));
   
-  ins->timestamp = get_global_step_no(state);
+  ins->timestamp = get_current_state_step_no(state);
   ins->rule = rule;
   ins->substitution = sub;
 
@@ -301,7 +301,7 @@ rule_instance* pop_youngest_axiom_rule_queue(rete_net_state* state, size_t axiom
   assert(axiom_no < state->net->th->n_axioms);
 
   rq->n_appl ++;
-  rq->previous_appl = get_global_step_no(state);
+  rq->previous_appl = get_current_state_step_no(state);
 
   rule_instance* retval = _pop_youngest_rule_queue(rq);
 
@@ -316,7 +316,7 @@ rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
   assert(rq->n_queue > 0);
 
   rq->n_appl++;
-  rq->previous_appl = get_global_step_no(state);
+  rq->previous_appl = get_current_state_step_no(state);
 
   rule_instance* retval = _pop_rule_queue(rq);
 
@@ -428,6 +428,11 @@ void print_dot_rule_queue(const rule_queue* rq, FILE* f){
   fprintf(f, "}");
 }
    
+void print_coq_rule_instance(const rule_instance *ri, FILE* f){
+  fprintf(f, "%s", ri->rule->name); 
+  print_coq_substitution(ri->substitution, f);
+}
+
 
 void print_dot_rule_instance(const rule_instance *ri, FILE* f){
   fprintf(f, " %s (", ri->rule->name); 

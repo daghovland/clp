@@ -150,7 +150,8 @@ bool insert_substitution(rete_net_state*, size_t, substitution*, const freevars*
 void insert_state_fact_set(rete_net_state*, const atom*);
 
 // in rete_state.c
-unsigned int get_global_step_no(const rete_net_state*);
+unsigned int get_current_state_step_no(const rete_net_state*);
+unsigned int get_latest_global_step_no(const rete_net_state*);
 bool proof_steps_limit(rete_net_state* s);
 void fresh_exist_constants(rete_net_state*, const conjunction*, substitution*);
 #endif

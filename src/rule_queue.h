@@ -69,5 +69,6 @@ void print_rule_queue(const rule_queue*, FILE*);
 void print_dot_rule_queue(const rule_queue*, FILE*);
 void print_rule_instance(const rule_instance*, FILE*);
 void print_dot_rule_instance(const rule_instance*, FILE*);
+void print_coq_rule_instance(const rule_instance*, FILE*);
 
 #endif

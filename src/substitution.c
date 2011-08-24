@@ -418,6 +418,19 @@ void print_substitution(const substitution* sub, FILE* f){
     fprintf(f, "%u, ", sub->timestamps[i]);
 }
 
+void print_coq_substitution(const substitution* sub, FILE* f){
+  size_t i;
+  size_t j = 0;
+  if(sub != NULL){
+    for(i = 0; i < sub->allvars->n_vars; i++){
+      if(sub->values[i] != NULL){
+	fprintf(f, " ");
+	print_coq_term(sub->values[i],f);
+      }
+    }
+  }
+}
+
 void print_substitution_list(const substitution_list* sublist, FILE* f){
   if(sublist != NULL){
     if(sublist->sub != NULL)
