@@ -40,6 +40,7 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = normal;
+  ret_val->name = NULL;
   ret_val->lhs = lhs;
   ret_val->rhs = rhs;
   ret_val->is_existential = false;

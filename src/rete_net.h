@@ -60,7 +60,6 @@ typedef struct rete_net_t {
   bool coq;
   strategy strat;
 
-  unsigned int n_history;
   unsigned int size_history;
   rule_instance ** history;
 

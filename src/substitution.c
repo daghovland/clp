@@ -35,20 +35,30 @@ bool unify_substitution_term_lists(const term_list*, const term_list*, substitut
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t, unsigned int timestamp){
+substitution* create_substitution(const theory* t, signed int timestamp){
   unsigned int i;
   substitution* ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*) );
   ret_val->allvars = t->vars;
   ret_val->n_subs = 0;
 
   ret_val->size_timestamps = t->max_lhs_conjuncts;
-  ret_val->timestamps = calloc_tester(sizeof(unsigned int), ret_val->size_timestamps);
+  ret_val->timestamps = calloc_tester(sizeof(int), ret_val->size_timestamps);
   ret_val->timestamps[0] = timestamp;
   ret_val->n_timestamps = 1;
 
   for(i = 0; i < t->vars->n_vars; i++)
     ret_val->values[i] = NULL;
   return ret_val;
+}
+
+/**
+   Only called from prover() in prover.c, when creating empty substitutions for facts.
+   Inserts a number needed by the coq proof output.
+**/
+substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
+  substitution* sub = create_substitution(t, 1);
+  sub->timestamps[0] = - a->axiom_no;
+  return sub;
 }
 
 substitution* copy_substitution(const substitution* orig){
@@ -67,7 +77,7 @@ substitution* copy_substitution(const substitution* orig){
 }
 
 void delete_substitution(substitution* a){
-  free(a->timestamps);
+  //  free(a->timestamps);
   free(a);
 }
 
@@ -418,16 +428,12 @@ void print_substitution(const substitution* sub, FILE* f){
     fprintf(f, "%u, ", sub->timestamps[i]);
 }
 
-void print_coq_substitution(const substitution* sub, FILE* f){
+void print_coq_substitution(const substitution* sub, const freevars* vars, FILE* f){
   size_t i;
   size_t j = 0;
-  if(sub != NULL){
-    for(i = 0; i < sub->allvars->n_vars; i++){
-      if(sub->values[i] != NULL){
-	fprintf(f, " ");
-	print_coq_term(sub->values[i],f);
-      }
-    }
+  for(i = 0; i < vars->n_vars; i++){
+    fprintf(f, " ");
+    print_coq_term(sub->values[vars->vars[i]->var_no],f);
   }
 }
 

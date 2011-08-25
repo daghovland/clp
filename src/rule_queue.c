@@ -271,6 +271,7 @@ void add_rule_to_queue(const axiom* rule, substitution* sub, rete_net_state* sta
   ins->timestamp = get_current_state_step_no(state);
   ins->rule = rule;
   ins->substitution = sub;
+  ins->used_in_proof = false;
 
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(test_rule_instance(ins, state));
@@ -430,7 +431,7 @@ void print_dot_rule_queue(const rule_queue* rq, FILE* f){
    
 void print_coq_rule_instance(const rule_instance *ri, FILE* f){
   fprintf(f, "%s", ri->rule->name); 
-  print_coq_substitution(ri->substitution, f);
+  print_coq_substitution(ri->substitution, ri->rule->lhs->free_vars, f);
 }
 
 

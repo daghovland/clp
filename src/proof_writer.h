@@ -33,6 +33,9 @@ void write_proof_node(rete_net_state*, const rule_instance*);
 void end_proof_dot_writer(const char*, const rete_net*);
 void write_proof_state(const rete_net_state*, const rete_net_state*);
 void write_proof_edge(const rete_net_state*, const rete_net_state*);
+void write_goal_proof(const rule_instance*, const rete_net_state*, int);
+void write_elim_usage_proof(rete_net_state*, rule_instance*, int);
+void write_disj_proof_start(const rule_instance* ri, int ts, int branch);
 #endif
 
 

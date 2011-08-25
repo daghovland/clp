@@ -33,6 +33,7 @@ typedef struct rule_instance_t {
   unsigned int timestamp;
   const axiom * rule;
   substitution * substitution;
+  bool used_in_proof;
 } rule_instance;
 
 /**

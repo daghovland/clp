@@ -58,6 +58,50 @@ void pthread_error_test(int retno, const char* msg){
 }
 #endif
 
+/**
+   Called at the end of a disjunctive branch. 
+   Checks what rule instanaces were used
+
+**/
+void check_used_rule_instances(rule_instance* ri, rete_net_state* state, int ts){
+  unsigned int i;
+  if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
+    unsigned int n_premises = ri->substitution->n_timestamps;
+    ri->used_in_proof = true;
+    for(i = 0; i < n_premises; i++){
+      int premiss_no = ri->substitution->timestamps[i];
+      if(premiss_no > 0)
+	check_used_rule_instances(state->net->history[premiss_no], state, premiss_no);
+    }
+    write_elim_usage_proof(state, ri, ts);
+  }
+}
+
+/**
+   Create rule instance history. Called from run_prover
+   Used by check_used_rule_instances and coq proof output
+**/
+void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
+  rete_net* net = (rete_net*) s->net;
+  unsigned int step = get_current_state_step_no(s);
+#ifdef HAVE_PTHREAD
+  if(step >= net->size_history){
+    pt_err(pthread_mutex_lock(&history_array_lock), "Could not get lock on history array.\n");
+#endif
+    while(step >= net->size_history - 1){
+      net->size_history *= 2;
+      net->history = realloc_tester(net->history, net->size_history * sizeof(rule_instance*));
+    }
+#ifdef HAVE_PTHREAD
+    pt_err(pthread_mutex_unlock(&history_array_lock), "Could not release lock on history array.\n");
+  } // end second if, avoiding unnecessary locking
+#endif
+  /**
+     Note that s->cursteps is set by inc_proof_step_counter to the current global step that is worked on
+  **/
+  net->history[step] = ri;
+}
+
 bool insert_rete_net_conjunction(rete_net_state* state, 
 				 conjunction* con, 
 				 substitution* sub, 
@@ -100,6 +144,67 @@ bool insert_rete_net_conjunction(rete_net_state* state,
   return true;
 }
 
+// This is inspired by Hans de Nivelle's treatment of existential quantifiers.
+// At the moment it is not working and the commandline option -e should probably not be used
+bool existdom_prover(rete_net_state* state, bool factset, rule_instance* next){
+  unsigned int i, s = 0;
+  bool finished = false;
+  rete_net_state* copy_state;
+  substitution * orig_sub = next->substitution;
+  unsigned int n_exist_vars = next->rule->exist_vars->n_vars;
+  domain_iter iters[n_exist_vars];
+  const term* terms[n_exist_vars];
+  bool created_fresh_constant[n_exist_vars];
+  
+  for(i = 0; i < next->rule->exist_vars->n_vars; i++){
+    iters[i] = get_domain_iter(state);
+    created_fresh_constant[i] = false;
+  }
+  
+  assert(n_exist_vars > 0);
+  
+  if(!domain_iter_has_next(state, &iters[0])){
+    terms[0] = get_fresh_constant(state,  next->rule->exist_vars->vars[0]);
+    created_fresh_constant[0] = true;
+  }
+  
+  for(i = 0; i < next->rule->exist_vars->n_vars; i++)
+    terms[i] = domain_iter_get_next(state, & iters[i]);
+  
+  while(!finished){
+    next->substitution = copy_substitution(orig_sub);
+    for(i = next->rule->exist_vars->n_vars - 1; i >= 0; i--){
+      if(domain_iter_has_next(state,&iters[i])){
+	terms[i] = domain_iter_get_next(state, &iters[i]);
+	break;
+      } else {
+	if(!created_fresh_constant[i]){
+	  terms[i] = get_fresh_constant(state, next->rule->exist_vars->vars[i]);
+	  created_fresh_constant[i] = true;
+	  break;
+	}
+	if(i == 0){
+	  finished = true;
+	  break;
+	}
+	iters[i] = get_domain_iter(state);
+	assert(domain_iter_has_next(state, &iters[i]));
+	terms[i] = domain_iter_get_next(state, &iters[i]);
+      } // end not iterator has next element
+    } // end for iterators
+    for(i = 0; i < next->rule->exist_vars->n_vars; i++)
+      add_substitution(next->substitution, next->rule->exist_vars->vars[i], terms[i]);
+    copy_state = split_rete_state(state, s++);
+    write_proof_edge(state, copy_state);  
+    if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
+      //free(next);
+      return false;
+    }
+    delete_rete_state(copy_state, state);
+  }// end while(!finished)
+  //free(next);
+  return true;
+}
 
 /**
    The main loop in a single-threaded prover
@@ -111,94 +216,33 @@ bool run_prover(rete_net_state* state, bool factset){
   bool empty_queue;
   rule_instance* next;
   while(true){
-    /* For factset based search: ( factset 
-      &&  ( next = factset_next_instance(state->net->th, state->facts), next != NULL) )*/
-
-    
-    if(!factset){
+    if(factset)
+      next = factset_next_instance(state->net->th, state->facts);
+    else
       next = choose_next_instance(state, state->net->strat);
-      if(next == NULL){
-	break;
-      }
-    }
+    if (next == NULL)
+      break;
     
     assert(test_rule_instance(next, state));
     
     if(next->rule->type != fact || next->rule->rhs->n_args != 1){
       if(!inc_proof_step_counter(state)){
 	printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
-	free(next);
+	//free(next);
 	return false;
       }
-      
+      insert_rule_instance_history(state, next);
       write_proof_node(state, next);
       
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	free(next);
+	check_used_rule_instances(next, state, get_current_state_step_no(state));
+	write_goal_proof(next, state,  get_current_state_step_no(state));
+	//free(next);
 	return true;
       }
     }
     if(state->net->existdom && next->rule->is_existential){
-      // This is inspired by Hans de Nivelle's treatment of existential quantifiers.
-      // At the moment it is not working and the commandline option -e should probably not be used
-      
-      unsigned int i, s = 0;
-      bool finished = false;
-      rete_net_state* copy_state;
-      substitution * orig_sub = next->substitution;
-      unsigned int n_exist_vars = next->rule->exist_vars->n_vars;
-      domain_iter iters[n_exist_vars];
-      const term* terms[n_exist_vars];
-      bool created_fresh_constant[n_exist_vars];
-      
-      for(i = 0; i < next->rule->exist_vars->n_vars; i++){
-	iters[i] = get_domain_iter(state);
-	created_fresh_constant[i] = false;
-      }
-      
-      assert(n_exist_vars > 0);
-      
-      if(!domain_iter_has_next(state, &iters[0])){
-	terms[0] = get_fresh_constant(state,  next->rule->exist_vars->vars[0]);
-	created_fresh_constant[0] = true;
-      }
-      
-      for(i = 0; i < next->rule->exist_vars->n_vars; i++)
-	terms[i] = domain_iter_get_next(state, & iters[i]);
-      
-      while(!finished){
-	next->substitution = copy_substitution(orig_sub);
-	for(i = next->rule->exist_vars->n_vars - 1; i >= 0; i--){
-	  if(domain_iter_has_next(state,&iters[i])){
-	    terms[i] = domain_iter_get_next(state, &iters[i]);
-	    break;
-	  } else {
-	    if(!created_fresh_constant[i]){
-	      terms[i] = get_fresh_constant(state, next->rule->exist_vars->vars[i]);
-	      created_fresh_constant[i] = true;
-	      break;
-	    }
-	    if(i == 0){
-	      finished = true;
-	      break;
-	    }
-	    iters[i] = get_domain_iter(state);
-	    assert(domain_iter_has_next(state, &iters[i]));
-	    terms[i] = domain_iter_get_next(state, &iters[i]);
-	  } // end not iterator has next element
-	} // end for iterators
-	for(i = 0; i < next->rule->exist_vars->n_vars; i++)
-	  add_substitution(next->substitution, next->rule->exist_vars->vars[i], terms[i]);
-	copy_state = split_rete_state(state, s++);
-	write_proof_edge(state, copy_state);  
-	if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
-	  free(next);
-	  return false;
-	}
-	delete_rete_state(copy_state, state);
-      }// end while(!finished)
-      free(next);
-      return true;
+      return existdom_prover(state, factset, next);
     } else {
       // if not existential rule or not existdom. This is usually used
       if(next->rule->rhs->n_args > 1){
@@ -214,9 +258,10 @@ bool run_prover(rete_net_state* state, bool factset){
   } // end while queue not empty
   fprintf(stdout, "Found a model of the theory: \n");
   print_fact_set(state->facts, stdout);
-  free(next);
+  //free(next);
   return false;
 }  
+
 
 /**
    The main loop in a multi-threaded prover
@@ -364,6 +409,7 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
   unsigned int i, j;
   const disjunction* dis = ri->rule->rhs;
   bool thread_can_run;
+  unsigned int step = get_current_state_step_no(state);
 
   assert(test_rule_instance(ri, state));
   assert(dis->n_args > 0);
@@ -373,11 +419,17 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
   for(i = 0; i < dis->n_args; i++){
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
+    if(i > 0)
+      write_disj_proof_start(ri, step, i);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
     
     if(!run_prover(copy_states[i], factset)){
       delete_rete_state(copy_states[i], state);
       return false;
+    }
+    if(!ri->used_in_proof){
+      printf("Disjunction in step %i not used, so skipping rest of branches.\n", step);
+      return true;
     }
     delete_rete_state(copy_states[i], state);
   }
@@ -406,11 +458,12 @@ unsigned int prover(const rete_net* rete, bool factset){
   srand(1000);
   for(i=0; i < th->n_axioms; i++){
     if(th->axioms[i]->type == fact && th->axioms[i]->rhs->n_args == 1){
-      assert(th->axioms[i]->axiom_no == i);
-      //      if(factset)
-	insert_rete_net_conjunction(state, th->axioms[i]->rhs->args[0], create_substitution(th, 1), factset);
-	//      else
-	//add_rule_to_queue(th->axioms[i],  create_substitution(th,1), state);
+      const axiom* axm = th->axioms[i];
+      substitution* sub = create_substitution(th, get_current_state_step_no(state));
+      assert(axm->axiom_no == i);
+      insert_rete_net_conjunction(state, axm->rhs->args[0], sub, factset);
+      insert_rule_instance_history(state, create_rule_instance(axm,sub));
+      inc_proof_step_counter(state);
     }
   }
   foundproof =  run_prover(state, factset);
