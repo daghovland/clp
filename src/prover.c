@@ -43,7 +43,7 @@ pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
 #endif
 
 
-bool insert_rete_net_disj_rule_instance(rete_net_state*, const rule_instance*, bool);
+bool insert_rete_net_disj_rule_instance(rete_net_state*, rule_instance*, bool);
 
 #ifdef HAVE_PTHREAD
 /**
@@ -405,7 +405,7 @@ bool mt_insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_ins
    Note that goal rules should never be inserted (This does not make sense, as no facts would be inserted)
 
   **/
-bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instance* ri, bool factset){
+bool insert_rete_net_disj_rule_instance(rete_net_state* state, rule_instance* ri, bool factset){
   unsigned int i, j;
   const disjunction* dis = ri->rule->rhs;
   bool thread_can_run;
@@ -419,24 +419,34 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instan
   for(i = 0; i < dis->n_args; i++){
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
-    if(i > 0)
-      write_disj_proof_start(ri, step, i);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
-    
+    if(i > 0 && state->net->coq)
+      write_disj_proof_start(ri, step, i);
     if(!run_prover(copy_states[i], factset)){
       delete_rete_state(copy_states[i], state);
       return false;
     }
+    if(state->net->coq){
+      while(!is_empty_ri_stack(copy_states[i]->ri_stack))
+	write_premiss_proof(pop_ri_stack(copy_states[i]->ri_stack), copy_states[i], step);
+    }
+    delete_rete_state(copy_states[i], state);
+    
     if(!ri->used_in_proof){
       printf("Disjunction in step %i not used, so skipping rest of branches.\n", step);
       return true;
     }
-    delete_rete_state(copy_states[i], state);
+    // The next line is somewhat experimental, and did not work yet with coq. The proof will then be wrong. 
+    // On the other hand, it does not seem to really lead to shorter proofs, so it seems
+    // usually a proof not using the disjunction is found in the first branch, if it is found at all.
+    if(!state->net->coq)
+      ri->used_in_proof = false;
+
   }
-  //write_proof_edge(state, state);
-  //insert_rete_net_conjunction(state, dis->args[dis->n_args - 1], ri->substitution);
+  if(state->net->coq){
+    write_premiss_proof(ri, state, step);
+  }
   return true;
-  //return run_prover(state);
 }
 /**
    The main prover function
@@ -467,6 +477,10 @@ unsigned int prover(const rete_net* rete, bool factset){
     }
   }
   foundproof =  run_prover(state, factset);
+  if(state->net->coq){
+    while(!is_empty_ri_stack(state->ri_stack))
+      write_premiss_proof(pop_ri_stack(state->ri_stack), state, 0);
+  }
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   if(foundproof)

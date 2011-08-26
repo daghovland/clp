@@ -30,6 +30,7 @@
 #include "theory.h"
 #include "substitution.h"
 #include "rule_queue.h"
+#include "rule_instance_stack.h"
 #include "fresh_constants.h"
 #include "fact_set.h"
 #include "strategy.h"
@@ -87,6 +88,9 @@ typedef struct rete_net_t {
 
    old_fact_set is used to print out only the newly inserted facts
 
+   ri_stack is used for the coq proof output.
+   It is pushed in proof_writer.c:write_elim_usage_proof
+
 **/
 typedef struct rete_net_state_t {
   const char* proof_branch_id;
@@ -109,6 +113,7 @@ typedef struct rete_net_state_t {
   size_t size_constants;
   unsigned int n_constants;
   bool verbose;
+  rule_instance_stack* ri_stack;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
 

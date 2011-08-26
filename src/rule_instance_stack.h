@@ -1,4 +1,4 @@
-/* proof_writer.h
+/* rule_instance_stack.h
 
    Copyright 2011 
 
@@ -18,25 +18,31 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-/**
-   Writes out the proof to a dot-file, or something else
-**/
+#ifndef __INCLUDED_RULE_INSTANCE_STACK_H
+#define __INCLUDED_RULE_INSTANCE_STACK_H
 
-#ifndef __INCLUDED_PROOF_WRITER_H
-#define __INCLUDED_PROOF_WRITER_H
-
-#include "rete.h"
+#include "substitution.h"
 #include "rule_queue.h"
 
-void init_proof_dot_writer(const char*, const rete_net*);
-void write_proof_node(rete_net_state*, const rule_instance*);
-void end_proof_dot_writer(const char*, const rete_net*);
-void write_proof_state(const rete_net_state*, const rete_net_state*);
-void write_proof_edge(const rete_net_state*, const rete_net_state*);
-void write_goal_proof(const rule_instance*, const rete_net_state*, int);
-void write_elim_usage_proof(rete_net_state*, rule_instance*, int);
-void write_disj_proof_start(const rule_instance* ri, int ts, int branch);
-void write_premiss_proof(const rule_instance* ri, const rete_net_state* state, int ts);
+/**
+   Used in prover.c by the coq output to keep track 
+   of the existential rules that have been eliminated, 
+   but not yet proved
+   
+   Is a fifo / stack in array implementation
+   
+**/
+typedef struct rule_instance_stack_t {
+  size_t size_stack;
+  rule_instance ** stack;
+  unsigned int n_stack;
+} rule_instance_stack;
+
+
+
+rule_instance_stack* initialize_ri_stack(void);
+void push_ri_stack(rule_instance_stack*, rule_instance*);
+rule_instance* pop_ri_stack(rule_instance_stack*);
+bool is_empty_ri_stack(rule_instance_stack*);
+void delete_ri_stack(rule_instance_stack*);
 #endif
-
-

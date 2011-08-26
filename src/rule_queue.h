@@ -40,10 +40,15 @@ typedef struct rule_instance_t {
    The queue of rule instances to be treated
    Called "conflict set" by Forgy
 
-   Is a linked list, because same parts are shared over threads
+   Is a fifo, implemented by an array that loops around the end
 
-   The "parent" element is the older element, possible shared by more threads
-   The top elements have parent NULL
+   first is the index of the oldest element, while end is the next free index
+
+   Note that you can have first > end !
+
+   previous_appl is used by the strategy, and indicates the
+   timestamp of the previous time instances were removed from the queue. 
+   n_appl indicates how many times instances have been removed from the queue.
 **/
 typedef struct rule_queue_t {
   size_t n_queue;

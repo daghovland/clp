@@ -44,7 +44,7 @@
 bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
 			       const atom * fact, 
 			       substitution* a, 
-			       rete_node* alpha_node){
+			       const rete_node* alpha_node){
   sub_alpha_queue* sub_list = (sub_list_ptr == NULL) ? NULL : *sub_list_ptr; 
   
   assert(test_substitution(a));

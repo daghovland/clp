@@ -44,7 +44,7 @@
 typedef struct sub_alpha_queue_t {
   struct sub_alpha_queue_t * next;
   substitution * sub;
-  rete_node * alpha_node;
+  const rete_node * alpha_node;
   const atom * fact;
   bool is_splitting_point;
 } sub_alpha_queue;
@@ -53,6 +53,6 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
 bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
 			       const atom * fact, 
 			       substitution* a, 
-			       rete_node* alpha_node);
+			       const rete_node* alpha_node);
 
 #endif

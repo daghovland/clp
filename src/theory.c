@@ -138,7 +138,7 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   fprintf(stream, "\n");
   
   for(i = 0; i < th->n_axioms; i++){
-    axiom* a = th->axioms[i];
+    const axiom* a = th->axioms[i];
     if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[0]->pred->is_domain))
       print_coq_axiom(th->axioms[i], stream);
   }
