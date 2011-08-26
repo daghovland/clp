@@ -60,7 +60,7 @@ void pthread_error_test(int retno, const char* msg){
 
 /**
    Called at the end of a disjunctive branch. 
-   Checks what rule instanaces were used
+   Checks what rule instances were used
 
 **/
 void check_used_rule_instances(rule_instance* ri, rete_net_state* state, int ts){
