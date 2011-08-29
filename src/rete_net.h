@@ -37,6 +37,8 @@
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
 
+
+
 /**
    The root of the rete network is an array of rete_node's of type selector
    They must be sorted according to (1) the predicate name, (2) the arity
@@ -61,8 +63,8 @@ typedef struct rete_net_t {
   bool coq;
   strategy strat;
 
-  unsigned int size_history;
-  rule_instance ** history;
+  //unsigned int size_history;
+  // rule_instance ** history;
 
   unsigned long maxsteps;
   rete_node selectors[];
@@ -113,7 +115,7 @@ typedef struct rete_net_state_t {
   size_t size_constants;
   unsigned int n_constants;
   bool verbose;
-  rule_instance_stack* ri_stack;
+  rule_instance_stack* exist_stack;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
 

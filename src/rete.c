@@ -105,8 +105,6 @@ rete_net* init_rete(const theory* th, unsigned long maxsteps, bool lazy, bool co
   net->maxsteps = maxsteps;
   net->lazy = lazy;
   net->coq = coq;
-  net->size_history = 5;
-  net->history = calloc_tester(sizeof(rule_instance*), net->size_history);
 
   net->n_subs = 0;
   for(i = 0; i < net->n_selectors; i++)

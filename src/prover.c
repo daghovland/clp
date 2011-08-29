@@ -27,6 +27,7 @@
 #include "rete.h"
 #include "proof_writer.h"
 #include "substitution.h"
+#include "rule_instance_state_stack.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -42,8 +43,20 @@ pthread_mutex_t prover_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
 #endif
 
+/*
+  A stack of used, but not proved disjunctive rules
 
-bool insert_rete_net_disj_rule_instance(rete_net_state*, rule_instance*, bool);
+  Pushed in "check_used_rule_instance" and popped in run_prover
+
+  initialized by prover()
+**/
+rule_instance_state_stack* disj_ri_stack;
+//rule_instance_state_stack* elim_ri_stack;
+
+rule_instance_state** history;
+size_t size_history;
+
+bool insert_rete_net_disjunction(rete_net_state*, rule_instance*, bool);
 
 #ifdef HAVE_PTHREAD
 /**
@@ -63,17 +76,26 @@ void pthread_error_test(int retno, const char* msg){
    Checks what rule instances were used
 
 **/
-void check_used_rule_instances(rule_instance* ri, rete_net_state* state, int ts){
+void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state, rete_net_state* current_state, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     unsigned int n_premises = ri->substitution->n_timestamps;
     ri->used_in_proof = true;
     for(i = 0; i < n_premises; i++){
       int premiss_no = ri->substitution->timestamps[i];
+      assert(premiss_no == history[premiss_no]->step_no);
       if(premiss_no > 0)
-	check_used_rule_instances(state->net->history[premiss_no], state, premiss_no);
+	check_used_rule_instances((history[premiss_no])->ri, (history[premiss_no])->s, current_state, (history[premiss_no])->step_no, premiss_no);
     }
-    write_elim_usage_proof(state, ri, ts);
+    // The stack is popped again in prover.c after the disjunction is finished
+    if(ri->rule->rhs->n_args > 1)
+      push_ri_state_stack(disj_ri_stack, ri, historic_state, historic_ts);
+    else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
+      push_ri_stack(current_state->exist_stack, ri);    
+
+    //    push_ri_state_stack(elim_ri_stack, ri, historic_state);
+      
+    write_elim_usage_proof(historic_state, ri, current_ts);
   }
 }
 
@@ -88,9 +110,9 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
   if(step >= net->size_history){
     pt_err(pthread_mutex_lock(&history_array_lock), "Could not get lock on history array.\n");
 #endif
-    while(step >= net->size_history - 1){
-      net->size_history *= 2;
-      net->history = realloc_tester(net->history, net->size_history * sizeof(rule_instance*));
+    while(step >= size_history - 1){
+      size_history *= 2;
+      history = realloc_tester(history, size_history * sizeof(rule_instance*));
     }
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(&history_array_lock), "Could not release lock on history array.\n");
@@ -99,10 +121,10 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
   /**
      Note that s->cursteps is set by inc_proof_step_counter to the current global step that is worked on
   **/
-  net->history[step] = ri;
+  history[step] = create_rule_instance_state(ri, s, get_current_state_step_no(s));
 }
 
-bool insert_rete_net_conjunction(rete_net_state* state, 
+void insert_rete_net_conjunction(rete_net_state* state, 
 				 conjunction* con, 
 				 substitution* sub, 
 				 bool factset){
@@ -141,69 +163,6 @@ bool insert_rete_net_conjunction(rete_net_state* state,
     }
     delete_instantiated_atom(con->args[i], ground);
   } // end for
-  return true;
-}
-
-// This is inspired by Hans de Nivelle's treatment of existential quantifiers.
-// At the moment it is not working and the commandline option -e should probably not be used
-bool existdom_prover(rete_net_state* state, bool factset, rule_instance* next){
-  unsigned int i, s = 0;
-  bool finished = false;
-  rete_net_state* copy_state;
-  substitution * orig_sub = next->substitution;
-  unsigned int n_exist_vars = next->rule->exist_vars->n_vars;
-  domain_iter iters[n_exist_vars];
-  const term* terms[n_exist_vars];
-  bool created_fresh_constant[n_exist_vars];
-  
-  for(i = 0; i < next->rule->exist_vars->n_vars; i++){
-    iters[i] = get_domain_iter(state);
-    created_fresh_constant[i] = false;
-  }
-  
-  assert(n_exist_vars > 0);
-  
-  if(!domain_iter_has_next(state, &iters[0])){
-    terms[0] = get_fresh_constant(state,  next->rule->exist_vars->vars[0]);
-    created_fresh_constant[0] = true;
-  }
-  
-  for(i = 0; i < next->rule->exist_vars->n_vars; i++)
-    terms[i] = domain_iter_get_next(state, & iters[i]);
-  
-  while(!finished){
-    next->substitution = copy_substitution(orig_sub);
-    for(i = next->rule->exist_vars->n_vars - 1; i >= 0; i--){
-      if(domain_iter_has_next(state,&iters[i])){
-	terms[i] = domain_iter_get_next(state, &iters[i]);
-	break;
-      } else {
-	if(!created_fresh_constant[i]){
-	  terms[i] = get_fresh_constant(state, next->rule->exist_vars->vars[i]);
-	  created_fresh_constant[i] = true;
-	  break;
-	}
-	if(i == 0){
-	  finished = true;
-	  break;
-	}
-	iters[i] = get_domain_iter(state);
-	assert(domain_iter_has_next(state, &iters[i]));
-	terms[i] = domain_iter_get_next(state, &iters[i]);
-      } // end not iterator has next element
-    } // end for iterators
-    for(i = 0; i < next->rule->exist_vars->n_vars; i++)
-      add_substitution(next->substitution, next->rule->exist_vars->vars[i], terms[i]);
-    copy_state = split_rete_state(state, s++);
-    write_proof_edge(state, copy_state);  
-    if(!insert_rete_net_disj_rule_instance(copy_state, next, factset)){
-      //free(next);
-      return false;
-    }
-    delete_rete_state(copy_state, state);
-  }// end while(!finished)
-  //free(next);
-  return true;
 }
 
 /**
@@ -213,9 +172,25 @@ bool existdom_prover(rete_net_state* state, bool factset, rule_instance* next){
 **/
 
 bool run_prover(rete_net_state* state, bool factset){
-  bool empty_queue;
+  bool pop_disj_stack = false;
+  rete_net_state* copy_state;
   rule_instance* next;
+  unsigned int ts;
   while(true){
+    if(pop_disj_stack){
+      if(state->net->coq){
+	while(!is_empty_ri_stack(state->exist_stack)){
+	  rule_instance* ri1 = pop_ri_stack(state->exist_stack);
+	  unsigned int ts = get_current_state_step_no(state);
+	  //TODO: write_premiss_proof(ri1, state, ts, ts);
+	  ri1->used_in_proof = false;
+	}
+      }
+      if(is_empty_ri_state_stack(disj_ri_stack))
+	return true;
+      pop_ri_state_stack(disj_ri_stack, &next, &state, &ts);
+      return insert_rete_net_disjunction(state, next, factset);
+    }
     if(factset)
       next = factset_next_instance(state->net->th, state->facts);
     else
@@ -228,175 +203,34 @@ bool run_prover(rete_net_state* state, bool factset){
     if(next->rule->type != fact || next->rule->rhs->n_args != 1){
       if(!inc_proof_step_counter(state)){
 	printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
-	//free(next);
+	free(next);
 	return false;
       }
       insert_rule_instance_history(state, next);
       write_proof_node(state, next);
       
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	check_used_rule_instances(next, state, get_current_state_step_no(state));
-	write_goal_proof(next, state,  get_current_state_step_no(state));
-	//free(next);
-	return true;
+	unsigned int ts = get_current_state_step_no(state);
+	check_used_rule_instances(next, state, state, ts, ts);
+	write_goal_proof(next, state,  get_current_state_step_no(state), history);
+	pop_disj_stack = true;
+	continue;
       }
     }
-    if(state->net->existdom && next->rule->is_existential){
-      return existdom_prover(state, factset, next);
-    } else {
-      // if not existential rule or not existdom. This is usually used
-      if(next->rule->rhs->n_args > 1){
-	bool retval = insert_rete_net_disj_rule_instance(state, next, factset);
-	// free(next);
-	return retval;
-      } else {
-	if(next->rule->type != fact)
-	  write_proof_edge(state, state);
-	insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, factset);
-      }
-    } // end if existential rule
-  } // end while queue not empty
-  fprintf(stdout, "Found a model of the theory: \n");
-  print_fact_set(state->facts, stdout);
-  //free(next);
-  return false;
-}  
-
-
-/**
-   The main loop in a multi-threaded prover
-
-   Uses a RETE state, but does not allocate or delete it
-**/
-#ifdef HAVE_PTHREAD 
-bool run_prover(rete_net_state* state){
-  while(state->rule_queue->n_queue != 0){
-    rule_instance* next;
-#ifdef __DEBUG_RETE_PTHREAD
-    fprintf(stdout, "Started iteration in thread %li \n", (long) pthread_self());
-    print_rete_state(state, stdout);
-#endif
-    next = choose_next_instance(state);
-
-    assert(test_rule_instance(next, state));
-    
-    if(!inc_proof_step_counter(state)){
-      printf("Reached %i proof steps, higher than given maximum\n", get_global_step_no(state));
-      return false;
-    }
-
-    write_proof_node(state, next);
-    
-    if(verbose){
-      fprintf(stdout, "Applying rule instance: ");
-      print_rule_instance(next, stdout);
-      fprintf(stdout, "\n");
-    }
-    if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-#ifdef __DEBUG_RETE_PTHREAD
-      printf("Exiting run_prover in thread %li\n",  (long) pthread_self());
-#endif
-      return true;
-    }
-    if(next->rule->rhs->n_args > 1){
-      bool retval = insert_rete_net_disj_rule_instance(state,next);
-      return retval;
-    } else {
-      write_proof_edge(state, state);
-      insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
-    }
-  } // end while queue not empty
+    if(next->rule->rhs->n_args > 1)
+      copy_state = split_rete_state(state, 0);
+    else
+      copy_state = state;
+    if(next->rule->type != fact)
+      write_proof_edge(state, copy_state);
+    state = copy_state;
+    insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, factset);
+  } // end while(true)
   fprintf(stdout, "Found a model of the theory: \n");
   print_fact_set(state->facts, stdout);
   return false;
 }  
-#endif
 
-#ifdef HAVE_PTHREAD
-static void* run_prover_thread(void* arg){
-  bool* retval = malloc_tester(sizeof(bool));
-  rete_net_state* state = (rete_net_state*) arg;
-#ifdef __DEBUG_RETE_PTHREAD
-  printf("Entering thread %li\n", pthread_self());
-#endif
-  *retval =  run_prover(state);
-#ifdef __DEBUG_RETE_PTHREAD
-  printf("Exiting thread %li\n", pthread_self());
-#endif
-  return retval;
-}
-#endif
-
-/**
-   Inserting a disjunctive rule into a network
-
-   Creates and deletes new states for each thread
-
-   Note that goal rules should never be inserted (This does not make sense, as no facts would be inserted)
-
-  **/
-#ifdef HAVE_PTHREAD
-bool mt_insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_instance* ri){
-  unsigned int i, j;
-  const disjunction* dis = ri->rule->rhs;
-  bool thread_can_run;
-
-  assert(test_rule_instance(ri, state));
-  assert(dis->n_args > 1);
-
-  rete_net_state* copy_states[dis->n_args];
-
-  pthread_t tids[dis->n_args]; 
-  thread_can_run = num_threads < MAX_THREADS;
-
-  while(!thread_can_run){
-    pthread_error_test( pthread_mutex_lock(&prover_mutex), " insert_rete_net_disj_rule_instance: Could not lock prover_mutex");
-    pthread_error_test( pthread_cond_wait(&prover_cond, &prover_mutex), " insert_rete_net_disj_rule_instance: Could not lock prover_mutex");
-    if( num_threads < MAX_THREADS ){
-      num_threads += dis->n_args;
-      thread_can_run = true;
-    }
-    pthread_error_test( pthread_mutex_unlock(&prover_mutex), " insert_rete_net_disj_rule_instance: Could not lock prover_mutex");
-  }
-
-  for(i = 0; i < dis->n_args; i++){
-    copy_states[i] = split_rete_state(state, i);
-    write_proof_edge(state, copy_states[i]);
-    insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution);
-
-    pthread_error_test( pthread_create(&tids[i], NULL, &run_prover_thread, copy_states[i]) , "Could not create thread");
-
-  }
-  for(i=0; i < dis->n_args; i++){
-    void* retstate = malloc_tester(sizeof(bool));
-    bool  retval;
-#ifdef __DEBUG_RETE_PTHREAD
-    printf("Waiting for thread %li\n", (long) tids[i]);
-#endif
-    
-    pthread_error_test( pthread_join(tids[i], &retstate), "Could not wait for thread");
-    
-    num_threads--;
-    pthread_error_test( pthread_cond_signal( &prover_cond), "Could not signal prover condititon\n");
-    
-    retval = * (bool*) retstate;
-    free(retstate);
-    
-#ifdef __DEBUG_RETE_PTHREAD
-    printf("Got return from thread %i\n", tids[i]);
-#endif
-    
-    delete_rete_state(copy_states[i]);
-    if(!retval){
-      for(; i < dis->n_args; i++){
-	pthread_join(tids[i], &retstate);
-      }
-      return false;
-    }
-  }
-  return true;
-}
-#endif
 /**
    Inserting a disjunctive rule into a network single threaded
 
@@ -405,7 +239,7 @@ bool mt_insert_rete_net_disj_rule_instance(rete_net_state* state, const rule_ins
    Note that goal rules should never be inserted (This does not make sense, as no facts would be inserted)
 
   **/
-bool insert_rete_net_disj_rule_instance(rete_net_state* state, rule_instance* ri, bool factset){
+bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool factset){
   unsigned int i, j;
   const disjunction* dis = ri->rule->rhs;
   bool thread_can_run;
@@ -416,7 +250,7 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, rule_instance* ri
 
   rete_net_state* copy_states[dis->n_args];
   
-  for(i = 0; i < dis->n_args; i++){
+  for(i = 1; i < dis->n_args; i++){
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
@@ -427,13 +261,17 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, rule_instance* ri
       return false;
     }
     if(state->net->coq){
-      while(!is_empty_ri_stack(copy_states[i]->ri_stack))
-	write_premiss_proof(pop_ri_stack(copy_states[i]->ri_stack), copy_states[i], step);
+      while(!is_empty_ri_stack(copy_states[i]->exist_stack)){
+	rule_instance* ri1 = pop_ri_stack(copy_states[i]->exist_stack);
+	write_premiss_proof(ri1, copy_states[i], step, history);
+	ri1->used_in_proof = false;
+      }
     }
-    delete_rete_state(copy_states[i], state);
+    //delete_rete_state(copy_states[i], state);
     
     if(!ri->used_in_proof){
-      printf("Disjunction in step %i not used, so skipping rest of branches.\n", step);
+      printf("Disjunction in step %i not used, so skipping rest of branches. This should not happen now, indicates error in prover. Exiting.\n", step);
+      assert(false);
       return true;
     }
     // The next line is somewhat experimental, and did not work yet with coq. The proof will then be wrong. 
@@ -441,10 +279,9 @@ bool insert_rete_net_disj_rule_instance(rete_net_state* state, rule_instance* ri
     // usually a proof not using the disjunction is found in the first branch, if it is found at all.
     if(!state->net->coq)
       ri->used_in_proof = false;
-
   }
   if(state->net->coq){
-    write_premiss_proof(ri, state, step);
+    write_premiss_proof(ri, state, step, history);
   }
   return true;
 }
@@ -462,9 +299,16 @@ unsigned int prover(const rete_net* rete, bool factset){
   bool foundproof;
   rete_net_state* state = create_rete_state(rete, verbose);
   const theory* th = rete->th;
+
 #ifdef HAVE_PTHREAD
   num_threads = 0;
 #endif
+
+  disj_ri_stack = initialize_ri_state_stack();
+  //  elim_ri_stack = initialize_ri_state_stack();
+  size_history = 5;
+  history = calloc_tester(sizeof(rule_instance_state*), size_history);
+
   srand(1000);
   for(i=0; i < th->n_axioms; i++){
     if(th->axioms[i]->type == fact && th->axioms[i]->rhs->n_args == 1){
@@ -478,11 +322,14 @@ unsigned int prover(const rete_net* rete, bool factset){
   }
   foundproof =  run_prover(state, factset);
   if(state->net->coq){
-    while(!is_empty_ri_stack(state->ri_stack))
-      write_premiss_proof(pop_ri_stack(state->ri_stack), state, 0);
+    while(!is_empty_ri_stack(state->exist_stack)){
+      rule_instance* ri = pop_ri_stack(state->exist_stack);
+      write_premiss_proof(ri, state, 0, history);
+    }
   }
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
+  delete_ri_state_stack(disj_ri_stack);
   if(foundproof)
     return retval;
   else

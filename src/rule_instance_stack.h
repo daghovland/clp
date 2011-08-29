@@ -26,7 +26,7 @@
 
 /**
    Used in prover.c by the coq output to keep track 
-   of the existential rules that have been eliminated, 
+   of the existential and disjunctive rules that have been eliminated, 
    but not yet proved
    
    Is a fifo / stack in array implementation
