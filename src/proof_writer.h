@@ -29,6 +29,8 @@
 #include "rule_queue.h"
 #include "rule_instance_state_stack.h"
 
+FILE* get_coq_fdes(void);
+bool next_ri_is_after(rule_instance_stack*, unsigned int);
 void init_proof_dot_writer(const char*, const rete_net*);
 void write_proof_node(rete_net_state*, const rule_instance*);
 void end_proof_dot_writer(const char*, const rete_net*);
@@ -37,7 +39,7 @@ void write_proof_edge(const rete_net_state*, const rete_net_state*);
 void write_goal_proof(const rule_instance*, const rete_net_state*, int, rule_instance_state**);
 void write_elim_usage_proof(rete_net_state*, rule_instance*, int);
 void write_disj_proof_start(const rule_instance* ri, int ts, int branch);
-void write_premiss_proof(const rule_instance* ri, const rete_net_state* state, int ts, rule_instance_state**);
+void write_premiss_proof(const rule_instance* ri, int ts, rule_instance_state**);
 #endif
 
 

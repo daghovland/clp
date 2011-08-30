@@ -51,7 +51,7 @@ pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
   initialized by prover()
 **/
 rule_instance_state_stack* disj_ri_stack;
-//rule_instance_state_stack* elim_ri_stack;
+//rule_instance_stack* exist_ri_stack;
 
 rule_instance_state** history;
 size_t size_history;
@@ -90,8 +90,12 @@ void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state
     // The stack is popped again in prover.c after the disjunction is finished
     if(ri->rule->rhs->n_args > 1)
       push_ri_state_stack(disj_ri_stack, ri, historic_state, historic_ts);
-    else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
-      push_ri_stack(current_state->exist_stack, ri);    
+    else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential){
+      push_ri_state_stack(disj_ri_stack, ri, historic_state, current_ts);
+      /*push_ri_stack(exist_ri_stack, ri, current_ts);    
+      if(current_state->net->coq)
+      print_coq_ri_stack(get_coq_fdes(), exist_ri_stack);*/
+    }
 
     //    push_ri_state_stack(elim_ri_stack, ri, historic_state);
       
@@ -165,32 +169,91 @@ void insert_rete_net_conjunction(rete_net_state* state,
   } // end for
 }
 
+#if false
+/**
+   Called from run_prover and insert_rete_net_disjunction when
+   a branch is finished
+**/
+void print_coq_exist_elim(unsigned int limit, rule_instance* disj){
+  fprintf(get_coq_fdes(), "(* Proving elims from below step %i *)\n", limit);
+  print_coq_ri_stack(get_coq_fdes(), exist_ri_stack);
+  while(next_ri_is_after(exist_ri_stack, limit)){
+    unsigned int step;
+    rule_instance* ri1 = pop_ri_stack(exist_ri_stack, &step);
+    
+    fprintf(get_coq_fdes(), "(* Proving eliminated instance from step %i :", step);
+    print_coq_rule_instance(ri1, get_coq_fdes());
+    fprintf(get_coq_fdes(), " *)\n");
+
+    write_premiss_proof(ri1, step, history);
+    fprintf(get_coq_fdes(), "(* Finished proof of eliminated instance from step %i *)\n", step);
+    ri1->used_in_proof = false;
+  }
+}
+#endif
+
 /**
    The main loop in a single-threaded prover
 
    Uses a RETE state, but does not allocate or delete it
 **/
 
-bool run_prover(rete_net_state* state, bool factset){
+bool run_prover(rete_net_state* state, bool factset, rule_instance* start_instance){
   bool pop_disj_stack = false;
   rete_net_state* copy_state;
   rule_instance* next;
-  unsigned int ts;
+  unsigned int ts, start_step;
+  start_step = get_current_state_step_no(state);
   while(true){
     if(pop_disj_stack){
-      if(state->net->coq){
-	while(!is_empty_ri_stack(state->exist_stack)){
-	  rule_instance* ri1 = pop_ri_stack(state->exist_stack);
-	  unsigned int ts = get_current_state_step_no(state);
-	  //TODO: write_premiss_proof(ri1, state, ts, ts);
-	  ri1->used_in_proof = false;
+      bool retval, found_new_disj = false;
+      while(!is_empty_ri_state_stack(disj_ri_stack)){
+	pop_ri_state_stack(disj_ri_stack, &next, &state, &ts);
+	if(next == start_instance){
+	  // This means the branch is finished
+	  assert(next->rule->rhs->n_args > 1);
+	  return true;
+	}
+	if(next->rule->rhs->n_args > 1){
+	  if(state->net->coq){
+	    fprintf(get_coq_fdes(), "(* Popped split %i from disj_ri_stack *)\n", ts);
+	    found_new_disj = true;
+	    pop_disj_stack = false;
+	    break;
+	  }
+	}
+	if(state->net->coq){
+	  fprintf(get_coq_fdes(), "(* Proving eliminated instance from step %i :", ts);
+	  print_coq_rule_instance(next, get_coq_fdes());
+	  fprintf(get_coq_fdes(), " *)\n");
+	  
+	  write_premiss_proof(next, ts, history);
+	  fprintf(get_coq_fdes(), "(* Finished proof of eliminated instance from step %i *)\n", ts);
+	  next->used_in_proof = false;
 	}
       }
-      if(is_empty_ri_state_stack(disj_ri_stack))
+      if(!found_new_disj)
 	return true;
-      pop_ri_state_stack(disj_ri_stack, &next, &state, &ts);
-      return insert_rete_net_disjunction(state, next, factset);
-    }
+      retval =  insert_rete_net_disjunction(state, next, factset);
+      while(!is_empty_ri_state_stack(disj_ri_stack)){
+	pop_ri_state_stack(disj_ri_stack, &next, &state, &ts);
+	if(next == start_instance){
+	  break;
+	} else {
+	  assert(next->rule->rhs->n_args == 1);
+	  if(state->net->coq){
+	    fprintf(get_coq_fdes(), "(* Proving eliminated instance from step %i :", ts);
+	    print_coq_rule_instance(next, get_coq_fdes());
+	    fprintf(get_coq_fdes(), " *)\n");
+	    
+	    write_premiss_proof(next, ts, history);
+	    fprintf(get_coq_fdes(), "(* Finished proof of eliminated instance from step %i *)\n", ts);
+	    next->used_in_proof = false;
+	  }
+	}
+      }
+      return retval;
+    } // end if(pop_disj_stack)
     if(factset)
       next = factset_next_instance(state->net->th, state->facts);
     else
@@ -212,7 +275,11 @@ bool run_prover(rete_net_state* state, bool factset){
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	unsigned int ts = get_current_state_step_no(state);
 	check_used_rule_instances(next, state, state, ts, ts);
-	write_goal_proof(next, state,  get_current_state_step_no(state), history);
+	if(state->net->coq){
+	  fprintf(get_coq_fdes(), "(* Reached leaf at step %i *)\n", ts);
+	  write_goal_proof(next, state,  ts, history);
+	  fprintf(get_coq_fdes(), "(* Finished goal proof of leaf at step %i *)\n", ts);
+	}
 	pop_disj_stack = true;
 	continue;
       }
@@ -249,23 +316,22 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
   assert(dis->n_args > 0);
 
   rete_net_state* copy_states[dis->n_args];
-  
+
+  if(state->net->coq)
+    fprintf(get_coq_fdes(), "(* Started properly treating split at step %i *)\n", step);
+
   for(i = 1; i < dis->n_args; i++){
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
     if(i > 0 && state->net->coq)
       write_disj_proof_start(ri, step, i);
-    if(!run_prover(copy_states[i], factset)){
+    push_ri_state_stack(disj_ri_stack, ri, state, step);
+    if(!run_prover(copy_states[i], factset, ri)){
       delete_rete_state(copy_states[i], state);
       return false;
-    }
-    if(state->net->coq){
-      while(!is_empty_ri_stack(copy_states[i]->exist_stack)){
-	rule_instance* ri1 = pop_ri_stack(copy_states[i]->exist_stack);
-	write_premiss_proof(ri1, copy_states[i], step, history);
-	ri1->used_in_proof = false;
-      }
+      //if(state->net->coq)
+      //	print_coq_exist_elim(step, ri);
     }
     //delete_rete_state(copy_states[i], state);
     
@@ -280,8 +346,11 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
     if(!state->net->coq)
       ri->used_in_proof = false;
   }
+  
   if(state->net->coq){
-    write_premiss_proof(ri, state, step, history);
+    fprintf(get_coq_fdes(), "(* Finished branch at step %i *)\n", step);
+    //print_coq_exist_elim(step, ri);
+    write_premiss_proof(ri, step, history);
   }
   return true;
 }
@@ -305,7 +374,6 @@ unsigned int prover(const rete_net* rete, bool factset){
 #endif
 
   disj_ri_stack = initialize_ri_state_stack();
-  //  elim_ri_stack = initialize_ri_state_stack();
   size_history = 5;
   history = calloc_tester(sizeof(rule_instance_state*), size_history);
 
@@ -320,13 +388,9 @@ unsigned int prover(const rete_net* rete, bool factset){
       inc_proof_step_counter(state);
     }
   }
-  foundproof =  run_prover(state, factset);
-  if(state->net->coq){
-    while(!is_empty_ri_stack(state->exist_stack)){
-      rule_instance* ri = pop_ri_stack(state->exist_stack);
-      write_premiss_proof(ri, state, 0, history);
-    }
-  }
+  foundproof =  run_prover(state, factset, NULL);
+  //  if(state->net->coq)
+  //  print_coq_exist_elim(0, NULL);
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   delete_ri_state_stack(disj_ri_stack);

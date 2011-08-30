@@ -17,5 +17,5 @@ ss(X,Y),ss(Y,Z) => ss(X,Z).
 r(X,Y),s(X,Z) => dom(U),ss(Y,U),rr(Z,U).
 r(a,X),rr(X,Y),ss(X,Z) => dom(U),ss(Y,U),rr(Z,U).
 s(a,X),rr(X,Y),ss(X,Z) => dom(U),ss(Y,U),rr(Z,U).
-rr(X,Y) => e(X,Y);dom(Z),r(X,Z),rr(Z,Y). 
-ss(X,Y) => e(X,Y);dom(Z),s(X,Z),ss(Z,Y). 
+rr(X,Y) => e(X,Y)|dom(Z),r(X,Z),rr(Z,Y). 
+ss(X,Y) => e(X,Y)|dom(Z),s(X,Z),ss(Z,Y). 

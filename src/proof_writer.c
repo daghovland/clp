@@ -92,6 +92,14 @@ FILE* file_err(FILE* retval, const char* msg){
   return retval;
 }
 
+/**
+   Used for prinitng debugging messsages in prover.c
+**/
+FILE* get_coq_fdes(){
+  assert(coq_fp != NULL);
+  return coq_fp;
+}
+
 void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
   if(proof || dot || pdf){ 
     char *dotfilename, *pdffilename, *command;
@@ -157,6 +165,7 @@ void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
     coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
     coq_file_open = true;
     print_coq_proof_intro(net->th, coq_fp);
+    
     free(coqfilename);
   }
 }
@@ -319,7 +328,7 @@ void write_goal_proof_step(const rule_instance* ri, const rete_net_state* state,
 }
 
 
-void write_premiss_proof(const rule_instance* ri, const rete_net_state* state, int ts, rule_instance_state** history){
+void write_premiss_proof(const rule_instance* ri, int ts, rule_instance_state** history){
   unsigned int i, n_premises = ri->substitution->n_timestamps;
   assert(n_premises == ri->rule->lhs->n_args);
   for(i = 0; i < n_premises; i++){
@@ -343,7 +352,7 @@ void write_goal_proof(const rule_instance* ri, const rete_net_state* state, int 
     fp_err( fprintf(coq_fp, "apply ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     print_coq_rule_instance(ri, coq_fp);
     fp_err( fprintf(coq_fp, ").\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    write_premiss_proof(ri, state, ts, history);
+    write_premiss_proof(ri, ts, history);
   }
 }
   

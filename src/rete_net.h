@@ -115,7 +115,6 @@ typedef struct rete_net_state_t {
   size_t size_constants;
   unsigned int n_constants;
   bool verbose;
-  rule_instance_stack* exist_stack;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
 

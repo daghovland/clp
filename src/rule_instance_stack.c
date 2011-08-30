@@ -28,16 +28,19 @@ rule_instance_stack* initialize_ri_stack(void){
   rule_instance_stack* ris = malloc_tester(sizeof(rule_instance_stack));
   ris->size_stack = 5;
   ris->stack = calloc(ris->size_stack, sizeof(rule_instance*));
+  ris->step_nos = calloc(ris->size_stack, sizeof(unsigned int));
   ris->n_stack = 0;
   return ris;
 }
 
-void push_ri_stack(rule_instance_stack* ris, rule_instance* ri){
+void push_ri_stack(rule_instance_stack* ris, rule_instance* ri, unsigned int step_no){
   while(ris->n_stack >= ris->size_stack - 1){
     ris->size_stack *= 2;
     ris->stack = realloc_tester(ris->stack, sizeof(rule_instance*) * ris->size_stack);
+    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
   }
   ris->stack[ris->n_stack] = ri;
+  ris->step_nos[ris->n_stack] = step_no;
   ris->n_stack++;
 }
 
@@ -45,13 +48,31 @@ bool is_empty_ri_stack(rule_instance_stack * ris){
   return (ris->n_stack == 0);
 }
 
-rule_instance* pop_ri_stack(rule_instance_stack* ris){
+bool next_ri_is_after(rule_instance_stack* ris, unsigned int limit){
+  return (ris->n_stack > 0 && ris->step_nos[ris->n_stack - 1] > limit);
+}
+
+rule_instance* pop_ri_stack(rule_instance_stack* ris, unsigned int * step_no){
   assert(ris->n_stack > 0);
-  return ris->stack[--(ris->n_stack)];
+  -- ris->n_stack;
+  *step_no = ris->step_nos[ris->n_stack];
+  return ris->stack[ris->n_stack];
 }
 
 
 void delete_ri_stack(rule_instance_stack* ris){
   free(ris->stack);
   free(ris);
+}
+
+void print_coq_ri_stack(FILE* f, rule_instance_stack* ris){
+  int i;
+  fprintf(f, "(* ");
+  if(ris->n_stack == 0)
+    fprintf(f, "empty stack");
+  else {
+    for(i = ris->n_stack-1; i >= 0; i--)
+      fprintf(f, "%i ", ris->step_nos[i]);
+  }
+  fprintf(f, "*)\n");
 }
