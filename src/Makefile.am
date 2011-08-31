@@ -27,8 +27,15 @@ check_clp.sh:
 	echo "./clpdebug -Gm 60 $(srcdir)/anl.gl" >> check_clp.sh
 	echo "./clpdebug -dq $(srcdir)/anc.in" >> check_clp.sh
 	echo "./clpdebug -l $(srcdir)/anc.in" >> check_clp.sh
+	echo "./clpdebug -ldq $(srcdir)/nl.in" >> check_clp.sh
+	echo "coqc nl.v" >> check_clp.sh
+	echo "rm nl.v nl.vo" >> check_clp.sh
 	echo "./clpdebug -lq $(srcdir)/anl.in" >> check_clp.sh
 	echo "coqc anl.v" >> check_clp.sh
+	echo "rm anl.v anl.vo" >> check_clp.sh
+	echo "./clpdebug -q $(srcdir)/anl.in" >> check_clp.sh
+	echo "coqc anl.v" >> check_clp.sh
+	echo "rm anl.v anl.vo" >> check_clp.sh
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS)
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 
