@@ -1,0 +1,31 @@
+% induction step in Newman's Lemma
+
+name(nl).
+
+:- dynamic e/2,r/2,s/2.
+
+%domain elements a,b,c
+dom(a). dom(b). dom(c).
+
+_ axiom found(X) :(s(b,X),s(c,X) => goal).
+_ axiom assump   :(true => s(a,b),s(a,c)).
+_ axiom ref_e(X) :(dom(X) => e(X,X)).
+_ axiom sym_e(X,Y) :(e(X,Y) => e(Y,X)).
+_ axiom e_in_s(X,Y) :(e(X,Y) => s(X,Y)).
+_ axiom r_in_s(X,Y) :(r(X,Y) => s(X,Y)).
+_ axiom trans_s(X,Y,Z) :(s(X,Y),s(Y,Z) => s(X,Z)).
+
+2 axiom lo_cfl(X,Y,Z) :(r(X,Y),r(X,Z) => dom(U),s(Y,U),s(Z,U)).
+1 axiom ih_cfl(X,Y,Z) :(r(a,X),s(X,Y),s(X,Z) => dom(U),s(Y,U),s(Z,U)).
+% last to avoid infinite path
+3 axiom e_or_rs(X,Y) :(s(X,Y) => e(X,Y);dom(Z),r(X,Z),s(Z,Y)). 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+enabled(X,X).
+enabled(N,[]):-number(N).
+
+next(_,[],1).
+next(_,1,2).
+next(_,2,3).
+next(_,3,1).
+
