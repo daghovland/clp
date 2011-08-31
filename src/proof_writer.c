@@ -262,9 +262,22 @@ void write_exist_vars_intro(freevars* ev, substitution* sub){
   }
 }
 
+/**
+   Writes coq proof for starting a new branch in a disjunction
+
+   ri is the rule instance with disjunction
+
+   branch is the branch of the disjunction that is started. Indexed from 0 and up, increasing from left to right
+
+   ts is the step where ri was first encountered
+ **/
 void write_disj_proof_start(const rule_instance* ri, int ts, int branch){
   assert(branch < ri->rule->rhs->n_args);
   fp_err( fprintf(coq_fp, "(* Proving branch %i from disj. split at step #%i*)\n", branch, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+  if(branch > 0 && branch < ri->rule->rhs->n_args - 1){
+    fp_err( fprintf(coq_fp, "intro H_%i_%i.\n", ts, branch), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    fp_err( fprintf(coq_fp, "elim H_%i_%i.\n", ts, branch), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+  }
   if(ri->rule->rhs->args[branch]->is_existential){
     fp_err( fprintf(coq_fp, "intro H_%i_tmp.\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     fp_err( fprintf(coq_fp, "(* Introducing existential variables from branch %i of step %i*)\n", branch, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
@@ -337,8 +350,8 @@ void write_premiss_proof(const rule_instance* ri, int ts, rule_instance_state** 
     const axiom* a = premiss->rule;
     if(!ri->rule->lhs->args[i]->pred->is_domain){
       //if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[i]->pred->is_domain)){
+      fp_err( fprintf(coq_fp, "(* Proving conjunct #%i of step %i *)\n", i, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       if(i < n_premises - 1){
-	fp_err( fprintf(coq_fp, "(* Proving conjunct #%i of step %i *)\n", i, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
 	fp_err( fprintf(coq_fp, "split.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       }
       write_goal_proof_step(premiss, history[premiss_no]->s, premiss_no, history);
@@ -348,7 +361,7 @@ void write_premiss_proof(const rule_instance* ri, int ts, rule_instance_state** 
 
 void write_goal_proof(const rule_instance* ri, const rete_net_state* state, int ts, rule_instance_state** history){
   if(state->net->coq){
-    fp_err( fprintf(coq_fp, "(* Proving %i using step %i *)\n", state->cursteps, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    fp_err( fprintf(coq_fp, "(* Applying fact from step %i *)\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     fp_err( fprintf(coq_fp, "apply ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     print_coq_rule_instance(ri, coq_fp);
     fp_err( fprintf(coq_fp, ").\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
