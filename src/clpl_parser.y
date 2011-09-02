@@ -180,11 +180,10 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
                           ;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
-| STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom(create_variable($3, th),th); }
-| STRING_DOM LPAREN NAME RPAREN { $$ = create_dom_atom(parser_create_constant_term(th, $3),th); }
-           | STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom($3,th); }
-           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
-           | NAME {$$ = create_prop_variable($1, th);}
+          | STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom(create_variable($3, th),th); }
+          | STRING_DOM LPAREN NAME RPAREN { $$ = create_dom_atom(parser_create_constant_term(th, $3),th); }
+          | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
+          | NAME {$$ = create_prop_variable($1, th);}
                ;
 terms:         terms COMMA term
                     { $$ = extend_term_list($1, $3); }

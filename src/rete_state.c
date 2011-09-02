@@ -66,6 +66,8 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->constants = calloc_tester(state->size_constants, sizeof(char*));
   state->n_constants = 0;
 
+  state->elim_stack = initialize_ri_stack();
+
   return state;
 }
 
@@ -93,6 +95,7 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
     free((char *) state->proof_branch_id);
   free(state->domain);
   free(state->constants);
+  delete_ri_stack(state->elim_stack);
 
   free(state);
 }
@@ -118,6 +121,7 @@ void delete_full_rete_state(rete_net_state* state){
   free(state->domain);
   free(state->constants);
   free(state->global_step_counter);
+  delete_ri_stack(state->elim_stack);
 
   free(state);
 }
@@ -182,6 +186,7 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
 
   copy->start_step_no = orig->cursteps;
 
+  copy->elim_stack = initialize_ri_stack();
 
   return copy;
 }

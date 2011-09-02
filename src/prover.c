@@ -35,6 +35,8 @@
 
 extern bool debug, verbose;
 
+bool foundproof;
+
 #ifdef HAVE_PTHREAD
 unsigned int num_threads;
 #define MAX_THREADS 20
@@ -56,6 +58,7 @@ rule_instance_state** history;
 size_t size_history;
 
 bool insert_rete_net_disjunction(rete_net_state*, rule_instance*, bool);
+bool insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next);
 
 #ifdef HAVE_PTHREAD
 /**
@@ -98,6 +101,29 @@ void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state
     write_elim_usage_proof(historic_state, ri, current_ts);
   }
 }
+
+/**
+   Called at the end of a disjunctive branch
+   Checks what rule instances were used
+   Called from run_prover_rete_coq_mt
+**/
+void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts){
+  unsigned int i;
+  if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
+    unsigned int n_premises = ri->substitution->n_timestamps;
+    ri->used_in_proof = true;
+    for(i = 0; i < n_premises; i++){
+      int premiss_no = ri->substitution->timestamps[i];
+      assert(premiss_no == history[premiss_no]->step_no);
+      check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no);
+    }
+    if(ri->rule->rhs->n_args > 1)
+      ;
+    else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
+      push_ri_stack(historic_state->elim_stack, ri, historic_ts);
+  }
+}
+
 
 /**
    Create rule instance history. Called from run_prover
@@ -165,14 +191,140 @@ void insert_rete_net_conjunction(rete_net_state* state,
   } // end for
 }
 
+/**
+   Called from run_prover_rete_coq when not finding new instance
+**/
+bool return_found_model(rete_net_state* state){
+  fprintf(stdout, "Found a model of the theory: \n");
+  print_fact_set(state->facts, stdout);
+  foundproof = false;
+  return false;
+}
+
+/**
+   Called from run_prover_rete_coq when not finding new instance
+**/
+bool return_reached_max_steps(rete_net_state* state, rule_instance* ri){
+  printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
+  free(ri);
+  foundproof = false;
+  return false;
+}
+
+/**
+   A new prover for coq output without proof rewriting
+
+   The goal is to make this multithreaded
+
+   Note that the rule instance on the stack is discarded, as the 
+   conjunction is already inserted by insert_rete_net_disjunction_coq_mt below
+**/
+
+bool run_prover_rete_coq_mt(rete_net_state* state){
+    while(true){
+      rule_instance* next = choose_next_instance(state, state->net->strat);
+      if(next == NULL)
+	return return_found_model(state);
+      
+      assert(next->rule->type != fact || next->rule->rhs->n_args != 1);
+      
+      bool incval = inc_proof_step_counter(state);
+      if(!incval)
+	return return_reached_max_steps(state, next);
+      
+      insert_rule_instance_history(state, next);
+      write_proof_node(state, next);
+      
+      if(next->rule->type == goal || next->rule->rhs->n_args == 0){
+	unsigned int ts = get_current_state_step_no(state);
+	check_used_rule_instances_coq_mt(next, state, ts);
+	state->end_of_branch = next;
+	break;
+      } else {	// not goal rule
+	if(next->rule->rhs->n_args > 1){
+	  bool insval = insert_rete_disjunction_coq_mt(state, next);
+	  if(!insval)
+	    return false;
+	  break;
+	} else { // rhs is single conjunction
+	  assert(next->rule->type != fact);
+	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, true);
+	}
+      }
+    } // end while(true)
+ }
+
+
+/**
+   One instance of this function is run in each thread
+**/
+void thread_runner_coq_rete(void){
+  while(!is_empty_ri_state_stack(disj_ri_stack)){
+    rete_net_state* state; 
+    rule_instance* next;
+    unsigned int step;
+    bool rp_val;
+    pop_ri_state_stack(disj_ri_stack, &next, &state, &step);
+    rp_val = run_prover_rete_coq_mt(state);
+    if(!rp_val)
+      return;
+  } // end while(stack_of_disjunctions_not_empty)
+}
+
+
+/**
+   Auxiliary function called from insert_rete_net_disjunction_coq_mt
+**/
+rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* con, substitution* sub, unsigned int branch_no){
+  rete_net_state* copy_state = split_rete_state(state, branch_no);
+  write_proof_edge(state, copy_state);
+  insert_rete_net_conjunction(copy_state, con, sub, true);
+  return copy_state;
+}
+
+
+bool insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
+  const axiom* rule;
+  unsigned int i;
+  unsigned int step;
+  bool retval;
+  rete_net_state* copy_state;
+  bool rp_val;
+
+  assert(rule->rhs->n_args > 1);
+
+  rule = next->rule;
+  step = get_current_state_step_no(state);
+  copy_state = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
+  rp_val  = run_prover_rete_coq_mt(copy_state);
+  if(!retval)
+    return false;
+
+  if(!next->used_in_proof){
+    state->end_of_branch = copy_state->end_of_branch;
+    add_ri_stack(state->elim_stack, copy_state->elim_stack);
+    return true;
+  }
+  for(i = 1; i < rule->rhs->n_args; i++){
+    copy_state = run_rete_proof_disj_branch(state, rule->rhs->args[i], next->substitution, i);
+    push_ri_state_stack(disj_ri_stack, NULL, copy_state, step);
+  }
+  state->end_of_branch = next;
+  return true;
+}
+
 
 /**
    The main loop in a single-threaded prover
 
    Uses a RETE state, but does not allocate or delete it
+
+   Uses rewriting of the proof: A disjunction is moved closest to the goal where it is used
+
+   Not really working
 **/
 
-bool run_prover(rete_net_state* state, bool factset, rule_instance* start_instance){
+bool run_prover(rete_net_state* state, bool factset, rule_instance* stack_marker){
   bool pop_disj_stack = false;
   rete_net_state* copy_state;
   rule_instance* next;
@@ -183,10 +335,11 @@ bool run_prover(rete_net_state* state, bool factset, rule_instance* start_instan
       bool retval, found_new_disj = false;
       while(!is_empty_ri_state_stack(disj_ri_stack)){
 	pop_ri_state_stack(disj_ri_stack, &next, &state, &ts);
-	next->used_in_proof = false;
-	if(next == start_instance){
+
+	if(next == stack_marker){
 	  // This means the branch is finished
-	  assert(next->rule->rhs->n_args > 1);
+	  assert(next->rule == NULL);
+	  delete_dummy_rule_instance(next);
 	  return true;
 	}
 	if(next->rule->rhs->n_args > 1){
@@ -204,6 +357,7 @@ bool run_prover(rete_net_state* state, bool factset, rule_instance* start_instan
 	  write_premiss_proof(next, ts, history);
 	  fprintf(get_coq_fdes(), "(* Finished proof of eliminated instance from step %i *)\n", ts);
 	}
+	next->used_in_proof = false;
       }
       if(!found_new_disj)
 	return true;
@@ -277,15 +431,21 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
   if(state->net->coq)
     fprintf(get_coq_fdes(), "(* Started properly treating split at step %i *)\n", step);
 
+  //check_used_rule_instances(ri, state, state, step, step);
+
   for(i = 1; i < dis->n_args; i++){
+    rule_instance* tmp = create_dummy_rule_instance();
+
     copy_states[i] = split_rete_state(state, i);
     write_proof_edge(state, copy_states[i]);
     insert_rete_net_conjunction(copy_states[i], dis->args[i], ri->substitution, factset);
-    if(i > 0 && state->net->coq)
+    
+    if(i > 0 && state->net->coq){
       write_disj_proof_start(ri, step, i);
-    push_ri_state_stack(disj_ri_stack, ri, state, step);
-    ri->used_in_proof = true;
-    if(!run_prover(copy_states[i], factset, ri)){
+    }
+    push_ri_state_stack(disj_ri_stack, tmp, state, step);
+    
+    if(!run_prover(copy_states[i], factset, tmp)){
       delete_rete_state(copy_states[i], state);
       return false;
     }
@@ -302,12 +462,13 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
   
   if(state->net->coq){
     fprintf(get_coq_fdes(), "(* Finished branch at step %i *)\n", step);
+    fprintf(get_coq_fdes(), "(* Proving premises of step %i *)\n", step);
     write_premiss_proof(ri, step, history);
     fprintf(get_coq_fdes(), "(* Finished proof of premises of step %i *)\n", step);	
   }
   // The next line is necessary in the cases where a disjunction is used several places
-  if(state->net->coq)
-    ri->used_in_proof = false;
+  /*if(state->net->coq)
+    ri->used_in_proof = false;*/
 
   return true;
 }
@@ -320,9 +481,8 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
 
    Returns 0 if no proof found, otherwise, the number of steps
 **/
-unsigned int prover(const rete_net* rete, bool factset){
+unsigned int prover(const rete_net* rete, bool factset, bool multithread){
   unsigned int i, j, retval;
-  bool foundproof;
   rete_net_state* state = create_rete_state(rete, verbose);
   const theory* th = rete->th;
 
@@ -333,6 +493,7 @@ unsigned int prover(const rete_net* rete, bool factset){
   disj_ri_stack = initialize_ri_state_stack();
   size_history = 5;
   history = calloc_tester(sizeof(rule_instance_state*), size_history);
+
 
   srand(1000);
   for(i=0; i < th->n_axioms; i++){
@@ -345,9 +506,12 @@ unsigned int prover(const rete_net* rete, bool factset){
       inc_proof_step_counter(state);
     }
   }
-  foundproof =  run_prover(state, factset, NULL);
-  //  if(state->net->coq)
-  //  print_coq_exist_elim(0, NULL);
+  if(multithread){
+    push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));
+    foundproof = true;
+    thread_runner_coq_rete();
+  } else 
+    foundproof =  run_prover(state, factset, NULL);
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   delete_ri_state_stack(disj_ri_stack);

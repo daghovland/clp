@@ -44,6 +44,7 @@ typedef struct rule_instance_stack_t {
 rule_instance_stack* initialize_ri_stack(void);
 void push_ri_stack(rule_instance_stack*, rule_instance*, unsigned int);
 rule_instance* pop_ri_stack(rule_instance_stack*, unsigned int*);
+void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src);
 bool is_empty_ri_stack(rule_instance_stack*);
 void delete_ri_stack(rule_instance_stack*);
 void print_coq_ri_stack(FILE*, rule_instance_stack*);

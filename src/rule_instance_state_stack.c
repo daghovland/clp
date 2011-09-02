@@ -34,6 +34,24 @@ rule_instance_state_stack* initialize_ri_state_stack(void){
   return ris;
 }
 
+void increase_stack_size(rule_instance_state_stack* ris, unsigned int min_size){
+  while(min_size >= ris->size_stack){
+    ris->size_stack *= 2;
+    ris->states = realloc_tester(ris->states, sizeof(rete_net_state*) * ris->size_stack);
+    ris->ris = realloc_tester(ris->ris, sizeof(rule_instance*) * ris->size_stack);
+    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
+  }
+}
+
+void add_ri_state_stack(rule_instance_state_stack* dest, rule_instance_state_stack* src){
+  increase_stack_size(dest, dest->n_stack + src->n_stack + 1);
+  memcpy(dest->states + dest->n_stack, src->states, src->n_stack * sizeof(rete_net_state*));
+  memcpy(dest->ris + dest->n_stack, src->ris, src->n_stack * sizeof(rule_instance*));
+  memcpy(dest->step_nos + dest->n_stack, src->step_nos, src->n_stack * sizeof(unsigned int));
+  dest->n_stack += src->n_stack;
+}
+    
+
 rule_instance_state* create_rule_instance_state(rule_instance* ri, rete_net_state* s, unsigned int step_no){
   rule_instance_state* ris = malloc_tester(sizeof(rule_instance_state));
   ris->ri = ri;
@@ -43,12 +61,7 @@ rule_instance_state* create_rule_instance_state(rule_instance* ri, rete_net_stat
 }
 
 void push_ri_state_stack(rule_instance_state_stack* ris, rule_instance* ri, rete_net_state* s, unsigned int step_no){
-  while(ris->n_stack >= ris->size_stack - 1){
-    ris->size_stack *= 2;
-    ris->states = realloc_tester(ris->states, sizeof(rete_net_state*) * ris->size_stack);
-    ris->ris = realloc_tester(ris->ris, sizeof(rule_instance*) * ris->size_stack);
-    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
-  }
+  increase_stack_size(ris, ris->n_stack + 1);
   ris->ris[ris->n_stack] = ri;
   ris->states[ris->n_stack] = s;
   ris->step_nos[ris->n_stack] = step_no;

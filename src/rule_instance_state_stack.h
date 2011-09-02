@@ -53,6 +53,7 @@ typedef struct rule_instance_state_stack_t {
 rule_instance_state* create_rule_instance_state(rule_instance*, rete_net_state*, unsigned int);
 rule_instance_state_stack* initialize_ri_state_stack(void);
 void push_ri_state_stack(rule_instance_state_stack*, rule_instance*, rete_net_state*, unsigned int);
+void add_ri_state_stack(rule_instance_state_stack* dest, rule_instance_state_stack* src);
 void pop_ri_state_stack(rule_instance_state_stack*, rule_instance**, rete_net_state**, unsigned int*);
 bool is_empty_ri_state_stack(rule_instance_state_stack*);
 void delete_ri_state_stack(rule_instance_state_stack*);

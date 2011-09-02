@@ -42,7 +42,7 @@ bool lazy;
 
 extern char * optarg;
 extern int optind, optopt, opterr;
-bool verbose, debug, proof, dot, text, pdf, existdom, factset, coq;
+bool verbose, debug, proof, dot, text, pdf, existdom, factset, coq, multithreaded;
 strategy strat;
 unsigned long maxsteps;
 typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
@@ -86,7 +86,7 @@ int file_prover(FILE* f, const char* prefix){
     
     init_proof_dot_writer(prefix, net);
   }
-  steps = prover(net, factset);
+  steps = prover(net, factset, multithreaded);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
     retval = EXIT_SUCCESS;
@@ -122,12 +122,12 @@ void print_help(char* exec){
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
   printf("\t-l, --lazy\t\tUses the lazy version of RETE.\n");
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory. The file has postfix 'v', and prefix equal to the value of the 'name' predicate in the theory file. If the file exists it is overwritten.\n");
-  printf("\t-e, --existdom\t\tFor existential quantifiers, tries all elements in the domain before creating new constants. Not finished.\n");
   printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. Without --lazy, it also tries to emulate the actual strategy used by CL.pl.\n");
   printf("\t-f, --factset\t\tUses standard fact-set based proof search in stead of the RETE alogrithm. Not finished.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
+  printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm.\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
 
@@ -148,8 +148,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'o'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"existdom", no_argument, NULL, 'e'}, {"depth-first", no_argument, NULL, 'd'}, {"lazy", no_argument, NULL, 'l'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdoaecCGlqm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'o'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"lazy", no_argument, NULL, 'l'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdoacCGlqMm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -159,10 +159,10 @@ int main(int argc, char *argv[]){
   debug = false;
   dot = false;
   pdf = false;
-  existdom = false;
   factset = false;
   lazy = false;
   coq = false;
+  multithreaded = true;
   input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
@@ -200,8 +200,8 @@ int main(int argc, char *argv[]){
     case 'V':
       print_version();
       exit(EXIT_SUCCESS);
-    case 'e':
-      existdom = true;
+    case 'M':
+      multithreaded = true;
       break;
     case 't':
       text = true;

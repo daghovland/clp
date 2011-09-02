@@ -254,7 +254,22 @@ rule_instance* create_rule_instance(const axiom* rule, substitution* sub){
   ins->substitution = sub;
   return ins;
 }
+
+/**
+   Used by prover as a stack marker in disj_ri_stack
+**/
+rule_instance* create_dummy_rule_instance(void){
+  rule_instance* ins = malloc_tester(sizeof(rule_instance));
+  ins->timestamp = 0;
+  ins->rule = NULL;
+  ins->substitution = NULL;
+  return ins;
+}
   
+void delete_dummy_rule_instance(rule_instance* ri){
+  free(ri);
+}
+
 
 /**
    External function for adding and popping instances of a rule

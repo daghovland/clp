@@ -5,9 +5,9 @@ clp_SOURCES =  geolog_parser.y clpl_parser.y prover.c common.h clpl.l geolog.l m
 
 clp_LDADD = -ll -lfl 
 AM_CFLAGS=-Wall
-AM_LDFLAGS = -L. #${PTHREAD_LIBS}
+AM_LDFLAGS = -L. ${PTHREAD_LIBS}
 #These flags (especially NDEBUG) are important for performance, and turned on here by default
-clp_CFLAGS=-DNDEBUG #${PTHREAD_CFLAGS} 
+clp_CFLAGS=-DNDEBUG ${PTHREAD_CFLAGS} 
 
 
 # Below is setup for testing (the target "check"). 

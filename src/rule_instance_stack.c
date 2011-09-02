@@ -33,6 +33,23 @@ rule_instance_stack* initialize_ri_stack(void){
   return ris;
 }
 
+
+void increase_ri_stack_size(rule_instance_stack* ris, unsigned int min_size){
+  while(min_size >= ris->size_stack){
+    ris->size_stack *= 2;
+    ris->stack = realloc_tester(ris->stack, sizeof(rule_instance*) * ris->size_stack);
+    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
+  }
+}
+
+void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src){
+  increase_ri_stack_size(dest, dest->n_stack + src->n_stack + 1);
+  memcpy(dest->stack + dest->n_stack, src->stack, src->n_stack * sizeof(rule_instance*));
+  memcpy(dest->step_nos + dest->n_stack, src->step_nos, src->n_stack * sizeof(unsigned int));
+  dest->n_stack += src->n_stack;
+}
+    
+
 void push_ri_stack(rule_instance_stack* ris, rule_instance* ri, unsigned int step_no){
   while(ris->n_stack >= ris->size_stack - 1){
     ris->size_stack *= 2;
