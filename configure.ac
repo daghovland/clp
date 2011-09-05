@@ -22,7 +22,7 @@ AC_PROG_CPP
 AM_PROG_CC_C_O
 
 # Checks for pthreads functionality. Currently disabled in the source code. Remove?
-#AX_PTHREAD
+AX_PTHREAD
 
 # Checks for libraries.
 # #FIXME: Find function in duma and Un-Comment  the next line in development versions

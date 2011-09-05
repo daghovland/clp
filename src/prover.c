@@ -37,12 +37,16 @@ extern bool debug, verbose;
 
 bool foundproof;
 
+unsigned int provers_running;
+
 #ifdef HAVE_PTHREAD
 unsigned int num_threads;
 #define MAX_THREADS 20
 
 pthread_mutex_t prover_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*
@@ -78,6 +82,7 @@ void pthread_error_test(int retno, const char* msg){
    Checks what rule instances were used
 
 **/
+#if 0
 void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state, rete_net_state* current_state, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
   if((!ri->used_in_proof 
@@ -101,6 +106,7 @@ void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state
     write_elim_usage_proof(historic_state, ri, current_ts);
   }
 }
+#endif
 
 /**
    Called at the end of a disjunctive branch
@@ -117,9 +123,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
       assert(premiss_no == history[premiss_no]->step_no);
       check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no);
     }
-    if(ri->rule->rhs->n_args > 1)
-      ;
-    else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
+    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
       push_ri_stack(historic_state->elim_stack, ri, historic_ts);
   }
 }
@@ -133,15 +137,15 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
   rete_net* net = (rete_net*) s->net;
   unsigned int step = get_current_state_step_no(s);
 #ifdef HAVE_PTHREAD
-  if(step >= net->size_history){
-    pt_err(pthread_mutex_lock(&history_array_lock), "Could not get lock on history array.\n");
+  if(step >= size_history -  1){
+    pt_err(pthread_mutex_lock(&history_mutex), "Could not get lock on history array.\n");
 #endif
     while(step >= size_history - 1){
       size_history *= 2;
       history = realloc_tester(history, size_history * sizeof(rule_instance*));
     }
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_unlock(&history_array_lock), "Could not release lock on history array.\n");
+    pt_err(pthread_mutex_unlock(&history_mutex), "Could not release lock on history array.\n");
   } // end second if, avoiding unnecessary locking
 #endif
   /**
@@ -155,7 +159,6 @@ void insert_rete_net_conjunction(rete_net_state* state,
 				 substitution* sub, 
 				 bool factset){
   unsigned int i, j;
-
   
   assert(test_conjunction(con));
   assert(test_substitution(sub));
@@ -239,16 +242,14 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	unsigned int ts = get_current_state_step_no(state);
 	check_used_rule_instances_coq_mt(next, state, ts);
 	state->end_of_branch = next;
-	break;
+	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
-	  bool insval = insert_rete_disjunction_coq_mt(state, next);
-	  if(!insval)
-	    return false;
-	  break;
+	  return  insert_rete_disjunction_coq_mt(state, next);
 	} else { // rhs is single conjunction
 	  assert(next->rule->type != fact);
-	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, true);
+	  write_proof_edge(state, state);
+	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, false);
 	}
       }
     } // end while(true)
@@ -259,13 +260,21 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
    One instance of this function is run in each thread
 **/
 void thread_runner_coq_rete(void){
-  while(!is_empty_ri_state_stack(disj_ri_stack)){
+  while(!is_empty_ri_state_stack(disj_ri_stack) || provers_running > 0){
     rete_net_state* state; 
     rule_instance* next;
     unsigned int step;
     bool rp_val;
+#ifdef HAVE_PTHREAD
+    pthread_lock(prover_mutex);
+#endif
     pop_ri_state_stack(disj_ri_stack, &next, &state, &step);
+    provers_running++;
+#ifdef HAVE_PTHREAD
+    pthread_unlock(prover_mutex);
+#endif
     rp_val = run_prover_rete_coq_mt(state);
+    provers_running--;
     if(!rp_val)
       return;
   } // end while(stack_of_disjunctions_not_empty)
@@ -278,7 +287,7 @@ void thread_runner_coq_rete(void){
 rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* con, substitution* sub, unsigned int branch_no){
   rete_net_state* copy_state = split_rete_state(state, branch_no);
   write_proof_edge(state, copy_state);
-  insert_rete_net_conjunction(copy_state, con, sub, true);
+  insert_rete_net_conjunction(copy_state, con, sub, false);
   return copy_state;
 }
 
@@ -291,25 +300,33 @@ bool insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   rete_net_state* copy_state;
   bool rp_val;
 
+  rule = next->rule;
   assert(rule->rhs->n_args > 1);
 
-  rule = next->rule;
   step = get_current_state_step_no(state);
   copy_state = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
   rp_val  = run_prover_rete_coq_mt(copy_state);
-  if(!retval)
+  if(!rp_val)
     return false;
 
   if(!next->used_in_proof){
     state->end_of_branch = copy_state->end_of_branch;
     add_ri_stack(state->elim_stack, copy_state->elim_stack);
+    state->branches = copy_state->branches;
+    for(i = 0; i < state->end_of_branch->rule->rhs->n_args; i++){
+      assert(state != state->branches[i]);
+    }
     return true;
   }
+  state->branches = calloc_tester(rule->rhs->n_args, sizeof(rete_net_state*));
+  state->branches[0] = copy_state;
   for(i = 1; i < rule->rhs->n_args; i++){
-    copy_state = run_rete_proof_disj_branch(state, rule->rhs->args[i], next->substitution, i);
-    push_ri_state_stack(disj_ri_stack, NULL, copy_state, step);
+    state->branches[i] = run_rete_proof_disj_branch(state, rule->rhs->args[i], next->substitution, i);
+    push_ri_state_stack(disj_ri_stack, NULL, state->branches[i], step);
   }
   state->end_of_branch = next;
+  for(i = 0; i < rule->rhs->n_args; i++)
+    assert(state != state->branches[i]);
   return true;
 }
 
@@ -323,7 +340,7 @@ bool insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
 
    Not really working
 **/
-
+#if 0
 bool run_prover(rete_net_state* state, bool factset, rule_instance* stack_marker){
   bool pop_disj_stack = false;
   rete_net_state* copy_state;
@@ -417,6 +434,7 @@ bool run_prover(rete_net_state* state, bool factset, rule_instance* stack_marker
    Note that goal rules should never be inserted (This does not make sense, as no facts would be inserted)
 
   **/
+
 bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool factset){
   unsigned int i, j;
   const disjunction* dis = ri->rule->rhs;
@@ -472,6 +490,44 @@ bool insert_rete_net_disjunction(rete_net_state* state, rule_instance* ri, bool 
 
   return true;
 }
+#endif
+/**
+   Writes the coq proof after the prover is done.
+   Used by the multithreaded version
+**/
+void write_mt_coq_proof(rete_net_state* state){
+  FILE* coq_fp = get_coq_fdes();
+  unsigned int n_branches = state->end_of_branch->rule->rhs->n_args;
+  unsigned int step = get_current_state_step_no(state);
+  unsigned int step_ri;
+  init_rev_stack(state->elim_stack);
+  assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
+  while(!is_empty_rev_ri_stack(state->elim_stack)){
+    rule_instance* ri = pop_rev_ri_stack(state->elim_stack, &step_ri);
+    write_elim_usage_proof(state, ri, step_ri);
+  }
+  if(state->end_of_branch->rule->type == goal && n_branches <= 1){
+    fprintf(get_coq_fdes(), "(* Reached leaf at step %i *)\n", step);
+    write_goal_proof(state->end_of_branch, state, step, history);
+    fprintf(get_coq_fdes(), "(* Finished goal proof of leaf at step %i *)\n", step);
+
+  } else {
+    unsigned int i;
+    assert(n_branches > 1);
+    write_elim_usage_proof(state, state->end_of_branch, step);
+    for(i = 0; i < n_branches; i++){
+      assert(state != state->branches[i]);
+      if(i > 0)
+	write_disj_proof_start(state->end_of_branch, step, i);
+      write_mt_coq_proof(state->branches[i]);
+    }
+    write_premiss_proof(state->end_of_branch, step, history);
+  }
+  while(!is_empty_ri_stack(state->elim_stack)){
+    rule_instance* ri = pop_ri_stack(state->elim_stack, &step_ri);
+    write_premiss_proof(ri, step_ri, history);
+  }
+}
 /**
    The main prover function
 
@@ -506,12 +562,13 @@ unsigned int prover(const rete_net* rete, bool factset, bool multithread){
       inc_proof_step_counter(state);
     }
   }
-  if(multithread){
-    push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));
-    foundproof = true;
-    thread_runner_coq_rete();
-  } else 
-    foundproof =  run_prover(state, factset, NULL);
+  push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));
+  foundproof = true;
+  thread_runner_coq_rete();
+  if(foundproof && rete->coq){
+    write_mt_coq_proof(state);
+    end_proof_coq_writer(rete->th);
+  }
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   delete_ri_state_stack(disj_ri_stack);

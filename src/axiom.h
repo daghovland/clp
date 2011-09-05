@@ -36,6 +36,8 @@
    pointers to the rule instance queue kept in the rete net
 
    exist_vars is the variables that are bound existentially on the right hand side
+
+   a fact has empty premiss, but may have a disjunction in the right hand side
  **/
 enum axiom_type { fact, goal, normal };
 

@@ -32,8 +32,10 @@
 FILE* get_coq_fdes(void);
 bool next_ri_is_after(rule_instance_stack*, unsigned int);
 void init_proof_dot_writer(const char*, const rete_net*);
+void init_proof_coq_writer(const char*, const rete_net*);
 void write_proof_node(rete_net_state*, const rule_instance*);
 void end_proof_dot_writer(const char*, const rete_net*);
+void end_proof_coq_writer(const theory* th);
 void write_proof_state(const rete_net_state*, const rete_net_state*);
 void write_proof_edge(const rete_net_state*, const rete_net_state*);
 void write_goal_proof(const rule_instance*, const rete_net_state*, int, rule_instance_state**);

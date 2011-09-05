@@ -82,14 +82,29 @@ void delete_theory(theory* t){
   free(t);
 }
 
+
 /**
    From the "name" predicate in CL.pl format
 **/
 void set_theory_name(theory *th, char* name){
+  unsigned int i, j;
   assert(th->name == NULL);
   assert(strlen(name) >= 0);
-  th->name = name;
+
+  th->name = malloc_tester(strlen(name) + 1);
+  
+  for(i = 0, j = 0; name[i] != '\0'; i++){
+    if( name[i] != '+' && name[i] != '.' && name[i] != '\'' && name[i] != '\"'){
+      th->name[j] = name[i];
+      j++;
+    }
+  }
+  th->name[j] = '\0';
+  
+  assert(i == strlen(th->name));  
 }
+
+
 /**
    Creates new rete network for the whole theory
 **/

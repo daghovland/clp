@@ -117,6 +117,7 @@ typedef struct rete_net_state_t {
   bool verbose;
   rule_instance* end_of_branch;
   rule_instance_stack* elim_stack;
+  struct rete_net_state_t ** branches;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
 

@@ -130,11 +130,13 @@ void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
     free(dotfilename);
     free(pdffilename);
   } // if proof etc. 
-  if(net->coq){
-    assert(coq_file_open);
-    print_coq_proof_ending(net->th, coq_fp);
-    sys_err( fclose(coq_fp), "Could not close coq .v proof file.");
-  }
+  
+}
+
+void end_proof_coq_writer(const theory* th){
+  assert(coq_file_open);
+  print_coq_proof_ending(th, coq_fp);
+  sys_err( fclose(coq_fp), "Could not close coq .v proof file.");
 }
 
 void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
@@ -148,26 +150,28 @@ void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
     file_open = true;
     free(dotfilename);
   }
-  if(net->coq){
-    char * coqfilename, * period_pos;
-    unsigned int i;
-    coqfilename = malloc_tester(strlen(filenameprefix) + 3);
+}
 
-    for(i = 0; filenameprefix[i] != '.' && filenameprefix[i] != '\0'; i++)
-      coqfilename[i] = filenameprefix[i];
-    coqfilename[i] = '\0';
+void init_proof_coq_writer(const char* filenameprefix, const rete_net* net){
+  char *coqfileprefix, * coqfilename, * period_pos;
+  unsigned int i;
+  coqfilename = malloc_tester(strlen(filenameprefix) + 3);
+  
+  for(i = 0; filenameprefix[i] != '.' && filenameprefix[i] != '\0'; i++)
+    coqfilename[i] = filenameprefix[i];
+  coqfilename[i] = '\0';
+  
+  assert(i == strlen(coqfilename));
+  
+  coqfilename = strcat(coqfilename, ".v");
+  printf("Writing coq format proof to file: \"%s\".\n", coqfilename);
+  
+  coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
+  coq_file_open = true;
 
-    assert(i == strlen(coqfilename));
-
-    coqfilename = strcat(coqfilename, ".v");
-    printf("Writing coq format proof to file: \"%s\".\n", coqfilename);
-
-    coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
-    coq_file_open = true;
-    print_coq_proof_intro(net->th, coq_fp);
-    
-    free(coqfilename);
-  }
+  print_coq_proof_intro(net->th, coq_fp);
+  
+  free(coqfilename);
 }
 
 void write_proof_node(rete_net_state* s, const rule_instance* ri){

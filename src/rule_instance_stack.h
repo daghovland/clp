@@ -37,15 +37,19 @@ typedef struct rule_instance_stack_t {
   rule_instance ** stack;
   unsigned int * step_nos;
   unsigned int n_stack;
+  unsigned int n_2_stack;
 } rule_instance_stack;
 
 
 
 rule_instance_stack* initialize_ri_stack(void);
+void init_rev_stack(rule_instance_stack*);
 void push_ri_stack(rule_instance_stack*, rule_instance*, unsigned int);
 rule_instance* pop_ri_stack(rule_instance_stack*, unsigned int*);
+rule_instance* pop_rev_ri_stack(rule_instance_stack*, unsigned int*);
 void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src);
 bool is_empty_ri_stack(rule_instance_stack*);
+bool is_empty_rev_ri_stack(rule_instance_stack*);
 void delete_ri_stack(rule_instance_stack*);
 void print_coq_ri_stack(FILE*, rule_instance_stack*);
 #endif

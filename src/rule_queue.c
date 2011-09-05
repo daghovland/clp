@@ -263,6 +263,7 @@ rule_instance* create_dummy_rule_instance(void){
   ins->timestamp = 0;
   ins->rule = NULL;
   ins->substitution = NULL;
+  ins->used_in_proof = false;
   return ins;
 }
   

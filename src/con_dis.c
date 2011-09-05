@@ -312,7 +312,7 @@ void print_coq_disj(const disjunction* dis, FILE* stream){
       fprintf(stream, ", ");
     }
     if(!print_coq_conj(arg, stream))
-      fprintf(stderr, "con_dis.c: print_coq_disj: Warning: A disjunct in an rhs contained only domain predicates. This might not make sense.");
+      fprintf(stderr, "con_dis.c: print_coq_disj: Warning: A disjunct in an rhs contained only domain predicates. This might not make sense.\n");
     if(arg->n_args > 0 || arg->is_existential)
       fprintf(stream, ")");
     if(i < dis->n_args - 1)

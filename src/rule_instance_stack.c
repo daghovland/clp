@@ -76,6 +76,31 @@ rule_instance* pop_ri_stack(rule_instance_stack* ris, unsigned int * step_no){
   return ris->stack[ris->n_stack];
 }
 
+/**
+   Called from write_mt_coq_proof after proof is done
+
+   used for writing usages in reverse order
+**/
+void init_rev_stack(rule_instance_stack* ri){
+  ri->n_2_stack = 0;
+}
+
+rule_instance* pop_rev_ri_stack(rule_instance_stack* ris, unsigned int * step_no){
+  rule_instance* ri;
+  assert(ris->n_2_stack < ris->n_stack);
+  *step_no = ris->step_nos[ris->n_2_stack];
+  ri = ris->stack[ris->n_2_stack];
+  ++ ris->n_2_stack;
+  return ri;
+}
+
+bool is_empty_rev_ri_stack(rule_instance_stack * ris){
+  return (ris->n_2_stack >= ris->n_stack);
+}
+
+/**
+   Printing and deleting. Not sure if this is used.
+**/
 
 void delete_ri_stack(rule_instance_stack* ris){
   free(ris->stack);
