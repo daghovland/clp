@@ -152,16 +152,12 @@ void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
   }
 }
 
-void init_proof_coq_writer(const char* filenameprefix, const rete_net* net){
+void init_proof_coq_writer(const rete_net* net){
   char *coqfileprefix, * coqfilename, * period_pos;
   unsigned int i;
-  coqfilename = malloc_tester(strlen(filenameprefix) + 3);
+  coqfilename = malloc_tester(strlen(net->th->name) + 3);
   
-  for(i = 0; filenameprefix[i] != '.' && filenameprefix[i] != '\0'; i++)
-    coqfilename[i] = filenameprefix[i];
-  coqfilename[i] = '\0';
-  
-  assert(i == strlen(coqfilename));
+  coqfilename = strcpy(coqfilename, net->th->name);
   
   coqfilename = strcat(coqfilename, ".v");
   printf("Writing coq format proof to file: \"%s\".\n", coqfilename);

@@ -90,9 +90,12 @@ typedef struct rete_net_t {
 
    old_fact_set is used to print out only the newly inserted facts
 
-   ri_stack is used for the coq proof output.
+   elim_stack is used for the coq proof output.
    It is pushed in proof_writer.c:write_elim_usage_proof
 
+   finished is true when the branch is done
+
+   The size of "branches" equals end_of_branch->rule->rhs->n_args
 **/
 typedef struct rete_net_state_t {
   const char* proof_branch_id;
@@ -118,7 +121,11 @@ typedef struct rete_net_state_t {
   rule_instance* end_of_branch;
   rule_instance_stack* elim_stack;
   struct rete_net_state_t ** branches;
+  struct rete_net_state_t * parent;
+  bool finished;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
+
+void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child);
 
 #endif

@@ -67,7 +67,8 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->n_constants = 0;
 
   state->elim_stack = initialize_ri_stack();
-
+  state->finished = false;
+  state->parent = NULL;
   return state;
 }
 
@@ -187,10 +188,32 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   copy->start_step_no = orig->cursteps;
 
   copy->elim_stack = initialize_ri_stack();
-
+  copy->finished = false;
+  copy->parent = orig;
   return copy;
 }
 
+/**
+   Called from prover.c when treating a disjunction which turns out not to be used. 
+   The information about the end point, and eliminations in the state "below" in the proof tree is
+   transferred to the state above
+
+   The endpoint of the parent is overwritten with that in the child
+
+   The step numbering is also transferred, since this is necessary for correct coq output.
+
+   The parent state cannot be used for anything else than printing output after this, as
+   the queues etc. are not correct anymore.
+**/
+void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child){ 
+  parent->end_of_branch = child->end_of_branch;
+  add_ri_stack(parent->elim_stack, child->elim_stack);
+  parent->branches = child->branches;
+
+  parent->step_no = child->step_no;
+  parent->cursteps = child->cursteps;
+  
+}
 /**
    Inserts a fact into the fact set
 **/

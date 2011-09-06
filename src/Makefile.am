@@ -21,12 +21,6 @@ check_SCRIPTS = check_clp.sh
 check_DATA = anl.gl anc.in
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
-	echo "./clpdebug -eG $(srcdir)/anl.gl" > check_clp.sh
-	echo "./clpdebug -C $(srcdir)/anl.in" >> check_clp.sh
-	echo "./clpdebug -eGm 60 $(srcdir)/anl.gl" >> check_clp.sh
-	echo "./clpdebug -eGm 60 $(srcdir)/anl.gl" >> check_clp.sh
-	echo "./clpdebug -edq $(srcdir)/anc.in" >> check_clp.sh
-	echo "./clpdebug -C $(srcdir)/anc.in" >> check_clp.sh
 	echo "./clpdebug -dq $(srcdir)/nl.in" >> check_clp.sh
 	echo "coqc nl.v" >> check_clp.sh
 	echo "rm nl.v nl.vo" >> check_clp.sh

@@ -39,6 +39,7 @@ typedef struct theory_t {
   size_t size_axioms;
   freevars* vars;
   char* name;
+  bool has_name;
   size_t n_predicates;
   size_t size_predicates;
   predicate** predicates;
@@ -54,7 +55,8 @@ typedef struct theory_t {
 
 theory* create_theory(void);
 void extend_theory(theory*, axiom*);
-void set_theory_name(theory*, char*);
+void set_theory_name(theory*, const char*);
+bool has_theory_name(const theory*);
 
 void print_coq_proof_intro(const theory*, FILE*);
 void print_coq_proof_ending(const theory*, FILE*);

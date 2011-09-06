@@ -51,6 +51,7 @@ theory* create_theory(void){
 
   ret_val->vars = init_freevars();
   ret_val->name = NULL;
+  ret_val->has_name = false;
   ret_val->max_lhs_conjuncts = 0;
 
   return ret_val;
@@ -86,11 +87,12 @@ void delete_theory(theory* t){
 /**
    From the "name" predicate in CL.pl format
 **/
-void set_theory_name(theory *th, char* name){
+void set_theory_name(theory *th, const char* name){
   unsigned int i, j;
-  assert(th->name == NULL);
+  assert(th->name == NULL && th->has_name == false);
   assert(strlen(name) >= 0);
 
+  th->has_name = true;
   th->name = malloc_tester(strlen(name) + 1);
   
   for(i = 0, j = 0; name[i] != '\0'; i++){
@@ -101,18 +103,26 @@ void set_theory_name(theory *th, char* name){
   }
   th->name[j] = '\0';
   
-  assert(i == strlen(th->name));  
+  assert(j == strlen(th->name));  
 }
 
+/**
+   Checks whether a name has been set for the theory
+   For CL.pl format, this is set by the name predicate in the theory file. 
+   In geolog, we must in stead use the filename
+**/
+bool has_theory_name(const theory* th){
+  return th->has_name;
+}
 
 /**
    Creates new rete network for the whole theory
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not){
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps, lazy, coq);
   for(i = 0; i < th->n_axioms; i++)
-    create_rete_axiom_node(net, th->axioms[i], i);
+    create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
   net->th = th;
   net->existdom = existdom;
   net->strat = strat;
@@ -138,7 +148,7 @@ bool test_theory(const theory* t){
    Prints a proof in coq format. Not finished.
 **/
 void print_coq_proof_intro(const theory* th, FILE* stream){
-  unsigned int i;
+  unsigned int i, j;
   fprintf(stream, "Section %s.\n\n", th->name);
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
 
@@ -154,8 +164,19 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   
   for(i = 0; i < th->n_axioms; i++){
     const axiom* a = th->axioms[i];
-    if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[0]->pred->is_domain))
-      print_coq_axiom(th->axioms[i], stream);
+    if(a->type == fact && a->rhs->n_args == 1){
+      conjunction* rhs = a->rhs->args[0];
+      bool only_domain = true;
+      for(j = 0; j < rhs->n_args; j++){
+	if(! rhs->args[j]->pred->is_domain){
+	  only_domain=false;
+	  break;
+	}
+      }
+      if(only_domain)
+	continue;
+    }
+    print_coq_axiom(th->axioms[i], stream);
   }
   fprintf(stream, "Theorem %s : goal.\n", th->name);
   fprintf(stream, "Proof.\n");

@@ -42,7 +42,7 @@ bool lazy;
 
 extern char * optarg;
 extern int optind, optopt, opterr;
-bool verbose, debug, proof, dot, text, pdf, existdom, factset, coq, multithreaded;
+bool verbose, debug, proof, dot, text, pdf, existdom, factset, coq, multithreaded, use_beta_not;
 strategy strat;
 unsigned long maxsteps;
 typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
@@ -68,7 +68,9 @@ int file_prover(FILE* f, const char* prefix){
   }
 
   assert(test_theory(th));
-  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq);
+  if(!has_theory_name(th))
+    set_theory_name(th, prefix);
+  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq, use_beta_not);
 
   if(!factset){  
     if(debug && !factset){
@@ -86,7 +88,7 @@ int file_prover(FILE* f, const char* prefix){
     
     init_proof_dot_writer(prefix, net);
     if(coq)
-      init_proof_coq_writer(prefix, net);
+      init_proof_coq_writer(net);
   }
   steps = prover(net, factset, multithreaded);
   if(steps > 0){
@@ -130,6 +132,7 @@ void print_help(char* exec){
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
   printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm.\n");
+  printf("\t-n, --not\t\tDo not constructs rete nodes for the rhs of rules. (Beta-not-nodes).\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
 
@@ -150,8 +153,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'o'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdoacCGeqMm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"dot", no_argument, NULL, 'o'}, {"pdf", no_argument, NULL, 'a'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"not", no_argument, NULL, 'n'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdoacCGeqMnm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -164,6 +167,7 @@ int main(int argc, char *argv[]){
   factset = false;
   lazy = true;
   coq = false;
+  use_beta_not = true;
   multithreaded = false;
   input_format = clpl_input;
   strat = normal_strategy;
@@ -185,6 +189,9 @@ int main(int argc, char *argv[]){
       break;
     case 'f':
       factset = true;
+      break;
+    case 'n':
+      use_beta_not = false;
       break;
     case 'g':
       debug = true;

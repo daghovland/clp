@@ -117,7 +117,7 @@ void delete_axiom(axiom* a){
    This is the only place where net->lazy is used, and it leads to setting the
    propagate value of alpha nodes in the left hand side to the opposite value
 **/
-void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
+void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, bool use_beta_not){
   rete_node* node;
   if(ax->type != fact){
     const freevars* rule_free_vars;
@@ -132,7 +132,7 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no){
 				 rule_free_vars,
 				 !(net->lazy),
 				 axiom_no);
-    if(ax->type == normal) {
+    if(ax->type == normal && use_beta_not) {
       node = create_rete_disj_node(net, 
 				   node, 
 				   ax->rhs,
