@@ -13,6 +13,14 @@ compile
 aclocal.m4
 clp
 texinfo.tex
+
+#Produced by autoscan
+autoscan.log
+config.guess
+config.sub
+configure.scan
+
+#Generated source files
 src/geolog.c
 src/geolog_parser.h
 src/geolog_parser.c
