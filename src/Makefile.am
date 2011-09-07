@@ -15,12 +15,15 @@ clp_CFLAGS=-DNDEBUG ${PTHREAD_CFLAGS}
 # (Detect Unintented Memory Access) and running
 # the prover on the theory anl (Newman's Lemma)
 
-check_PROGRAMS = clpdebug
+check_PROGRAMS = clpdebug clpmemdebug
 clpdebug_SOURCES = $(clp_SOURCES) 
+clpmemdebug_SOURCES = $(clp_SOURCES) 
 check_SCRIPTS = check_clp.sh
 check_DATA = anl.gl anc.in
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
+	echo "./clpmemdebug -dq $(srcdir)/nl.in" >> check_clp.sh
+	echo "./clpmemdebug -dq $(srcdir)/anl.in" >> check_clp.sh
 	echo "./clpdebug -dq $(srcdir)/nl.in" >> check_clp.sh
 	echo "coqc nl.v" >> check_clp.sh
 	echo "rm nl.v nl.vo" >> check_clp.sh
@@ -33,6 +36,7 @@ check_clp.sh:
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS)
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 
-clpdebug_CFLAGS = -g -lduma
+clpmemdebug_CFLAGS = -g -lduma
+clpdebug_CFLAGS = -g 
 
 

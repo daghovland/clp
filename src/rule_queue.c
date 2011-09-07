@@ -125,6 +125,8 @@ int compare_timestamps(const substitution* first, const substitution* last){
 rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq, bool clpl_sorted){
   size_t orig_size = rq->size_queue;
 
+  assert(!ri->used_in_proof);
+
   rq->n_queue++;
   if(rq->n_queue >= rq->size_queue){    
     rq->size_queue *= 2;
@@ -165,6 +167,7 @@ rule_instance* _pop_rule_queue(rule_queue* rq){
   retval =  rq->queue[rq->first++];
   rq->first %= rq->size_queue;
 
+  assert(!retval->used_in_proof);
   return retval;
 }
 
@@ -186,6 +189,8 @@ rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
     rq->end--;
 
   retval =  rq->queue[rq->end];
+
+  assert(!retval->used_in_proof);
 
   return retval;
 }
@@ -224,6 +229,7 @@ bool test_rule_instance(const rule_instance* ri, const rete_net_state* state){
   assert(ri->substitution != NULL);
   assert(test_substitution(ri->substitution));
   assert(test_axiom(ri->rule, ri->rule->axiom_no));
+  assert(!ri->used_in_proof);
   if(ri->timestamp > get_latest_global_step_no(state)){
     fprintf(stderr, "Wrong timestamp %i on rule instance\n", ri->timestamp);
     return false;
@@ -252,6 +258,7 @@ rule_instance* create_rule_instance(const axiom* rule, substitution* sub){
   ins->timestamp = 0;
   ins->rule = rule;
   ins->substitution = sub;
+  ins->used_in_proof = false;
   return ins;
 }
 

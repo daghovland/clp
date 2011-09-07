@@ -117,6 +117,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
   unsigned int i;
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     unsigned int n_premises = ri->substitution->n_timestamps;
+    printf("%i set to used by %i\n", historic_ts, current_ts);
     ri->used_in_proof = true;
     for(i = 0; i < n_premises; i++){
       int premiss_no = ri->substitution->timestamps[i];
@@ -159,7 +160,11 @@ void insert_rete_net_conjunction(rete_net_state* state,
 				 substitution* sub, 
 				 bool factset){
   unsigned int i, j;
-  
+#ifndef NDEBUG
+  printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
   assert(test_conjunction(con));
   assert(test_substitution(sub));
 
@@ -192,6 +197,11 @@ void insert_rete_net_conjunction(rete_net_state* state,
     }
     delete_instantiated_atom(con->args[i], ground);
   } // end for
+#ifndef NDEBUG
+	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
+	for(i = 0; i < state->net->th->n_axioms; i++)
+	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
 }
 
 /**
@@ -254,6 +264,14 @@ void check_state_finished(rete_net_state* state){
 
 bool run_prover_rete_coq_mt(rete_net_state* state){
     while(true){
+      unsigned int i, ts;
+      
+#ifndef NDEBUG
+      printf("Testing queues at the end of step %i.\n", get_current_state_step_no(state));
+      for(i = 0; i < state->net->th->n_axioms; i++)
+	assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
+
       rule_instance* next = choose_next_instance(state, state->net->strat);
       if(next == NULL)
 	return return_found_model(state);
@@ -265,23 +283,55 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	return return_reached_max_steps(state, next);
       
       insert_rule_instance_history(state, next);
-      
+
+      ts = get_current_state_step_no(state);
+
+#ifndef NDEBUG
+	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
+	for(i = 0; i < state->net->th->n_axioms; i++)
+	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
+
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	unsigned int ts = get_current_state_step_no(state);
 	check_used_rule_instances_coq_mt(next, state, ts, ts);
 	state->end_of_branch = next;
 	check_state_finished(state);
+	write_proof_node(state, next);
+#ifndef NDEBUG
+	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
+	for(i = 0; i < state->net->th->n_axioms; i++)
+	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
 	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
 	  write_proof_node(state, next);
+#ifndef NDEBUG
+	  printf("Testing queues at start of run_prover_rete_coq_mt (disjunction) in step %i.\n", get_current_state_step_no(state));
+	  for(i = 0; i < state->net->th->n_axioms; i++)
+	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
 	  bool rv = start_rete_disjunction_coq_mt(state, next);
+#ifndef NDEBUG
+	  printf("Testing queues at end of  run_prover_rete_coq_mt (disjunction) in step %i.\n", get_current_state_step_no(state));
+	  for(i = 0; i < state->net->th->n_axioms; i++)
+	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
 	  return rv;
 	} else { // rhs is single conjunction
 	  assert(next->rule->type != fact);
 	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, false);
 	  write_proof_node(state, next);
-	  write_proof_edge(state, state);      
+	  write_proof_edge(state, state);  
+#ifndef NDEBUG
+	  printf("Testing queues at end of  run_prover_rete_coq_mt (normal) in step %i.\n", get_current_state_step_no(state));
+	  for(i = 0; i < state->net->th->n_axioms; i++)
+	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif    
+	  if(ts == 157){
+	    printf("157\n");
+	    ;
+	  }
 	}
       }
     } // end while(true)
@@ -334,6 +384,7 @@ bool thread_runner_single_step(void){
   rule_instance* next;
   unsigned int step;
   bool rp_val;
+  unsigned int i;
 #ifdef HAVE_PTHREAD
   pthread_lock(prover_mutex);
 #endif
@@ -349,6 +400,7 @@ bool thread_runner_single_step(void){
     insert_rete_disjunction_coq_mt(state, next, step);
   }
   provers_running--;
+
   return rp_val;
 }
 
@@ -389,9 +441,23 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   push_ri_state_stack(disj_ri_stack, next, state, step);
 
   state->branches[0] = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
+#ifndef NDEBUG
+  printf("Testing queues in middle of  \"start_rete_disjunction_coq_mt\" in step %i.\n", get_current_state_step_no(state));
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
+  if(get_current_state_step_no(state) == 139){
+    printf("139\n");
+    ;
+  }
   rp_val  = run_prover_rete_coq_mt(state->branches[0]);
   if(!rp_val)
     return false;
+#ifndef NDEBUG
+  printf("Testing queues at end of \"start_rete_disjunction_coq_mt\" in step %i.\n", get_current_state_step_no(state));
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    assert(test_rule_queue(state->axiom_inst_queue[i], state));
+#endif
   return true;
 }
 
