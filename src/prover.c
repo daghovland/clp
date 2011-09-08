@@ -58,7 +58,7 @@ pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 **/
 rule_instance_state_stack* disj_ri_stack;
 
-rule_instance_state** history;
+rule_instance_state * * history;
 size_t size_history;
 
 bool insert_rete_net_disjunction(rete_net_state*, rule_instance*, bool);
@@ -142,8 +142,14 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
     pt_err(pthread_mutex_lock(&history_mutex), "Could not get lock on history array.\n");
 #endif
     while(step >= size_history - 1){
+      unsigned int i;
       size_history *= 2;
       history = realloc_tester(history, size_history * sizeof(rule_instance*));
+#ifndef NDEBUG
+      for(i = size_history / 2; i < size_history; i++)
+	history[i] = NULL;
+#endif
+      
     }
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(&history_mutex), "Could not release lock on history array.\n");
@@ -152,6 +158,7 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
   /**
      Note that s->cursteps is set by inc_proof_step_counter to the current global step that is worked on
   **/
+  assert(history[step] == NULL);
   history[step] = create_rule_instance_state(ri, s, get_current_state_step_no(s));
 }
 
@@ -685,7 +692,7 @@ unsigned int prover(const rete_net* rete, bool factset, bool multithread){
 
   disj_ri_stack = initialize_ri_state_stack();
   size_history = 5;
-  history = calloc_tester(sizeof(rule_instance_state*), size_history);
+  history = calloc_tester(size_history, sizeof(rule_instance_state*));
 
 
   srand(1000);

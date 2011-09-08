@@ -54,6 +54,7 @@ void add_ri_state_stack(rule_instance_state_stack* dest, rule_instance_state_sta
 
 rule_instance_state* create_rule_instance_state(rule_instance* ri, rete_net_state* s, unsigned int step_no){
   rule_instance_state* ris = malloc_tester(sizeof(rule_instance_state));
+  assert(!ri->used_in_proof);
   ris->ri = ri;
   ris->s = s;
   ris->step_no = step_no;
