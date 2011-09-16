@@ -155,8 +155,15 @@ rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq, bool clpl_sort
   rq->end %= rq->size_queue;
   return rq;
 }
+/**
+   Used by normal_next_instance. Pops the rule instance
+   that was pushed most recently. 
 
+   Must copy disjunction instances, so as not to mess up 
+   the use in different branches
 
+   The other instances are copied in the prover, when "used_in_proof" is set to true.
+**/
 rule_instance* _pop_rule_queue(rule_queue* rq){
   rule_instance* retval;
 
@@ -168,6 +175,10 @@ rule_instance* _pop_rule_queue(rule_queue* rq){
   rq->first %= rq->size_queue;
 
   assert(!retval->used_in_proof);
+
+
+  retval = copy_rule_instance(retval);
+  retval->substitution = copy_substitution(retval->substitution);
   return retval;
 }
 
@@ -175,6 +186,12 @@ rule_instance* _pop_rule_queue(rule_queue* rq){
    Takes most recently added instance from rule queue
 
    Used by CL.pl emulation to choose next instance
+
+   Must copy disjunction instances, so as not to mess up 
+   the use in different branches
+
+   The other rule instances are copied in prover.c, if they are seen to be used
+   (That is, if the "used_in_proof" is set to true.)
 **/
 rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
   rule_instance* retval;
@@ -191,7 +208,9 @@ rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
   retval =  rq->queue[rq->end];
 
   assert(!retval->used_in_proof);
-
+  
+  retval = copy_rule_instance(retval);
+  retval->substitution = copy_substitution(retval->substitution);
   return retval;
 }
 
@@ -260,6 +279,20 @@ rule_instance* create_rule_instance(const axiom* rule, substitution* sub){
   ins->substitution = sub;
   ins->used_in_proof = false;
   return ins;
+}
+
+
+/*
+  When the prover changes "used_in_proof" to true, it must copy the rule instance, 
+  as the other copies must not be changed
+*/
+rule_instance* copy_rule_instance(rule_instance* orig){
+  rule_instance* copy = malloc_tester(sizeof(rule_instance));
+  
+  assert(!orig->used_in_proof);
+
+  copy = memcpy(copy, orig, sizeof(rule_instance));
+  return copy;
 }
 
 /**

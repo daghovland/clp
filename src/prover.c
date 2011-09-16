@@ -112,12 +112,25 @@ void check_used_rule_instances(rule_instance* ri, rete_net_state* historic_state
    Called at the end of a disjunctive branch
    Checks what rule instances were used
    Called from run_prover_rete_coq_mt
+
+   At the moment, all rule instances are unique in eqch branch (they are copied when popped from the queue)
+   So we know that changing the "used_in_proof" here is ok.
 **/
 void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
+  assert(ri == history[historic_ts]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     unsigned int n_premises = ri->substitution->n_timestamps;
+#ifndef NDEBUG 
     printf("%i set to used by %i\n", historic_ts, current_ts);
+#endif
+    if(ri->rule->rhs->n_args <= 1){
+#ifndef NDEBUG
+      printf("Making copy of %i\n", historic_ts);
+#endif
+      ri = copy_rule_instance(ri);
+      history[historic_ts]->ri = ri;
+    }
     ri->used_in_proof = true;
     for(i = 0; i < n_premises; i++){
       int premiss_no = ri->substitution->timestamps[i];
@@ -175,6 +188,8 @@ void insert_rete_net_conjunction(rete_net_state* state,
   assert(test_conjunction(con));
   assert(test_substitution(sub));
 
+  // At the moment the substitution is copied, when the instance is popped, 
+  // so we know it is unique. This could be change if memory becomes an issue.
   if(!state->net->existdom)
     fresh_exist_constants(state, con, sub);
   
@@ -204,11 +219,6 @@ void insert_rete_net_conjunction(rete_net_state* state,
     }
     delete_instantiated_atom(con->args[i], ground);
   } // end for
-#ifndef NDEBUG
-	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
-	for(i = 0; i < state->net->th->n_axioms; i++)
-	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
 }
 
 /**
@@ -273,11 +283,6 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
     while(true){
       unsigned int i, ts;
       
-#ifndef NDEBUG
-      printf("Testing queues at the end of step %i.\n", get_current_state_step_no(state));
-      for(i = 0; i < state->net->th->n_axioms; i++)
-	assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
 
       rule_instance* next = choose_next_instance(state, state->net->strat);
       if(next == NULL)
@@ -293,52 +298,28 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 
       ts = get_current_state_step_no(state);
 
-#ifndef NDEBUG
-	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
-	for(i = 0; i < state->net->th->n_axioms; i++)
-	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
+
 
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	check_used_rule_instances_coq_mt(next, state, ts, ts);
 	state->end_of_branch = next;
 	check_state_finished(state);
 	write_proof_node(state, next);
-#ifndef NDEBUG
-	printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
-	for(i = 0; i < state->net->th->n_axioms; i++)
-	  assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
+
 	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
 	  write_proof_node(state, next);
-#ifndef NDEBUG
-	  printf("Testing queues at start of run_prover_rete_coq_mt (disjunction) in step %i.\n", get_current_state_step_no(state));
-	  for(i = 0; i < state->net->th->n_axioms; i++)
-	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
+
 	  bool rv = start_rete_disjunction_coq_mt(state, next);
-#ifndef NDEBUG
-	  printf("Testing queues at end of  run_prover_rete_coq_mt (disjunction) in step %i.\n", get_current_state_step_no(state));
-	  for(i = 0; i < state->net->th->n_axioms; i++)
-	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
+
 	  return rv;
 	} else { // rhs is single conjunction
 	  assert(next->rule->type != fact);
 	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, false);
 	  write_proof_node(state, next);
 	  write_proof_edge(state, state);  
-#ifndef NDEBUG
-	  printf("Testing queues at end of  run_prover_rete_coq_mt (normal) in step %i.\n", get_current_state_step_no(state));
-	  for(i = 0; i < state->net->th->n_axioms; i++)
-	    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif    
-	  if(ts == 157){
-	    printf("157\n");
-	    ;
-	  }
+
 	}
       }
     } // end while(true)
@@ -448,23 +429,10 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   push_ri_state_stack(disj_ri_stack, next, state, step);
 
   state->branches[0] = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
-#ifndef NDEBUG
-  printf("Testing queues in middle of  \"start_rete_disjunction_coq_mt\" in step %i.\n", get_current_state_step_no(state));
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
-  if(get_current_state_step_no(state) == 139){
-    printf("139\n");
-    ;
-  }
+ 
   rp_val  = run_prover_rete_coq_mt(state->branches[0]);
   if(!rp_val)
     return false;
-#ifndef NDEBUG
-  printf("Testing queues at end of \"start_rete_disjunction_coq_mt\" in step %i.\n", get_current_state_step_no(state));
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
   return true;
 }
 
@@ -641,6 +609,7 @@ void write_mt_coq_proof(rete_net_state* state){
   unsigned int step = get_current_state_step_no(state);
   unsigned int step_ri, pusher;
   init_rev_stack(state->elim_stack);
+  fprintf(coq_fp, "(* Treating branch %s *)\n", state->proof_branch_id);
   assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
   while(!is_empty_rev_ri_stack(state->elim_stack)){
     rule_instance* ri = pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher);
@@ -671,6 +640,7 @@ void write_mt_coq_proof(rete_net_state* state){
     write_premiss_proof(ri, step_ri, history);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
   }
+  fprintf(coq_fp, "(* Finished with branch %s *)\n", state->proof_branch_id);
 }
 /**
    The main prover function
