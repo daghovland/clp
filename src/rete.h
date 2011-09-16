@@ -90,6 +90,7 @@ bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state);
 unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state);
 
 sub_list_iter* get_state_sub_list_iter(rete_net_state*, size_t);
+void free_state_sub_list_iter(rete_net_state*, size_t, sub_list_iter*);
 
 rete_node* get_selector(size_t, rete_net*);
 const rete_node* get_const_selector(size_t, const rete_net*);

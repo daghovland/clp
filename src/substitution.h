@@ -63,9 +63,7 @@ typedef struct substitution_t {
 **/
 typedef struct substitution_list_t {
   struct substitution_list_t * next;
-#ifndef HAVE_PTHREAD
   struct substitution_list_t * prev;
-#endif
   substitution * sub;
 } substitution_list;
 
@@ -81,7 +79,6 @@ substitution* create_empty_fact_substitution(const theory*, const axiom*);
 bool test_substitution(const substitution*);
 bool test_is_instantiation(const freevars*, const substitution*);
 bool test_is_conj_instantiation(const conjunction*, const substitution*);
-
 
 sub_list_iter* get_sub_list_iter(substitution_list*);
 bool has_next_sub_list(const sub_list_iter*);

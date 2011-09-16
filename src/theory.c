@@ -27,6 +27,9 @@
 #include "theory.h"
 #include "fresh_constants.h"
 #include "rete.h"
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 
 theory* create_theory(void){  
@@ -119,6 +122,9 @@ bool has_theory_name(const theory* th){
    Creates new rete network for the whole theory
 **/
 rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not){
+#ifdef HAVE_PTHREAD
+  pthread_mutexattr_t p_attr;
+#endif
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps, lazy, coq);
   for(i = 0; i < th->n_axioms; i++)
@@ -126,6 +132,17 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   net->th = th;
   net->existdom = existdom;
   net->strat = strat;
+#ifdef HAVE_PTHREAD
+  pthread_mutexattr_init(&p_attr);
+#ifndef NDEBUG
+  pthread_mutexattr_settype(&p_attr, PTHREAD_MUTEX_ERRORCHECK_NP);
+#endif
+  net->sub_mutexes = calloc_tester(net->n_subs, sizeof(pthread_mutex_t));
+  for(i = 0; i < net->n_subs; i++){
+    pthread_mutex_init(&net->sub_mutexes[i], &p_attr);
+  }
+  pthread_mutexattr_destroy(&p_attr);
+#endif
   return net;
 }
    

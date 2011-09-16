@@ -43,12 +43,10 @@ void detract_rete_beta_sub(rete_net_state* state,
 			   substitution* sub)
 {
   sub_list_iter* iter;
-
+  size_t sub_no = (node->type == beta_not) ? node->val.beta.b_store_no : node->val.rule.store_no;
   assert(node->type == beta_not || node->type == rule);
 
-  iter = get_state_sub_list_iter(state, 
-				 (node->type == beta_not) ? node->val.beta.b_store_no : node->val.rule.store_no
-				 );
+  iter = get_state_sub_list_iter(state, sub_no);
 
 #ifdef __DEBUG_RETE_STATE
   fprintf(stdout, "\nRetracting: ");
@@ -65,7 +63,7 @@ void detract_rete_beta_sub(rete_net_state* state,
       }
   } // end   while(has_next_sub_list(iter)){
   delete_substitution(sub);
-  free(iter);
+  free_state_sub_list_iter(state, sub_no, iter);
 }
 
 /**
@@ -115,7 +113,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 	    if(join != NULL) 
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
-	  free(iter);
+	  free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 	} else
 	delete_substitution(sub);
       break;
@@ -129,11 +127,11 @@ void insert_rete_beta_sub(rete_net_state* state,
 	    iter = get_state_sub_list_iter(state, node->val.beta.a_store_no);
 	    while(has_next_sub_list(iter)){
 	      if(subs_equal_intersection(sub, get_next_sub_list(iter))){
-		free(iter);
+		free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 		return;
 	      }
 	    }
-	    free(iter);
+	    free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
 	  } else 
 	  delete_substitution(sub);
@@ -230,7 +228,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }
-      free(iter);
+      free_state_sub_list_iter(state, node->val.beta.b_store_no, iter);
     }
     break;
   case beta_not: 

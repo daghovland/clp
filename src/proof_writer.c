@@ -43,7 +43,7 @@ static FILE* coq_fp = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dot_file_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t history_array_lock = PTHREAD_MUTEX_INITIALIZER;
-history_array_lock
+
 #endif
 
 static bool file_open, coq_file_open;

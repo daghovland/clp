@@ -222,8 +222,23 @@ void insert_state_fact_set(rete_net_state* s, const atom* a){
   s->facts = insert_fact_set(s->facts, a);
 }
 
+/**
+   All sub_list_iter _must_be freed with the according function below.
+   Otherwise the threaded version will deadlock
+**/
+   
 sub_list_iter* get_state_sub_list_iter(rete_net_state* state, size_t sub_no){
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(& state->net->sub_mutexes[sub_no]);
+#endif
   return get_sub_list_iter(state->subs[sub_no]);
+}
+
+void free_state_sub_list_iter(rete_net_state* state, size_t sub_no, sub_list_iter* i){
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(& state->net->sub_mutexes[sub_no]);
+#endif
+  free_sub_list_iter(i);
 }
 
 /**

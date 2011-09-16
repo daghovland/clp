@@ -36,6 +36,9 @@
 #include "strategy.h"
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 
 
@@ -53,6 +56,10 @@
 
    history is used when printing coq format proofs. 
    Keeps track of used rule instances.
+
+   sub_mutexes is of length n_subs. There is a mutex for each of the substitution list structures, since
+   these must be protected when they are iterated. This is because the thread-safe version of sub_list_iter
+   has too high overhead (3x run-time)
 **/
 typedef struct rete_net_t {
   size_t n_subs;
@@ -62,7 +69,9 @@ typedef struct rete_net_t {
   bool lazy;
   bool coq;
   strategy strat;
-
+#ifdef HAVE_PTHREAD
+  pthread_mutex_t * sub_mutexes;
+#endif
   //unsigned int size_history;
   // rule_instance ** history;
 
@@ -121,7 +130,7 @@ typedef struct rete_net_state_t {
   rule_instance* end_of_branch;
   rule_instance_stack* elim_stack;
   struct rete_net_state_t ** branches;
-  struct rete_net_state_t * parent;
+  const struct rete_net_state_t * parent;
   bool finished;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;

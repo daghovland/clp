@@ -327,6 +327,8 @@ void delete_substitution_list_below(substitution_list* list, substitution_list* 
   }
 }
 
+
+
 /**
    Iterator functionality
 
@@ -334,8 +336,10 @@ void delete_substitution_list_below(substitution_list* list, substitution_list* 
    A pointer to an iterator therefore a pointer to a pointer to a substitution_list
 
    The substitutions must be returned in order: The oldest first. Therefore the
-   prev pointer is used. This is not thread safe!!!
+   prev pointer is used. This is not thread safe. Therefore the accessor function 
+   must use a mutex. This is done in rete_state.c
 **/
+
 sub_list_iter* get_sub_list_iter(substitution_list* sub){
   sub_list_iter* i = malloc_tester(sizeof(sub_list_iter));
   substitution_list* prev = NULL;
@@ -369,6 +373,10 @@ substitution* get_next_sub_list(sub_list_iter* i){
   (*i) = sl->prev;
   sl->prev = NULL;
   return retval;
+}
+
+free_sub_list_iter(sub_list_iter* i){
+  free(i);
 }
 
 /**
