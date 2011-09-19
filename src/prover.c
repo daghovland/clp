@@ -43,7 +43,8 @@ unsigned int provers_running;
 unsigned int num_threads;
 #define MAX_THREADS 20
 
-pthread_cond_t prover_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t stack_increased_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t prover_done_cond = PTHREAD_COND_INITIALIZER;
 
 pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t disj_ri_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -199,7 +200,10 @@ bool return_found_model(rete_net_state* state){
   fprintf(stdout, "Found a model of the theory: \n");
   print_fact_set(state->facts, stdout);
   foundproof = false;
-  pthread_cond_signal(&prover_cond);
+#ifdef HAVE_PTHREAD
+  pthread_cond_broadcast(&prover_done_cond);
+  pthread_cond_broadcast(& stack_increased_cond);
+#endif
   return false;
 }
 
@@ -210,7 +214,10 @@ bool return_reached_max_steps(rete_net_state* state, rule_instance* ri){
   printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
   free(ri);
   foundproof = false;
-  pthread_cond_signal(&prover_cond);
+#ifdef HAVE_PTHREAD
+  pthread_cond_broadcast(&prover_done_cond);
+  pthread_cond_broadcast(& stack_increased_cond);
+#endif
   return false;
 }
 
@@ -314,10 +321,17 @@ rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* c
 **/
 void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, unsigned int step){
   unsigned int i;
-  if(!state->branches[0]->finished) {
+  while(!state->branches[0]->finished) {
     fprintf(stderr, "prover.c:insert_rete_disjunction_coq_mt: Warning: a not finished disjunction was popped.\n");
     thread_runner_single_step();
+#ifdef HAVE_PTHREAD
+    pthread_mutex_lock(& disj_ri_stack_mutex);
+#endif
     push_ri_state_stack(disj_ri_stack, next, state, step);
+#ifdef HAVE_PTHREAD
+    pthread_cond_signal(& stack_increased_cond);
+    pthread_mutex_unlock(& disj_ri_stack_mutex);
+#endif
     return;
   }
   if(!next->used_in_proof){
@@ -340,66 +354,148 @@ void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, 
   return;
 }
 
-bool thread_runner_single_step(rule_instance* next, rete_net_state* state, unsigned int step){
+/**
+   Finds the newest element on disj_ri_stack with a finished branch
+   The function assumes the coresponding mutex is already locked
+
+   Also assumes that it is called with a non-empty disj_ri_stack
+**/
+bool pop_latest_finished_disj(rule_instance ** next, rete_net_state ** state, unsigned int * step){
+  rule_instance * next_tmp;
+  rete_net_state * state_tmp;
+  unsigned int  step_tmp;
+  bool retval;
+  pop_ri_state_stack(disj_ri_stack, &next_tmp, &state_tmp, &step_tmp);
+  *next = next_tmp;
+  *state = state_tmp;
+  *step = step_tmp;
+  if(next_tmp == NULL || (*state)->branches[0]->finished){
+    return true;
+  } else {
+    if(is_empty_ri_state_stack(disj_ri_stack))
+      retval = false;
+    else 
+      retval = pop_latest_finished_disj(next, state, step);
+    push_ri_state_stack(disj_ri_stack, next_tmp, state_tmp, step_tmp);
+    return retval;
+  }
+}
+
+bool thread_runner_single_step(void){
+  rete_net_state* state; 
+  rule_instance* next;
+  unsigned int step;
   bool rp_val;
-  unsigned int i;
-  if(next == NULL)
+  unsigned int i, retcode;
+
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(& disj_ri_stack_mutex);
+#endif
+
+  while(foundproof 
+	&& ( is_empty_ri_state_stack(disj_ri_stack) 
+	     || ! pop_latest_finished_disj(&next, &state, &step) )
+	&& provers_running > 0 )
+    {
+#ifdef HAVE_PTHREAD
+      retcode = pthread_cond_wait(&stack_increased_cond,  & disj_ri_stack_mutex);
+      if(retcode != 0)
+	perror("prover.c: thread_runner_single_step: could not wait on on signal ");
+#endif
+    }
+
+  provers_running++;
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(& disj_ri_stack_mutex);
+#endif
+
+  if(!foundproof || (is_empty_ri_state_stack(disj_ri_stack) && provers_running == 0)){
+  }
+
+
+  if(next == NULL){
     rp_val = run_prover_rete_coq_mt(state);
-  else {
+  } else {
+    assert(state->branches[0]->finished);
     rp_val = true;
     insert_rete_disjunction_coq_mt(state, next, step);
   }
+
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(& disj_ri_stack_mutex);
+#endif
+  provers_running--;
+#ifdef HAVE_PTHREAD
+  pthread_cond_broadcast(& prover_done_cond);
+  pthread_cond_broadcast(& stack_increased_cond);
+  pthread_mutex_unlock(& disj_ri_stack_mutex);
+#endif
 
   return rp_val;
 }
 
 /**
    This runs the single-threaded prover
-**/
-void thread_runner_coq_rete(void){
-  while(!is_empty_ri_state_stack(disj_ri_stack) || provers_running > 0){
-    pop_ri_state_stack(disj_ri_stack, &next, &state, &step);
-    provers_running++;
-    if(!thread_runner_single_step(next, state, step))
-      return;
-    provers_running--;
-  } // end while(stack_of_disjunctions_not_empty)
-}
 
-/**
    One instance of this function is run in each thread
 **/
-void thread_runner_coq_rete_mt(void){
+void * thread_runner(void * arg){
+  int tid;
+  if(arg == NULL)
+    tid = 0;
+  else
+    tid = * (int *) arg;
+  printf("Thread # %i started\n", tid);
+#ifdef HAVE_PTHREAD
   pthread_mutex_lock(& disj_ri_stack_mutex);
+#endif
   while(foundproof && (!is_empty_ri_state_stack(disj_ri_stack) || provers_running > 0)){
-    while(foundproof && is_empty_ri_state_stack(disj_ri_stack))
-      pthread_cond_wait(&prover_cond,  & disj_ri_stack_mutex);
-    
-    pop_ri_state_stack(disj_ri_stack, &next, &state, &step);
-    provers_running++;
+#ifdef HAVE_PTHREAD
     pthread_mutex_unlock(& disj_ri_stack_mutex);
-    if(!thread_runner_single_step(next, state, step))
+#endif
+    if(!thread_runner_single_step())
       break;
-    pthread_mutex_lock(& disj_ri_stack_mutex);
-    provers_running--;
   }
+  printf("Thread # %i returning\n", tid);
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(& disj_ri_stack_mutex);
+  pthread_cond_broadcast(& prover_done_cond);
+  pthread_cond_broadcast(& stack_increased_cond);
   pthread_mutex_unlock(& disj_ri_stack_mutex);
+#endif
+  return NULL;
 }
 
+#ifdef HAVE_PTHREAD
 /**
    Starts the threads, and wait till some signal it is done
 **/
-#ifdef HAVE_PTHREAD
 void thread_manager(int n_threads){
   pthread_t * tids;
   unsigned int i;
+  int * tid_infos;
+  tid_infos = calloc(n_threads, sizeof(int));
   tids = calloc(n_threads, sizeof(pthread_t));
-  for(i = 0; i < n_threads; i++)
-    pthread_create(& tids[i], NULL, thread_runner_coq_rete, NULL);
+  for(i = 0; i < n_threads; i++){
+    tid_infos[i] = i;
+    pthread_create(& tids[i], NULL, thread_runner, (void *) &tid_infos[i]);
+  }
   pthread_mutex_lock(& disj_ri_stack_mutex);
-  while(foundproof && !is_empty_ri_state_stack(disj_ri_stack))
-    pthread_cond_wait(&prover_cond,  & disj_ri_stack_mutex);
-  pthread_mutex_lock(& disj_ri_stack_mutex);
+  while(foundproof && (!is_empty_ri_state_stack(disj_ri_stack) || provers_running > 0))
+    pthread_cond_wait(&prover_done_cond,  & disj_ri_stack_mutex);
+
+  assert( !foundproof || (provers_running == 0 && is_empty_ri_state_stack(disj_ri_stack)));
+
+  if(pthread_cond_broadcast(& stack_increased_cond) != 0)
+    perror("prover.c:thread_manager, could not broadcast signal");
+  pthread_mutex_unlock(& disj_ri_stack_mutex);
+  
+  
+  for(i = 0; i < n_threads; i++){
+    int err_no = pthread_join(tids[i], NULL);
+    if(err_no != 0)
+      perror("prover.c : thread_manager : Could not join thread");
+  }
 }
 #endif
 
@@ -426,13 +522,24 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   state->branches = calloc_tester(rule->rhs->n_args, sizeof(rete_net_state*));
   step = get_current_state_step_no(state);
 
-  push_ri_state_stack(disj_ri_stack, next, state, step);
-
   state->branches[0] = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
- 
+  
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(& disj_ri_stack_mutex);
+#endif
+  push_ri_state_stack(disj_ri_stack, next, state, step);
+  
+#ifdef HAVE_PTHREAD
+  pthread_cond_signal(& stack_increased_cond);
+  pthread_mutex_unlock(& disj_ri_stack_mutex);
+#endif
+
   rp_val  = run_prover_rete_coq_mt(state->branches[0]);
   if(!rp_val)
     return false;
+  
+  
+
   return true;
 }
 
@@ -519,10 +626,12 @@ unsigned int prover(const rete_net* rete, bool factset, bool multithread){
   push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));
   foundproof = true;
 #ifdef HAVE_PTHREAD
-  thread_manager(num_threads);
-#else
-  thread_runner_coq_rete();
+  if(multithread)
+    thread_manager(num_threads);
+  else
 #endif
+    thread_runner(NULL);
+
   if(foundproof && rete->coq){
     write_mt_coq_proof(state);
     end_proof_coq_writer(rete->th);
