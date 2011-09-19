@@ -22,7 +22,8 @@
 #include "common.h"
 #include "atom.h"
 #include "fact_set.h"
-
+#include "conjunction.h"
+#include "substitution.h"
 
 fact_set* create_fact_set(){
   return NULL;
@@ -52,7 +53,6 @@ fact_set* insert_fact_set(fact_set* f, const atom* a){
 fact_set* print_fact_set(fact_set* fs, FILE* f){
   fprintf(f, "{");
   while(fs != NULL){
-    assert(test_atom(fs->fact));
     print_fol_atom(fs->fact, f);
     if(fs->next != NULL)
       fprintf(f, ", ");
@@ -66,9 +66,7 @@ fact_set* print_fact_set(fact_set* fs, FILE* f){
    Used by unit testing to test that an inserted fact is not already in the factset
 **/
 bool is_in_fact_set(const fact_set* fs, const atom* fact){
-  assert(test_atom(fact));
   while(fs != NULL){
-    assert(test_atom(fs->fact));
     if(equal_atoms(fs->fact, fact)){
       print_fol_atom(fact, stderr);
       fprintf(stderr, " is already in the fact set\n");
@@ -79,11 +77,28 @@ bool is_in_fact_set(const fact_set* fs, const atom* fact){
   return false;
 }
 
-#if 0
 /**
-   Used when unit testing prover
+   Strating implementation of checking the fact set
+   This is not finished, just skeletons
+**/
 
-   Extremely inefficient, important to define NDEBUG in production environments
+bool atom_true_in_fact_set(const fact_set* fs, const atom* a, const substitution* sub){
+  while(fs != NULL){
+    if(equal_atoms(fs->fact, a)){
+      print_fol_atom(fact, stderr);
+      fprintf(stderr, " is already in the fact set\n");
+      return true;
+    }
+    fs = fs->next;
+  }
+  return false;
+}
+
+
+/**
+   For testing whether a conjunction is true in the fact set
+
+   Not done.
 **/
 
 
@@ -95,7 +110,8 @@ bool conjunction_true_in_fact_set(const fact_set* fs, const conjunction* con, co
   for(i = 0; i < con->n_args && true_in_fact_set; i++){
     if(! atom_true_in_fact_set(&fs_list[i], con->args[i], sub)){
       
+    }
   }
   return true_in_fact_set;
 }
-#endif
+

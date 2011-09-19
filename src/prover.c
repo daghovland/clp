@@ -152,11 +152,6 @@ void insert_rete_net_conjunction(rete_net_state* state,
 				 substitution* sub, 
 				 bool factset){
   unsigned int i, j;
-#ifndef NDEBUG
-  printf("Testing queues at start of step %i.\n", get_current_state_step_no(state));
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    assert(test_rule_queue(state->axiom_inst_queue[i], state));
-#endif
   assert(test_conjunction(con));
   assert(test_substitution(sub));
 
@@ -184,11 +179,9 @@ void insert_rete_net_conjunction(rete_net_state* state,
     printf("\n");
 #endif
     
-    if(factset)
-      insert_state_fact_set(state, ground);
-    else {
-      insert_rete_net_fact(state, ground);
-    }
+    insert_state_fact_set(state, ground);
+    insert_rete_net_fact(state, ground);
+
     delete_instantiated_atom(con->args[i], ground);
   } // end for
 }
@@ -321,19 +314,8 @@ rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* c
 **/
 void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, unsigned int step){
   unsigned int i;
-  while(!state->branches[0]->finished) {
-    fprintf(stderr, "prover.c:insert_rete_disjunction_coq_mt: Warning: a not finished disjunction was popped.\n");
-    thread_runner_single_step();
-#ifdef HAVE_PTHREAD
-    pthread_mutex_lock(& disj_ri_stack_mutex);
-#endif
-    push_ri_state_stack(disj_ri_stack, next, state, step);
-#ifdef HAVE_PTHREAD
-    pthread_cond_signal(& stack_increased_cond);
-    pthread_mutex_unlock(& disj_ri_stack_mutex);
-#endif
-    return;
-  }
+  assert(state->branches[0]->finished);
+
   if(!next->used_in_proof){
     rete_net_state* copy_state = state->branches[0];
     transfer_state_endpoint(state, copy_state);
@@ -403,7 +385,7 @@ bool thread_runner_single_step(void){
 	perror("prover.c: thread_runner_single_step: could not wait on on signal ");
 #endif
     }
-
+  assert(next == NULL || state->branches[0]->finished);
   provers_running++;
 #ifdef HAVE_PTHREAD
   pthread_mutex_unlock(& disj_ri_stack_mutex);
@@ -446,7 +428,6 @@ void * thread_runner(void * arg){
     tid = 0;
   else
     tid = * (int *) arg;
-  printf("Thread # %i started\n", tid);
 #ifdef HAVE_PTHREAD
   pthread_mutex_lock(& disj_ri_stack_mutex);
 #endif
@@ -457,9 +438,7 @@ void * thread_runner(void * arg){
     if(!thread_runner_single_step())
       break;
   }
-  printf("Thread # %i returning\n", tid);
 #ifdef HAVE_PTHREAD
-  pthread_mutex_lock(& disj_ri_stack_mutex);
   pthread_cond_broadcast(& prover_done_cond);
   pthread_cond_broadcast(& stack_increased_cond);
   pthread_mutex_unlock(& disj_ri_stack_mutex);
