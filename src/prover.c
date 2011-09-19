@@ -410,6 +410,7 @@ bool thread_runner_single_step(void){
 #endif
 
   if(!foundproof || (is_empty_ri_state_stack(disj_ri_stack) && provers_running == 0)){
+    return false;
   }
 
 
