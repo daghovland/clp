@@ -34,7 +34,7 @@ symbol     [\'\"_]
 <C_COMMENT>"*/"                BEGIN(INITIAL);
 <C_COMMENT>.                     { ;}
 <INITIAL>,                                            {  return COMMA;                   }
-<INITIAL>\|                                    {  return OR_SEPARATOR;  }
+<INITIAL>";"                                    {  return OR_SEPARATOR;  }
 <INITIAL>\(                                         {  return LPAREN;                  }
 <INITIAL>\)                                         {  return RPAREN;                 }
 <INITIAL>"."                                         {  return PERIOD;                   }

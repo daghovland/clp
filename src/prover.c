@@ -149,8 +149,7 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
 
 void insert_rete_net_conjunction(rete_net_state* state, 
 				 conjunction* con, 
-				 substitution* sub, 
-				 bool factset){
+				 substitution* sub){
   unsigned int i, j;
   assert(test_conjunction(con));
   assert(test_substitution(sub));
@@ -179,8 +178,10 @@ void insert_rete_net_conjunction(rete_net_state* state,
     printf("\n");
 #endif
     
-    insert_state_fact_set(state, ground);
-    insert_rete_net_fact(state, ground);
+    if(state->net->has_factset)
+      insert_state_fact_set(state, ground);
+    if(!state->net->factset_lhs || state->net->use_beta_not)
+      insert_rete_net_fact(state, ground);
 
     delete_instantiated_atom(con->args[i], ground);
   } // end for
@@ -191,7 +192,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
 **/
 bool return_found_model(rete_net_state* state){
   fprintf(stdout, "Found a model of the theory: \n");
-  print_fact_set(state->facts, stdout);
+  print_state_fact_set(state, stdout);
   foundproof = false;
 #ifdef HAVE_PTHREAD
   pthread_cond_broadcast(&prover_done_cond);
@@ -289,7 +290,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	  return rv;
 	} else { // rhs is single conjunction
 	  assert(next->rule->type != fact);
-	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution, false);
+	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
 	  write_proof_node(state, next);
 	  write_proof_edge(state, state);  
 
@@ -304,7 +305,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* con, substitution* sub, unsigned int branch_no){
   rete_net_state* copy_state = split_rete_state(state, branch_no);
   write_proof_edge(state, copy_state);
-  insert_rete_net_conjunction(copy_state, con, sub, false);
+  insert_rete_net_conjunction(copy_state, con, sub);
   return copy_state;
 }
 
@@ -578,7 +579,7 @@ void write_mt_coq_proof(rete_net_state* state){
 
    Returns 0 if no proof found, otherwise, the number of steps
 **/
-unsigned int prover(const rete_net* rete, bool factset, bool multithread){
+unsigned int prover(const rete_net* rete, bool multithread){
   unsigned int i, j, retval;
   rete_net_state* state = create_rete_state(rete, verbose);
   const theory* th = rete->th;
@@ -598,7 +599,7 @@ unsigned int prover(const rete_net* rete, bool factset, bool multithread){
       const axiom* axm = th->axioms[i];
       substitution* sub = create_substitution(th, get_current_state_step_no(state));
       assert(axm->axiom_no == i);
-      insert_rete_net_conjunction(state, axm->rhs->args[0], sub, factset);
+      insert_rete_net_conjunction(state, axm->rhs->args[0], sub);
       insert_rule_instance_history(state, create_rule_instance(axm,sub));
       inc_proof_step_counter(state);
     }

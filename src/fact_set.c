@@ -30,19 +30,28 @@ fact_set* create_fact_set(){
 }
 
 void delete_fact_set(fact_set* f){
-  while(f != NULL && !f->split_point){
+  while(f != NULL){
     fact_set* n = f->next;
     free(f);
     f = n;
   }
 }
 
+void delete_fact_set_below(fact_set* f, fact_set* limit){
+  while(f != NULL && f != limit){
+    fact_set* n = f->next;
+    free(f);
+    f = n;
+  }
+}
+
+
 void split_fact_set(fact_set* f){
   if(f != NULL)
     f->split_point = true;
 }
 
-fact_set* insert_fact_set(fact_set* f, const atom* a){
+fact_set* insert_fact_set(fact_set* f, const term_list* a){
   fact_set* new = malloc_tester(sizeof(fact_set));
   new->next = f;
   new->split_point = false;
@@ -53,7 +62,7 @@ fact_set* insert_fact_set(fact_set* f, const atom* a){
 fact_set* print_fact_set(fact_set* fs, FILE* f){
   fprintf(f, "{");
   while(fs != NULL){
-    print_fol_atom(fs->fact, f);
+    print_fol_term_list(fs->fact, f);
     if(fs->next != NULL)
       fprintf(f, ", ");
     fs = fs->next;
@@ -65,7 +74,7 @@ fact_set* print_fact_set(fact_set* fs, FILE* f){
 /**
    Used by unit testing to test that an inserted fact is not already in the factset
 **/
-bool is_in_fact_set(const fact_set* fs, const atom* fact){
+bool is_in_fact_set(const fact_set* fs, const term_list* fact){
   while(fs != NULL){
     if(equal_atoms(fs->fact, fact)){
       print_fol_atom(fact, stderr);
@@ -108,7 +117,7 @@ bool conjunction_true_in_fact_set(const fact_set* fs, const conjunction* con, co
   substitution* sub2 = copy_substitution(sub);
   fact_set* fs_list[con->n_args];
   for(i = 0; i < con->n_args && true_in_fact_set; i++){
-    if(! atom_true_in_fact_set(&fs_list[i], con->args[i], sub)){
+    if(! atom_true_in_fact_set(fs_list[i], con->args[i], sub)){
       
     }
   }

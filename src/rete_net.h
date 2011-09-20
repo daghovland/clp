@@ -68,6 +68,9 @@ typedef struct rete_net_t {
   bool existdom;
   bool lazy;
   bool coq;
+  bool factset_lhs;
+  bool use_beta_not;
+  bool has_factset;
   strategy strat;
 #ifdef HAVE_PTHREAD
   pthread_mutex_t * sub_mutexes;
@@ -105,6 +108,9 @@ typedef struct rete_net_t {
    finished is true when the branch is done
 
    The size of "branches" equals end_of_branch->rule->rhs->n_args
+
+   The fact_set is an array of length net->n_predicates containing the substitutions
+   of the respective atoms
 **/
 typedef struct rete_net_state_t {
   const char* proof_branch_id;
@@ -118,8 +124,7 @@ typedef struct rete_net_state_t {
   unsigned int cursteps;
   unsigned int start_step_no;
   fresh_const_counter fresh;
-  fact_set* facts;
-  fact_set* old_fact_set;
+
   const term** domain;
   size_t size_domain;
   unsigned int n_domain;
@@ -129,6 +134,8 @@ typedef struct rete_net_state_t {
   bool verbose;
   rule_instance* end_of_branch;
   rule_instance_stack* elim_stack;
+  fact_set ** factset;
+  fact_set ** prev_factset;
   struct rete_net_state_t ** branches;
   const struct rete_net_state_t * parent;
   bool finished;

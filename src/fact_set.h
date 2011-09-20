@@ -27,19 +27,18 @@
 typedef struct fact_set_t {
   struct fact_set_t * next;
   bool split_point;
-  const atom* fact;
+  const term_list* fact;
 } fact_set;
 
-
-fact_set* create_fact_set(void);
+void delete_fact_set_below(fact_set*, fact_set*);
 
 void split_fact_set(fact_set*);
 
 void delete_fact_set(fact_set*);
 
-fact_set* insert_fact_set(fact_set*, const atom*);
+fact_set* insert_in_fact_set(fact_set*, const atom*);
 
 fact_set* print_fact_set(fact_set*, FILE*);
-bool is_in_fact_set(const fact_set*, const atom*);
+bool is_in_fact_set(const fact_set*, const term_list*);
 
 #endif
