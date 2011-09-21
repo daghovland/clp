@@ -118,7 +118,6 @@ bool test_rule_instance(const rule_instance*, const rete_net_state*);
 bool test_rule_queue(const rule_queue*, const rete_net_state*);
 
 
-
 void print_rete_net(const rete_net*, FILE* );
 void print_dot_rete_net(const rete_net*, FILE* );
 void print_state_new_facts(rete_net_state*, FILE*);

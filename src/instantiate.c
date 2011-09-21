@@ -19,9 +19,14 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
+/**
+   Different utility functions relating to substitutions as instantiations of formulas
+**/
+
 #include "common.h"
 #include "rete.h"
 #include "substitution.h"
+
 
 
 /**
@@ -80,10 +85,7 @@ void delete_instantiated_term(const term* orig, term* copy){
   }
 }
 
-/**
-   Deletes a term list instantiated by the function above
-   called from the similar function for atoms below
-**/
+
 const term_list* instantiate_term_list(const term_list* orig, 
 				       const substitution* sub){
   unsigned int i;
@@ -95,6 +97,10 @@ const term_list* instantiate_term_list(const term_list* orig,
   return retval;
 }
 
+/**
+   Deletes a term list instantiated by the function above
+   called from the similar function for atoms below
+**/
 void delete_instantiated_term_list(const term_list* orig, term_list* copy){
   unsigned int i;
   if(copy->args != NULL){
@@ -155,4 +161,63 @@ void fresh_exist_constants(rete_net_state* state, const conjunction* con, substi
     const term* t =  get_fresh_constant(state, var);
     insert_substitution_value(sub, var, t);
   }
+}
+
+/**
+   Used by the factset in the rete_state.c
+
+   Tries to expand a substitution such that fact is an
+   the instantiation of at
+
+   If this is not possible, it returns false
+**/
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub);
+
+bool find_instantiate_sub_term(const term* t, const term* ground, substitution* sub){
+  const term* val;
+  if(t == ground){
+    assert(t->type == constant_term);
+    return true;
+  }
+  switch(t->type){
+  case constant_term: 
+    return (ground->type == constant_term 
+	    && t->name == ground->name);
+    break;
+  case variable_term:
+    val = find_substitution(sub, t->var);
+    if (val == NULL){
+      add_substitution(sub, t->var, ground);
+      return true;
+    }
+    return (val->name == ground->name);
+    break;
+  case function_term: 
+    return (ground->type == function_term 
+	    && t->name == ground->name 
+	    && find_instantiate_sub_termlist(t->args, ground->args, sub));
+    break;
+  default:
+    fprintf(stderr, "Unknown term type %i occurred\n", t->type);
+    assert(false);
+  }
+  assert(false);
+}
+
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub){
+  unsigned int i;
+  assert(tl->n_args == ground->n_args);
+  assert(test_ground_term_list(ground));
+  for(i = 0; i < tl->n_args; i++){
+    if(!find_instantiate_sub_term(tl->args[i], ground->args[i], sub))
+      return false;
+  }
+  return true;
+}
+
+
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub){
+  assert(at->pred == fact->pred && at->args->n_args == fact->args->n_args);
+  assert(test_ground_atom(fact));
+  return find_instantiate_sub_termlist(at->args, fact->args, sub);
 }

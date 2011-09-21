@@ -147,5 +147,7 @@ typedef struct rete_net_state_t {
 
 void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child);
 void print_state_fact_set(rete_net_state* state, FILE* stream);
+bool conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, substitution* sub);
+bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction* dis, substitution* sub);
 
 #endif

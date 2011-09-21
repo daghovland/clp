@@ -76,9 +76,7 @@ substitution* create_substitution(const theory*, signed int);
 substitution* copy_substitution(const substitution*);
 substitution* create_empty_fact_substitution(const theory*, const axiom*);
 
-bool test_substitution(const substitution*);
-bool test_is_instantiation(const freevars*, const substitution*);
-bool test_is_conj_instantiation(const conjunction*, const substitution*);
+
 
 sub_list_iter* get_sub_list_iter(substitution_list*);
 bool has_next_sub_list(const sub_list_iter*);
@@ -100,5 +98,14 @@ void delete_substitution_list_below(substitution_list*, substitution_list*);
 void print_substitution(const substitution*, FILE*);
 void print_coq_substitution(const substitution*, const freevars*, FILE*);
 void print_substitution_list(const substitution_list*, FILE*);
+
+
+// In instantiate.c
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub);
+
+
+bool test_substitution(const substitution*);
+bool test_is_instantiation(const freevars*, const substitution*);
+bool test_is_conj_instantiation(const conjunction*, const substitution*);
 
 #endif

@@ -263,19 +263,37 @@ void print_state_fact_set(rete_net_state* state, FILE* stream){
 
    Not done.
 **/
-
-
-bool conjunction_true_in_fact_set(const fact_set* fs, const conjunction* con, substitution* sub){
-  bool true_in_fact_set = true;
+bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
   unsigned int i;
-  substitution* sub2 = copy_substitution(sub);
-  fact_set* fs_list[con->n_args];
-  for(i = 0; i < con->n_args && true_in_fact_set; i++){
-    if(! atom_true_in_fact_set(fs_list[i], con->args[i], sub)){
-      
+  const fact_set * fs;
+  if(conjunct >= con->n_args)
+    return true;
+  fs = state->factset[con->args[conjunct]->pred->pred_no];
+  while(fs != NULL){
+    substitution* sub2 = copy_substitution(sub);
+    if(find_instantiate_sub(con->args[i], fs->fact, sub2)){
+      if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
+	delete_substitution(sub2);
+	return true;
+      }
     }
+    delete_substitution(sub2);
+    fs = fs->next;
   }
-  return true_in_fact_set;
+  return false;
+}
+
+bool conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, substitution* sub){
+  return remaining_conjunction_true_in_fact_set(state, con, 0, sub);
+}
+
+bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction* dis, substitution* sub){
+  int i;
+  for(i = 0; i < dis->n_args; i++){
+    if(conjunction_true_in_fact_set(state, dis->args[i], sub))
+      return true;
+  }
+  return false;
 }
 
 /**

@@ -128,8 +128,15 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
     
     sub_list_root = new_root; 
 
-    if(state->axiom_inst_queue[axiom_no]->n_queue > 0)
-      return true;
+    while(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+      rule_instance* next;
+      if(state->net->use_beta_not)
+	return true;
+      next = peek_axiom_rule_queue(state, axiom_no);
+      if(!disjunction_true_in_fact_set(state, next->rule->rhs, next->sub))
+	return true;
+      pop_axiom_rule_queue(state, axiom);
+    }
   }
   return false;
 }
