@@ -142,6 +142,10 @@ typedef struct rete_net_state_t {
   rule_queue* axiom_inst_queue[];
 } rete_net_state;
 
+
+// In rete_state.c
+
 void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child);
+void print_state_fact_set(rete_net_state* state, FILE* stream);
 
 #endif

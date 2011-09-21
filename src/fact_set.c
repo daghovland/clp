@@ -51,7 +51,7 @@ void split_fact_set(fact_set* f){
     f->split_point = true;
 }
 
-fact_set* insert_fact_set(fact_set* f, const term_list* a){
+fact_set* insert_fact_set(fact_set* f, const atom* a){
   fact_set* new = malloc_tester(sizeof(fact_set));
   new->next = f;
   new->split_point = false;
@@ -62,7 +62,7 @@ fact_set* insert_fact_set(fact_set* f, const term_list* a){
 fact_set* print_fact_set(fact_set* fs, FILE* f){
   fprintf(f, "{");
   while(fs != NULL){
-    print_fol_term_list(fs->fact, f);
+    print_fol_atom(fs->fact, f);
     if(fs->next != NULL)
       fprintf(f, ", ");
     fs = fs->next;
@@ -73,14 +73,13 @@ fact_set* print_fact_set(fact_set* fs, FILE* f){
 
 /**
    Used by unit testing to test that an inserted fact is not already in the factset
+   Note that facts are per definition ground
 **/
-bool is_in_fact_set(const fact_set* fs, const term_list* fact){
+bool is_in_fact_set(const fact_set* fs, const atom* fact){
   while(fs != NULL){
-    if(equal_atoms(fs->fact, fact)){
-      print_fol_atom(fact, stderr);
-      fprintf(stderr, " is already in the fact set\n");
+    assert(fact->pred == fs->fact->pred);
+    if(equal_atoms(fs->fact, fact))
       return true;
-    }
     fs = fs->next;
   }
   return false;
@@ -91,11 +90,10 @@ bool is_in_fact_set(const fact_set* fs, const term_list* fact){
    This is not finished, just skeletons
 **/
 
-bool atom_true_in_fact_set(const fact_set* fs, const atom* a, const substitution* sub){
+bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub){
   while(fs != NULL){
+    assert(a->pred == fs->fact->pred);
     if(equal_atoms(fs->fact, a)){
-      print_fol_atom(fact, stderr);
-      fprintf(stderr, " is already in the fact set\n");
       return true;
     }
     fs = fs->next;
@@ -104,23 +102,5 @@ bool atom_true_in_fact_set(const fact_set* fs, const atom* a, const substitution
 }
 
 
-/**
-   For testing whether a conjunction is true in the fact set
 
-   Not done.
-**/
-
-
-bool conjunction_true_in_fact_set(const fact_set* fs, const conjunction* con, const substitution* sub){
-  bool true_in_fact_set = true;
-  unsigned int i;
-  substitution* sub2 = copy_substitution(sub);
-  fact_set* fs_list[con->n_args];
-  for(i = 0; i < con->n_args && true_in_fact_set; i++){
-    if(! atom_true_in_fact_set(fs_list[i], con->args[i], sub)){
-      
-    }
-  }
-  return true_in_fact_set;
-}
 

@@ -65,11 +65,13 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->constants = calloc_tester(state->size_constants, sizeof(char*));
   state->n_constants = 0;
   
-  state->factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
-  state->prev_factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
-  for(i = 0; i < net->n_selectors; i++){
-    state->factset[i] = NULL;
-    state->prev_factset[i] = NULL;
+  if(state->net->has_factset){
+    state->factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
+    state->prev_factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
+    for(i = 0; i < net->n_selectors; i++){
+      state->factset[i] = NULL;
+      state->prev_factset[i] = NULL;
+    }
   }
 
   state->elim_stack = initialize_ri_stack();
@@ -103,8 +105,10 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   free(state->constants);
   delete_ri_stack(state->elim_stack);
 
-  for(i = 0; i < state->net->n_selectors; i++){
-    delete_factset_below(state->factset[i], orig->factset[i]);
+  if(state->net->has_factset){
+    for(i = 0; i < state->net->n_selectors; i++){
+      delete_fact_set_below(state->factset[i], orig->factset[i]);
+    }
   }
 
   free(state);
@@ -132,8 +136,10 @@ void delete_full_rete_state(rete_net_state* state){
   free(state->global_step_counter);
   delete_ri_stack(state->elim_stack);
 
-  for(i = 0; i < state->net->n_selectors; i++){
-    delete_factset(state->factset[i]);
+  if(state->net->has_factset){
+    for(i = 0; i < state->net->n_selectors; i++){
+      delete_fact_set(state->factset[i]);
+    }
   }
   
   free(state);
@@ -238,7 +244,38 @@ void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child){
 
 void insert_state_fact_set(rete_net_state* s, const atom* a){
   assert(s->net->has_factset);
-  insert_factset(s->factset[a->pred->pred_no], a->args);
+  insert_fact_set(s->factset[a->pred->pred_no], a->args);
+}
+
+
+/**
+   Prints all facts currently in the "factset"
+**/
+void print_state_fact_set(rete_net_state* state, FILE* stream){
+  unsigned int i;
+  assert(state->net->has_factset);
+  for(i = 0; i < state->net->n_selectors; i++)
+    print_fact_set(state->factset[i], stream);
+}
+
+/**
+   For testing whether a conjunction is true in the fact set
+
+   Not done.
+**/
+
+
+bool conjunction_true_in_fact_set(const fact_set* fs, const conjunction* con, substitution* sub){
+  bool true_in_fact_set = true;
+  unsigned int i;
+  substitution* sub2 = copy_substitution(sub);
+  fact_set* fs_list[con->n_args];
+  for(i = 0; i < con->n_args && true_in_fact_set; i++){
+    if(! atom_true_in_fact_set(fs_list[i], con->args[i], sub)){
+      
+    }
+  }
+  return true_in_fact_set;
 }
 
 /**
@@ -441,6 +478,7 @@ void print_dot_rete_state_net(const rete_net* net, const rete_net_state* state, 
 **/
 void print_state_new_facts(rete_net_state* state, FILE* f){
   int i;
+  assert(state->net->has_factset);
   for(i = 0; i < state->net->n_selectors; i++){
     fact_set* fs = state->factset[i];
     fact_set* old = state->prev_factset[i];

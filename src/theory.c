@@ -121,7 +121,7 @@ bool has_theory_name(const theory* th){
 /**
    Creates new rete network for the whole theory
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model){
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t p_attr;
 #endif
@@ -134,7 +134,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   net->strat = strat;
   net->use_beta_not = use_beta_not;
   net->factset_lhs = factset_lhs;
-  net->has_factset = factset_lhs || !use_beta_not;
+  net->has_factset = factset_lhs || !use_beta_not || print_model;
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_init(&p_attr);
 #ifndef NDEBUG

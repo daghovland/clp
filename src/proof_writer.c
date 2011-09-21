@@ -101,12 +101,10 @@ FILE* get_coq_fdes(){
 }
 
 void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
-  if(proof || dot || pdf){ 
-    char *dotfilename, *pdffilename, *command;
+  if(proof){ 
+    char *dotfilename, *command;
     dotfilename = malloc_tester(strlen(filenameprefix) + 6);
-    pdffilename = malloc_tester(strlen(filenameprefix) + 6);
     sprintf(dotfilename, "%s.dot", filenameprefix);
-    sprintf(pdffilename, "%s.pdf", filenameprefix);
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_lock(& dot_file_lock), "Could not get lock on dot proof file\n");
 #endif
@@ -120,15 +118,7 @@ void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(&dot_file_lock), "Could not release lock on dot proof file\n");
 #endif  
-    if(pdf){
-      command = malloc_tester(strlen(filenameprefix)*2 + 50);
-      sprintf(command, "dot -Tpdf %s > %s", dotfilename, pdffilename);
-      sys_err( system(command), 
-	       "Could not execute dot on proof file. Maybe dot is not installed?\n");
-      free(command);
-    } // end if pdf
     free(dotfilename);
-    free(pdffilename);
   } // if proof etc. 
   
 }
@@ -140,7 +130,7 @@ void end_proof_coq_writer(const theory* th){
 }
 
 void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
-  if(proof || dot || pdf){
+  if(proof){
     char* dotfilename;
     dotfilename = malloc_tester(strlen(filenameprefix) + 5);
     sprintf(dotfilename, "%s.dot", filenameprefix);
@@ -177,7 +167,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
 #endif
   unsigned int i;
 
-  if(proof || pdf || dot){
+  if(proof){
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_lock(&dot_file_lock), "Could not get lock on dot proof file\n");
 #endif
@@ -212,7 +202,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
   //  print_rule_queue(s->rule_queue, stdout);
 #endif
 
-  if(proof || dot || pdf){
+  if(proof){
     if(file_open){
 #ifdef RETE_STATE_DEBUG_DOT
       print_dot_rule_queue(s->rule_queue, dot_fp);
@@ -236,7 +226,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
   }// proof || dot
 }
 void write_proof_edge(const rete_net_state* s1, const rete_net_state* s2){
-  if(proof || dot || pdf){
+  if(proof){
     assert(dot_fp != NULL);
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_lock(&dot_file_lock), "Could not get lock on dot proof file\n");

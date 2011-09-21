@@ -93,13 +93,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
   assert(ri == history[historic_ts]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     unsigned int n_premises = ri->substitution->n_timestamps;
-#ifndef NDEBUG 
-    printf("%i set to used by %i\n", historic_ts, current_ts);
-#endif
     if(ri->rule->rhs->n_args <= 1){
-#ifndef NDEBUG
-      printf("Making copy of %i\n", historic_ts);
-#endif
       ri = copy_rule_instance(ri);
       history[historic_ts]->ri = ri;
     }
@@ -191,8 +185,11 @@ void insert_rete_net_conjunction(rete_net_state* state,
    Called from run_prover_rete_coq when not finding new instance
 **/
 bool return_found_model(rete_net_state* state){
-  fprintf(stdout, "Found a model of the theory: \n");
-  print_state_fact_set(state, stdout);
+  fprintf(stdout, "Found a model of the theory \n");
+  if(state->net->has_factset)
+    print_state_fact_set(state, stdout);
+  else
+    fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
   foundproof = false;
 #ifdef HAVE_PTHREAD
   pthread_cond_broadcast(&prover_done_cond);

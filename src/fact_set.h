@@ -21,13 +21,18 @@
 
 #ifndef __INCLUDE_FACT_SET_H
 #define __INCLUDE_FACT_SET_H
+
+#include "substitution.h"
 /**
    Representation of the fact set as a linked list of atoms
+
+   Note that each fact-set is for a specific predicate, so it is unnecessary
+   to have the whole atom. It would suffice with an array of constants
 **/
 typedef struct fact_set_t {
   struct fact_set_t * next;
   bool split_point;
-  const term_list* fact;
+  const atom* fact;
 } fact_set;
 
 void delete_fact_set_below(fact_set*, fact_set*);
@@ -39,6 +44,7 @@ void delete_fact_set(fact_set*);
 fact_set* insert_in_fact_set(fact_set*, const atom*);
 
 fact_set* print_fact_set(fact_set*, FILE*);
-bool is_in_fact_set(const fact_set*, const term_list*);
+bool is_in_fact_set(const fact_set*, const atom*);
+bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub);
 
 #endif
