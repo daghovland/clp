@@ -51,8 +51,11 @@ void split_fact_set(fact_set* f){
     f->split_point = true;
 }
 
-fact_set* insert_fact_set(fact_set* f, const atom* a){
-  fact_set* new = malloc_tester(sizeof(fact_set));
+fact_set* insert_in_fact_set(fact_set* f, const atom* a){
+  fact_set* new;
+  if(is_in_fact_set(f, a))
+    return f;
+  new = malloc_tester(sizeof(fact_set));
   new->next = f;
   new->split_point = false;
   new->fact = a;
@@ -77,7 +80,7 @@ fact_set* print_fact_set(fact_set* fs, FILE* f){
 **/
 bool is_in_fact_set(const fact_set* fs, const atom* fact){
   while(fs != NULL){
-    assert(fact->pred == fs->fact->pred);
+    assert(fact->pred->pred_no == fs->fact->pred->pred_no);
     if(equal_atoms(fs->fact, fact))
       return true;
     fs = fs->next;
@@ -92,7 +95,7 @@ bool is_in_fact_set(const fact_set* fs, const atom* fact){
 
 bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub){
   while(fs != NULL){
-    assert(a->pred == fs->fact->pred);
+    assert(a->pred->pred_no == fs->fact->pred->pred_no);
     if(equal_atoms(fs->fact, a)){
       return true;
     }

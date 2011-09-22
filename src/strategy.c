@@ -56,9 +56,23 @@ rule_instance* normal_next_instance(rete_net_state* state){
   size_t lightest_rule = th->n_axioms;
   unsigned int min_weight = 2 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
-  unsigned int max_weight = 2 * (get_current_state_step_no(state)+1) * (1 +  RAND_RULE_WEIGHT);
+  unsigned int max_weight = 40 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
   rule_instance* retval;
 
+  /*
+    for(i = 0; i < th->n_axioms; i++){
+    if(th->axioms[i]->type != goal && th->axioms[i]->type != fact){
+    unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
+    axiom_weights[i] = (rule_queue_possible_age(i, state) + rule_previously_applied) 
+    * (th->axioms[i]->lhs->n_args) 
+    * (1 + rand() / RAND_DIV);
+    if(max_weight <= axiom_weights[i])
+    max_weight = axiom_weights[i];
+    }
+    }
+  if(max_weight = 0)
+    max_weight = 20 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
+  */
   for(i = 0; i < th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
@@ -67,7 +81,10 @@ rule_instance* normal_next_instance(rete_net_state* state){
       continue;
     if(axiom_may_have_new_instance(axiom_no, state)){
       unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
-      axiom_weights[axiom_no] = (rule_queue_possible_age(axiom_no, state) + rule_previously_applied) * (1 + rand() / RAND_DIV);
+      axiom_weights[axiom_no] = 
+	(rule_queue_possible_age(axiom_no, state) + rule_previously_applied) 
+	* rule->lhs->n_args 
+	* (1 + rand() / RAND_DIV);
       
       may_have_next_rule = true;
       
@@ -91,7 +108,10 @@ rule_instance* normal_next_instance(rete_net_state* state){
 	  min_weight = axiom_weights[axiom_no];
 	  lightest_rule = axiom_no;
 	}
-	assert(min_weight <  max_weight);
+	if(axiom_weights[axiom_no] >= max_weight){
+	  max_weight = axiom_weights[axiom_no];
+	}
+	assert(min_weight <=  max_weight);
       } // end not definite rule
 
     } // end if rule queue not empty
@@ -106,15 +126,20 @@ rule_instance* normal_next_instance(rete_net_state* state){
     return pop_axiom_rule_queue(state, definite_rule);
 
   while(may_have_next_rule){
+    assert(min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
     if(may_have_next_rule && axiom_has_new_instance(lightest_rule, state))
       return pop_axiom_rule_queue(state, lightest_rule);
     axiom_weights[lightest_rule] = max_weight;
+    min_weight = max_weight;
     may_have_next_rule = false;
     for(i = 0; i < th->n_axioms; i++){
-      if(axiom_weights[i] < axiom_weights[lightest_rule]){
+      if(axiom_weights[i] < min_weight){
 	lightest_rule = i;
+	min_weight = axiom_weights[i];
 	may_have_next_rule = true;
       }
+      if(axiom_weights[i] > max_weight)
+	max_weight = axiom_weights[i];
     }
   }
   return NULL;

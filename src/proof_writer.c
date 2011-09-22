@@ -196,8 +196,10 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
 #ifdef RETE_STATE_DEBUG_TXT
   printf("\nRule Queues in step: %i: \n", get_current_state_step_no(s));
   for(i = 0; i < s->net->th->n_axioms; i++){
-    if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first)
+    if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first){
+      printf("Axiom %s ", s->net->th->axioms[i]->name);
       print_rule_queue(s->axiom_inst_queue[i], stdout);
+    }
   }
   //  print_rule_queue(s->rule_queue, stdout);
 #endif

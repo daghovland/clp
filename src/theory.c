@@ -27,6 +27,8 @@
 #include "theory.h"
 #include "fresh_constants.h"
 #include "rete.h"
+#include <math.h>
+#include <inttypes.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -62,6 +64,13 @@ theory* create_theory(void){
 
 void extend_theory(theory *th, axiom *ax){
   ax->axiom_no = th->n_axioms;
+
+  if(!ax->has_name){
+    char* axname = malloc_tester(10 + abs(log10(th->n_axioms)));
+    sprintf(axname, "axiom_%i", th->n_axioms);
+    set_axiom_name(ax, axname);
+  }
+
   th->n_axioms++;
   if(th->n_axioms >= th->size_axioms){
     th->size_axioms *= 2;
@@ -69,7 +78,7 @@ void extend_theory(theory *th, axiom *ax){
   }
   th->axioms[th->n_axioms-1] = ax;
   if(ax->lhs->n_args > th->max_lhs_conjuncts)
-    th->max_lhs_conjuncts = ax->lhs->n_args;
+    th->max_lhs_conjuncts = ax->lhs->n_args; 
 }
 
 void delete_theory(theory* t){

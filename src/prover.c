@@ -172,12 +172,14 @@ void insert_rete_net_conjunction(rete_net_state* state,
     printf("\n");
 #endif
     
-    if(state->net->has_factset)
+    if(state->net->has_factset){
       insert_state_fact_set(state, ground);
+    }
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
 
-    delete_instantiated_atom(con->args[i], ground);
+    if(!state->net->has_factset)
+      delete_instantiated_atom(con->args[i], ground);
   } // end for
 }
 

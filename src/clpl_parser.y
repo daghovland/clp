@@ -155,11 +155,11 @@ axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
                       | NAME LPAREN RPAREN { $$ = $1;}
                       | NAME { $$ = $1;}
 ;
-axmno:     INTEGER {;}
+axmno:     NAME {;}
 | UNDERSCORE {;}
 ;
-predlist:   NAME SLASH INTEGER {;}
-           | NAME SLASH INTEGER COMMA predlist {;}
+predlist:   NAME SLASH NAME {;}
+           | NAME SLASH NAME COMMA predlist {;}
 ;
 axiomw:     axmno AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 ;
@@ -190,11 +190,11 @@ terms:         terms COMMA term
                    | term 
                    { $$ = create_term_list($1); }
                    ;
-term:         NAME LPAREN terms RPAREN 
+term:         INTEGER
+                   { $$ = parser_create_constant_term(th, $1); }
+                   | NAME LPAREN terms RPAREN 
                    { $$ = create_term($1, $3); }
                    | NAME
-                   { $$ = parser_create_constant_term(th, $1); }
-                   | INTEGER
                    { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 
                    { $$ = create_variable($1, th); }

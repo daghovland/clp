@@ -463,7 +463,7 @@ void delete_full_rule_queue(rule_queue* rq){
 **/
 void print_rule_queue(const rule_queue* rq, FILE* f){
   unsigned int i, j;
-  fprintf(f, "Rule queue %zi entries: \n", rq->n_queue);
+  fprintf(f, "queue with %zi entries: \n", rq->n_queue);
   assert(rq->end == (rq->first + rq->n_queue) % rq->size_queue);
   j=1;
   for(i = rq->first; i < rq->end; i = (i+1) % rq->size_queue){

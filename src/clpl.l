@@ -60,13 +60,13 @@ symbol     [\'\"_]
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);
                                               return VARIABLE;                   }
-<INITIAL>{digit}+                                { yylval->str = malloc (strlen(yytext)+1);
-                                               strcpy(yylval->str, yytext);
-                                               return INTEGER; }
 <INITIAL>(\'[^\']*\')|({letter}|{digit}|{symbol}|"["|"]")+    {
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);
                                               return NAME;                   }
+<INITIAL>{digit}+                                { yylval->str = malloc (strlen(yytext)+1);
+                                               strcpy(yylval->str, yytext);
+                                               return INTEGER; }
 [ \t]                            {                                                  }
 [\n\r]                            {                                               }
 %[^\n]*$                        {                                                  }

@@ -41,6 +41,7 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = normal;
   ret_val->name = NULL;
+  ret_val->has_name = false;
   ret_val->lhs = lhs;
   ret_val->rhs = rhs;
   ret_val->is_existential = false;
@@ -143,9 +144,13 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, boo
 }
     
 void set_axiom_name(axiom* a, const char* name){
+  a->has_name = true;
   a->name = name;
 }
     
+bool axiom_has_name(const axiom* a){
+  return a->has_name;
+}
 
 /**
    The  free variables 

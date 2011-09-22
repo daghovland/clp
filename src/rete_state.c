@@ -66,9 +66,9 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->n_constants = 0;
   
   if(state->net->has_factset){
-    state->factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
-    state->prev_factset = calloc_tester(sizeof(fact_set*), net->n_selectors);
-    for(i = 0; i < net->n_selectors; i++){
+    state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
+    state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
+    for(i = 0; i < net->th->n_predicates; i++){
       state->factset[i] = NULL;
       state->prev_factset[i] = NULL;
     }
@@ -106,7 +106,7 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   delete_ri_stack(state->elim_stack);
 
   if(state->net->has_factset){
-    for(i = 0; i < state->net->n_selectors; i++){
+    for(i = 0; i < state->net->th->n_predicates; i++){
       delete_fact_set_below(state->factset[i], orig->factset[i]);
     }
   }
@@ -137,7 +137,7 @@ void delete_full_rete_state(rete_net_state* state){
   delete_ri_stack(state->elim_stack);
 
   if(state->net->has_factset){
-    for(i = 0; i < state->net->n_selectors; i++){
+    for(i = 0; i < state->net->th->n_predicates; i++){
       delete_fact_set(state->factset[i]);
     }
   }
@@ -166,10 +166,10 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
 
   if(orig->net->has_factset){
-    copy->factset = calloc_tester(orig->net->n_selectors, sizeof(fact_set*));
-    copy->prev_factset = calloc_tester(orig->net->n_selectors, sizeof(fact_set*));
-    memcpy(copy->factset, orig->factset, sizeof(fact_set*) * orig->net->n_selectors);
-    memcpy(copy->prev_factset, orig->factset, sizeof(fact_set*) * orig->net->n_selectors);
+    copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
+    copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
+    memcpy(copy->factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
+    memcpy(copy->prev_factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
   }
 
   
@@ -243,8 +243,10 @@ void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child){
 **/
 
 void insert_state_fact_set(rete_net_state* s, const atom* a){
+  unsigned int pred_no = a->pred->pred_no;
   assert(s->net->has_factset);
-  insert_fact_set(s->factset[a->pred->pred_no], a->args);
+  assert(s->factset[pred_no] == NULL || s->factset[pred_no]->fact->pred->pred_no == pred_no);
+  s->factset[pred_no] = insert_in_fact_set(s->factset[pred_no], a);
 }
 
 
@@ -254,7 +256,7 @@ void insert_state_fact_set(rete_net_state* s, const atom* a){
 void print_state_fact_set(rete_net_state* state, FILE* stream){
   unsigned int i;
   assert(state->net->has_factset);
-  for(i = 0; i < state->net->n_selectors; i++)
+  for(i = 0; i < state->net->th->n_predicates; i++)
     print_fact_set(state->factset[i], stream);
 }
 
@@ -264,14 +266,13 @@ void print_state_fact_set(rete_net_state* state, FILE* stream){
    Not done.
 **/
 bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
-  unsigned int i;
   const fact_set * fs;
   if(conjunct >= con->n_args)
     return true;
   fs = state->factset[con->args[conjunct]->pred->pred_no];
   while(fs != NULL){
     substitution* sub2 = copy_substitution(sub);
-    if(find_instantiate_sub(con->args[i], fs->fact, sub2)){
+    if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2)){
       if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
 	delete_substitution(sub2);
 	return true;
@@ -440,8 +441,10 @@ const term* get_fresh_constant(rete_net_state* state, variable* var){
 void print_rete_state(const rete_net_state* state, FILE*  f){
   unsigned int i;
   fprintf(f, "State of RETE net\n");
-  for(i = 0; i < state->net->th->n_axioms; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++){
+    printf("Axiom %s ", state->net->th->axioms[i]->name);
     print_rule_queue(state->axiom_inst_queue[i], f);
+  }
   //  print_rule_queue(state->rule_queue, f);
   fprintf(f, "\nBranch: %s, Step: %i", state->proof_branch_id,state->step_no);
   fprintf(f, "\nSubstitution Lists:");
@@ -497,7 +500,7 @@ void print_dot_rete_state_net(const rete_net* net, const rete_net_state* state, 
 void print_state_new_facts(rete_net_state* state, FILE* f){
   int i;
   assert(state->net->has_factset);
-  for(i = 0; i < state->net->n_selectors; i++){
+  for(i = 0; i < state->net->th->n_predicates; i++){
     fact_set* fs = state->factset[i];
     fact_set* old = state->prev_factset[i];
     bool first_iter = true;

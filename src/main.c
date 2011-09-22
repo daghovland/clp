@@ -31,6 +31,8 @@
 #include <getopt.h> 
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
+#include <time.h>
 
 /**
    The boolean lazy leads to the opposite value for propagate in the 
@@ -42,9 +44,9 @@ bool lazy;
 
 extern char * optarg;
 extern int optind, optopt, opterr;
-bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model;
+bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, use_timer;
 strategy strat;
-unsigned long maxsteps;
+unsigned long maxsteps, maxtimer;
 typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
 input_format_type input_format;
 
@@ -90,6 +92,32 @@ int file_prover(FILE* f, const char* prefix){
     if(coq)
       init_proof_coq_writer(net);
   }
+  if(use_timer){
+    struct sigevent timer_event;
+    struct timespec timeout;
+    struct timespec zero_time;
+    struct itimerspec timer_val;
+    timer_t * timer = malloc_tester(sizeof(timer_t));
+    timer_event.sigev_notify = SIGEV_SIGNAL;
+    timer_event.sigev_signo = 9;
+
+    if(timer_create(CLOCK_PROCESS_CPUTIME_ID, &timer_event, timer) != 0){
+      perror("main.c: file_prover: Could not create timer");
+      exit(EXIT_FAILURE);
+    }
+    timeout.tv_sec = maxtimer;
+    timeout.tv_nsec = 0;
+    zero_time.tv_sec = 0;
+    zero_time.tv_nsec = 0;
+    timer_val.it_interval = zero_time;
+    timer_val.it_value = timeout;
+    
+    if(timer_settime(*timer, 0, & timer_val, NULL) != 0){
+      perror("main.c: file_prover: Could not set timer");
+      exit(EXIT_FAILURE);
+    } 
+  }
+
   steps = prover(net, multithreaded);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
@@ -131,6 +159,7 @@ void print_help(char* exec){
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
   printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm.\n");
+  printf("\t-T, --timer=LIMIT\t\tSets a limit to total CPU time used.\n");
   printf("\t-n, --not\t\tDo not constructs rete nodes for the rhs of rules, but in stead use a factset to determine whether the right hand side of a new instance is already satisified. (Beta-not-nodes).\n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
@@ -152,8 +181,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"not", no_argument, NULL, 'n'}, {"print_model", no_argument, NULL, 'o'}, {0,0,0,0}};
-  char shortargs[] = "vfVphgdoacCGeqMnm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"not", no_argument, NULL, 'n'}, {"timer", required_argument, NULL, 'T'}, {"print_model", no_argument, NULL, 'o'}, {0,0,0,0}};
+  char shortargs[] = "vfVphgdoacCT:GeqMnm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -167,6 +196,7 @@ int main(int argc, char *argv[]){
   use_beta_not = true;
   multithreaded = false;
   factset_lhs = false;
+  use_timer = false;
 
   input_format = clpl_input;
   strat = normal_strategy;
@@ -185,6 +215,15 @@ int main(int argc, char *argv[]){
       break;
     case 'q':
       coq = true;
+      break;
+    case 'T':
+      use_timer = true;
+      errno = 0;
+      maxtimer = strtoul(optarg, &tailptr, 0);
+      if(tailptr[0] != '\0' || errno != 0){
+	perror("Error with argument to option \"timer\". Must be a positive integer stating maximum CPU time.\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 'f':
       factset_lhs = true;

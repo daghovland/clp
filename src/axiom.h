@@ -49,6 +49,7 @@ typedef struct axiom_t {
   const conjunction * lhs;
   const disjunction * rhs;
   const char* name;
+  bool has_name;
   bool is_existential;
   freevars* exist_vars;
 } axiom;

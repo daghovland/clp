@@ -21,7 +21,7 @@ AC_PROG_CPP
 # For per-target flags
 AM_PROG_CC_C_O
 
-# Checks for pthreads functionality. Currently disabled in the source code. Remove?
+# Checks for pthreads functionality. 
 AX_PTHREAD
 
 # Checks for libraries.
@@ -34,9 +34,12 @@ AC_CHECK_LIB([fl], [main])
 #FIXME: What is this library?
 AC_CHECK_LIB([l], [main])
 
+#FIXME: What is this library?
+AC_CHECK_LIB([m], [main])
+
 # Checks for header files.
 AC_FUNC_ALLOCA
-AC_CHECK_HEADERS([fcntl.h errno.h unistd.h inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h])
+AC_CHECK_HEADERS([fcntl.h errno.h unistd.h inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

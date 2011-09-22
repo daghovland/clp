@@ -217,7 +217,7 @@ bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground,
 
 
 bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub){
-  assert(at->pred == fact->pred && at->args->n_args == fact->args->n_args);
+  assert(at->pred->pred_no == fact->pred->pred_no && at->args->n_args == fact->args->n_args);
   assert(test_ground_atom(fact));
   return find_instantiate_sub_termlist(at->args, fact->args, sub);
 }

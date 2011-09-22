@@ -92,6 +92,28 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
   }
 }
 
+/**
+   Helper function for axiom_has_new_instance
+
+   If the the rete node is used for the rhs, this only checks that
+   there is something on the queue.
+
+   Otherwise, if the factset is used, it searches for any instances
+   with a rhs not fulfilled, and discards the others
+**/
+bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state){
+  while(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+    rule_instance* next;
+    if(state->net->use_beta_not)
+      return true;
+    next = peek_axiom_rule_queue(state, axiom_no);
+    if(!disjunction_true_in_fact_set(state, next->rule->rhs, next->substitution))
+      return true;
+    //delete_rule_instance(pop_axiom_rule_queue(state, axiom_no));
+    pop_axiom_rule_queue(state, axiom_no);
+  }
+  return false;
+}
 
 /*
   Implements functionality for the lazy version of RETE. 
@@ -108,7 +130,7 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
 bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
   sub_alpha_queue * sub_list = state->sub_alpha_queues[axiom_no];
   sub_alpha_queue * sub_list_root = state->sub_alpha_queue_roots[axiom_no];
-  if(state->axiom_inst_queue[axiom_no]->n_queue > 0)
+  if(axiom_queue_has_interesting_instance(axiom_no, state))
     return true;
 
   while(sub_list != sub_list_root && sub_list != NULL){
@@ -127,16 +149,9 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
     state->sub_alpha_queue_roots[axiom_no] = new_root;
     
     sub_list_root = new_root; 
-
-    while(state->axiom_inst_queue[axiom_no]->n_queue > 0){
-      rule_instance* next;
-      if(state->net->use_beta_not)
-	return true;
-      next = peek_axiom_rule_queue(state, axiom_no);
-      if(!disjunction_true_in_fact_set(state, next->rule->rhs, next->sub))
-	return true;
-      pop_axiom_rule_queue(state, axiom);
-    }
+    
+    if(axiom_queue_has_interesting_instance(axiom_no, state))
+      return true;
   }
   return false;
 }
