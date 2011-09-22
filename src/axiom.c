@@ -120,27 +120,25 @@ void delete_axiom(axiom* a){
 **/
 void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, bool use_beta_not){
   rete_node* node;
-  if(ax->type != fact){
-    const freevars* rule_free_vars;
-    if(ax->type == normal) {
-      rule_free_vars = ax->rhs->free_vars;
-    } else {   // not normal 
-      assert(ax->type == goal);
-      rule_free_vars = init_freevars();
-    }
-    node = create_rete_conj_node(net, 
-				 ax->lhs, 
-				 rule_free_vars,
-				 !(net->lazy),
+  const freevars* rule_free_vars;
+  if(ax->type != goal) {
+    rule_free_vars = ax->rhs->free_vars;
+  } else {   // not normal 
+    assert(ax->type == goal);
+    rule_free_vars = init_freevars();
+  }
+  node = create_rete_conj_node(net, 
+			       ax->lhs, 
+			       rule_free_vars,
+			       !(net->lazy),
+			       axiom_no);
+  if(ax->type != goal && use_beta_not) {
+    node = create_rete_disj_node(net, 
+				 node, 
+				 ax->rhs,
 				 axiom_no);
-    if(ax->type == normal && use_beta_not) {
-      node = create_rete_disj_node(net, 
-				   node, 
-				   ax->rhs,
-				   axiom_no);
-    }
-    create_rule_node(net, node, ax, rule_free_vars, axiom_no);
-  }  
+  }
+  create_rule_node(net, node, ax, rule_free_vars, axiom_no);
 }
     
 void set_axiom_name(axiom* a, const char* name){

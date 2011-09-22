@@ -261,7 +261,6 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
       if(next == NULL)
 	return return_found_model(state);
       
-      assert(next->rule->type != fact || next->rule->rhs->n_args != 1);
       
       bool incval = inc_proof_step_counter(state);
       if(!incval)
@@ -288,7 +287,6 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 
 	  return rv;
 	} else { // rhs is single conjunction
-	  assert(next->rule->type != fact);
 	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
 	  write_proof_node(state, next);
 	  write_proof_edge(state, state);  
