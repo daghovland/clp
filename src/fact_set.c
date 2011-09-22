@@ -63,14 +63,12 @@ fact_set* insert_in_fact_set(fact_set* f, const atom* a){
 }
 
 fact_set* print_fact_set(fact_set* fs, FILE* f){
-  fprintf(f, "{");
   while(fs != NULL){
     print_fol_atom(fs->fact, f);
     if(fs->next != NULL)
       fprintf(f, ", ");
     fs = fs->next;
   }
-  fprintf(f, "}\n");
 }
 
 

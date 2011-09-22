@@ -63,11 +63,11 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   return ret_val;
 }
 
-axiom* create_fact(disjunction *rhs){
+axiom* create_fact(disjunction *rhs, theory* th){
   unsigned int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = fact;
-  ret_val->lhs = create_empty_conjunction();
+  ret_val->lhs = create_empty_conjunction(th);
   ret_val->rhs = rhs;
   ret_val->exist_vars = init_freevars();
   ret_val->is_existential = false;
@@ -175,7 +175,7 @@ bool test_axiom(const axiom* a, size_t no){
     fv = free_conj_variables(a->lhs, fv);
     break;
   case fact:
-    assert(a->lhs->n_args == 0);
+    assert(a->lhs->n_args == 1);
     test_disjunction(a->rhs);
     break;
   case normal:

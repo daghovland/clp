@@ -114,7 +114,7 @@ theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th,
 ;
 dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
 ;
-domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom(parser_create_constant_term(th, $3),th))));} // dom(constant).
+domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom(parser_create_constant_term(th, $3),th))), th);} // dom(constant).
 ;
 theory:   STRING_NEXT {;}
                 | STRING_ENABLED {;}
@@ -167,9 +167,9 @@ varlist:      VARIABLE { ; }
             |  VARIABLE COMMA varlist { ; }
 ;
 axiom:    LPAREN axiom RPAREN { $$ = $2; }    
-              |  TRUE ARROW disjunction  {$$ = create_fact($3); }
-              | ARROW disjunction   {$$ = create_fact($2); }
-              | disjunction   {$$ = create_fact($1); }
+|  TRUE ARROW disjunction  {$$ = create_fact($3, th); }
+| ARROW disjunction   {$$ = create_fact($2, th); }
+| disjunction   {$$ = create_fact($1, th); }
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
               | conjunction ARROW FALSE  { $$ = create_goal($1);}
               | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}

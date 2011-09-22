@@ -68,6 +68,14 @@ atom* create_dom_atom(const term*, theory*);
 term* parser_create_constant_term(theory*, const char*);
 atom* create_prop_variable(const char*, theory*);
 
+// In con_dis.c
+conjunction* create_empty_conjunction(theory*);
+
+//In axiom.c
+axiom* create_fact(disjunction*, theory*);
+
+
+
 bool test_theory(const theory*);
 
 void delete_theory(theory*);

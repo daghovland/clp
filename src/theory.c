@@ -41,6 +41,7 @@ theory* create_theory(void){
   ret_val->n_predicates = 0;
   ret_val->predicates = calloc_tester(sizeof(predicate*),ret_val->size_predicates);
 
+
   ret_val->size_axioms = 100;
   ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(axiom));
   ret_val->n_axioms =  0;

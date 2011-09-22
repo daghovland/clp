@@ -77,8 +77,6 @@ rule_instance* normal_next_instance(rete_net_state* state){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);
-    if(rule->type == fact && rule->rhs->n_args == 1)
-      continue;
     if(axiom_may_have_new_instance(axiom_no, state)){
       unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
       axiom_weights[axiom_no] = 

@@ -36,7 +36,6 @@ typedef struct conjunction_t {
 } conjunction;
 
 conjunction* create_conjunction(const atom*);
-conjunction* create_empty_conjunction(void);
 conjunction* extend_conjunction(conjunction*, const atom*);
 
 void delete_conjunction(conjunction*);

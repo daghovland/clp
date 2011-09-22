@@ -49,11 +49,12 @@ conjunction* create_conjunction(const atom *at){
   return ret_val;
 }
 
-conjunction*create_empty_conjunction(){
+conjunction* create_empty_conjunction(theory* th){
   conjunction * ret_val = malloc_tester(sizeof(conjunction));
-  ret_val->n_args = 0;
-  ret_val->size_args = 0;
-  ret_val->args = NULL;
+  ret_val->n_args = 1;
+  ret_val->size_args = 1;
+  ret_val->args =  calloc_tester(ret_val->size_args,  sizeof(atom*));
+  (ret_val->args)[0] = create_prop_variable("true", th);
   ret_val->free_vars = init_freevars();
   ret_val->bound_vars = init_freevars();
   ret_val->has_domain_pred = false;

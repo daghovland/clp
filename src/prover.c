@@ -580,6 +580,8 @@ void write_mt_coq_proof(rete_net_state* state){
 **/
 unsigned int prover(const rete_net* rete, bool multithread){
   unsigned int i, j, retval;
+  atom* true_atom;
+  bool has_fact;
   rete_net_state* state = create_rete_state(rete, verbose);
   const theory* th = rete->th;
 
@@ -593,16 +595,23 @@ unsigned int prover(const rete_net* rete, bool multithread){
 
 
   srand(1000);
-  for(i=0; i < th->n_axioms; i++){
-    if(th->axioms[i]->type == fact && th->axioms[i]->rhs->n_args == 1){
-      const axiom* axm = th->axioms[i];
-      substitution* sub = create_substitution(th, get_current_state_step_no(state));
-      assert(axm->axiom_no == i);
-      insert_rete_net_conjunction(state, axm->rhs->args[0], sub);
-      insert_rule_instance_history(state, create_rule_instance(axm,sub));
-      inc_proof_step_counter(state);
+  
+  has_fact = false;
+  for(i = 0; i < rete->th->n_axioms; i++){
+    if(rete->th->axioms[i]->type == fact){
+      has_fact = true;
+      break;
     }
   }
+  if(!has_fact){
+    printf("The theory has no facts, and is therefore never contradictory.\n");
+    return 0;
+  }
+  
+  true_atom = create_prop_variable("true", (theory*) rete->th);
+  if(!state->net->factset_lhs || state->net->use_beta_not)
+    insert_rete_net_fact(state, true_atom);
+  
   push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));
   foundproof = true;
 #ifdef HAVE_PTHREAD

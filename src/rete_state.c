@@ -48,8 +48,9 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
 
-  for(i = 0; i < net->th->n_axioms; i++)
+  for(i = 0; i < net->th->n_axioms; i++){
     state->axiom_inst_queue[i] = initialize_queue();
+  }
   state->step_no = 0;
   state->cursteps = 0;
   state->start_step_no = 0;
@@ -256,8 +257,13 @@ void insert_state_fact_set(rete_net_state* s, const atom* a){
 void print_state_fact_set(rete_net_state* state, FILE* stream){
   unsigned int i;
   assert(state->net->has_factset);
-  for(i = 0; i < state->net->th->n_predicates; i++)
-    print_fact_set(state->factset[i], stream);
+  fprintf(stream, "{");
+
+  for(i = 0; i < state->net->th->n_predicates; i++){
+    if(state->factset[i] != NULL)
+      print_fact_set(state->factset[i], stream);
+  }
+  fprintf(stream, "}\n");
 }
 
 /**
