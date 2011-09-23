@@ -19,19 +19,21 @@ check_PROGRAMS = clpdebug clpmemdebug
 clpdebug_SOURCES = $(clp_SOURCES) 
 clpmemdebug_SOURCES = $(clp_SOURCES) 
 check_SCRIPTS = check_clp.sh
-check_DATA = anl.gl anc.in
+check_DATA = $(srcdir)/anc.in  /home/dag/totalfinaelf/anc.in anc.in
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
-	echo "./clpmemdebug -q $(srcdir)/nl.in" >> check_clp.sh
-	echo "./clpdebug -q $(srcdir)/nl.in" >> check_clp.sh
-	echo "coqc nl.v" >> check_clp.sh
-	echo "rm nl.v nl.vo" >> check_clp.sh
-	echo "./clpdebug -q $(srcdir)/anl.in" >> check_clp.sh
-	echo "coqc anl.v" >> check_clp.sh
-	echo "rm anl.v anl.vo" >> check_clp.sh
-	echo "./clpdebug -eq $(srcdir)/anl.in" >> check_clp.sh
-	echo "coqc anl.v" >> check_clp.sh
-	echo "rm anl.v anl.vo" >> check_clp.sh
+#	echo "./clpmemdebug -q $(srcdir)/nl.in" >> check_clp.sh
+#	echo "./clpdebug -q $(srcdir)/nl.in" > check_clp.sh
+#	echo "coqc nl.v" >> check_clp.sh
+#	echo "rm nl.v nl.vo" >> check_clp.sh
+#	echo "./clpdebug -q $(srcdir)/anl.in" >> check_clp.sh
+#	echo "coqc anl.v" >> check_clp.sh
+#	echo "rm anl.v anl.vo" >> check_clp.sh
+#	echo "./clp -q $(srcdir)/anl.in" > check_clp.sh
+#	echo "coqc anl.v" >> check_clp.sh
+#	echo "rm anl.v anl.vo" >> check_clp.sh
+	echo "ls -l $(srcdir)/anc.in" > check_clp.sh
+	echo "DUMA_FILL=0 DUMA_PROTECT_FREE=1 ./clpmemdebug -q /home/dag/totalfinaelf/anc.in" >> check_clp.sh
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS)
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 
