@@ -110,18 +110,29 @@
 
 
 %%
+
+theory:   STRING_NEXT {;}
+                | STRING_ENABLED {;}
+                | SECTION_MARKER {;}
+                | theory_line {;}
+                | theory_line theory {;}
+;
 theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th, $3); }
 ;
 dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
 ;
 domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom(parser_create_constant_term(th, $3),th))), th);} // dom(constant).
 ;
-theory:   STRING_NEXT {;}
-                | STRING_ENABLED {;}
-                | SECTION_MARKER {;}
-                | theory_line {;}
-                | theory_line theory {;}
 
+theory_line:    axiomw { extend_theory(th, $1); }
+               | strategy_def { ; }
+               | domain_line { extend_theory(th, $1);}
+               | theory_name_line { ; }
+               | dynamicline { ; }
+               | COMMENT { ; }
+;
+axiomw:     axiom_name AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
+|     UNDERSCORE AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 ;
 prolog_atom_list : prolog_atom COMMA prolog_atom_list { ; }
                    | prolog_atom {;}
@@ -144,13 +155,7 @@ prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
                       | prolog_arg { ; }
                       | prolog_list_content COMMA prolog_arg {;}
 ;
-theory_line:    axiomw { extend_theory(th, $1); }
-               | strategy_def { ; }
-               | domain_line { extend_theory(th, $1);}
-               | theory_name_line { ; }
-               | dynamicline { ; }
-               | COMMENT { ; }
-;
+
 axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
                       | NAME LPAREN RPAREN { $$ = $1;}
                       | NAME { $$ = $1;}
@@ -161,18 +166,17 @@ axmno:     NAME {;}
 predlist:   NAME SLASH NAME {;}
            | NAME SLASH NAME COMMA predlist {;}
 ;
-axiomw:     axmno AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
-;
+
 varlist:      VARIABLE { ; }
             |  VARIABLE COMMA varlist { ; }
 ;
 axiom:    LPAREN axiom RPAREN { $$ = $2; }    
-|  TRUE ARROW disjunction  {$$ = create_fact($3, th); }
-| ARROW disjunction   {$$ = create_fact($2, th); }
-| disjunction   {$$ = create_fact($1, th); }
+              |  TRUE ARROW disjunction  {$$ = create_fact($3, th); }
+              | ARROW disjunction   {$$ = create_fact($2, th); }
+              | disjunction   {$$ = create_fact($1, th); }
+              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
               | conjunction ARROW FALSE  { $$ = create_goal($1);}
-              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}
                ;
 conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA TRUE { $$ = $1;}
@@ -200,6 +204,8 @@ term:         INTEGER
                    { $$ = create_variable($1, th); }
                    ;
 disjunction:            conjunction  { $$ = create_disjunction($1);}
+| FALSE OR_SEPARATOR disjunction { $$ = $3; }
+| disjunction OR_SEPARATOR FALSE { $$ = $1; }
                                  | disjunction OR_SEPARATOR conjunction { $$ = extend_disjunction($1, $3);}
 ;
 
