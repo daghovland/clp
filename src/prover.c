@@ -100,8 +100,10 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
     ri->used_in_proof = true;
     for(i = 0; i < n_premises; i++){
       int premiss_no = ri->substitution->timestamps[i];
-      assert(premiss_no == history[premiss_no]->step_no);
-      check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no, current_ts);
+      if(premiss_no > 0){
+	assert(premiss_no == history[premiss_no]->step_no);
+	check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no, current_ts);
+      }
     }
     if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
       push_ri_stack(historic_state->elim_stack, ri, historic_ts, current_ts);
@@ -178,8 +180,8 @@ void insert_rete_net_conjunction(rete_net_state* state,
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
 
-    if(!state->net->has_factset)
-      delete_instantiated_atom(con->args[i], ground);
+    /*    if(!state->net->has_factset)
+	  delete_instantiated_atom(con->args[i], ground);*/
   } // end for
 }
 

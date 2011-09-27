@@ -111,17 +111,14 @@
 
 %%
 
-theory:   STRING_NEXT {;}
-                | STRING_ENABLED {;}
-                | SECTION_MARKER {;}
-                | theory_line {;}
+theory:   theory_line {;}
                 | theory_line theory {;}
 ;
 theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th, $3); }
 ;
 dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
 ;
-domain_line: STRING_DOM LPAREN NAME RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom(parser_create_constant_term(th, $3),th))), th);} // dom(constant).
+domain_line: STRING_DOM LPAREN term RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom($3,th))), th);} // dom(constant).
 ;
 
 theory_line:    axiomw { extend_theory(th, $1); }
@@ -134,26 +131,7 @@ theory_line:    axiomw { extend_theory(th, $1); }
 axiomw:     axiom_name AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 |     UNDERSCORE AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 ;
-prolog_atom_list : prolog_atom COMMA prolog_atom_list { ; }
-                   | prolog_atom {;}
-;
-prolog_atom :  NAME LPAREN RPAREN {;}
-             | NAME LPAREN prolog_arg_list RPAREN {;}
-;
-prolog_arg_list:     prolog_arg 
-                   | prolog_arg COMMA prolog_arg_list {;}
-;
-prolog_arg:         UNDERSCORE {;}
-                          | VARIABLE {;}
-                          | LSQPAREN prolog_list_content RSQPAREN { ; }
-                          | LSQPAREN RSQPAREN { ; }
-                          | NAME {;}
-                          | INTEGER {;}
-                          | NAME LPAREN prolog_arg_list RPAREN {;}
-;
-prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
-                      | prolog_arg { ; }
-                      | prolog_list_content COMMA prolog_arg {;}
+
 ;
 
 axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
@@ -184,8 +162,7 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
                           ;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
-          | STRING_DOM LPAREN VARIABLE RPAREN { $$ = create_dom_atom(create_variable($3, th),th); }
-          | STRING_DOM LPAREN NAME RPAREN { $$ = create_dom_atom(parser_create_constant_term(th, $3),th); }
+          | STRING_DOM LPAREN term RPAREN { $$ = create_dom_atom($3,th); }
           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
           | NAME {$$ = create_prop_variable($1, th);}
                ;
@@ -194,10 +171,10 @@ terms:         terms COMMA term
                    | term 
                    { $$ = create_term_list($1); }
                    ;
-term:         INTEGER
-                   { $$ = parser_create_constant_term(th, $1); }
-                   | NAME LPAREN terms RPAREN 
+term:              NAME LPAREN terms RPAREN 
                    { $$ = create_term($1, $3); }
+                   | INTEGER
+                   { $$ = parser_create_constant_term(th, $1); }
                    | NAME
                    { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 
@@ -209,10 +186,31 @@ disjunction:            conjunction  { $$ = create_disjunction($1);}
                                  | disjunction OR_SEPARATOR conjunction { $$ = extend_disjunction($1, $3);}
 ;
 
-strategy_def:         STRING_NEXT LPAREN prolog_arg COMMA prolog_arg COMMA prolog_arg RPAREN PERIOD { ; }
-                      | STRING_ENABLED LPAREN prolog_arg COMMA prolog_arg RPAREN PERIOD { ; }
-                      | STRING_ENABLED LPAREN prolog_arg COMMA prolog_arg RPAREN COLON DASH prolog_atom_list PERIOD { ; }
+strategy_def:         STRING_NEXT LPAREN prolog_arg_list RPAREN PERIOD { ; }
+                      | STRING_ENABLED LPAREN prolog_arg_list RPAREN PERIOD { ; }
+                      | STRING_ENABLED LPAREN prolog_arg_list RPAREN COLON DASH prolog_atom_list PERIOD { ; }
 ;
+
+prolog_atom_list : prolog_atom COMMA prolog_atom_list { ; }
+                   | prolog_atom {;}
+;
+prolog_atom :  NAME LPAREN RPAREN {;}
+             | NAME LPAREN prolog_arg_list RPAREN {;}
+;
+prolog_arg_list:     prolog_arg COMMA prolog_arg_list {;}
+                     | prolog_arg {;}
+;
+prolog_arg:         UNDERSCORE {;}
+                          | VARIABLE {;}
+                          | LSQPAREN prolog_list_content RSQPAREN { ; }
+                          | LSQPAREN RSQPAREN { ; }
+                          | NAME {;}
+                          | INTEGER {;}
+                          | NAME LPAREN prolog_arg_list RPAREN {;}
+;
+prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
+                      | prolog_arg { ; }
+                      | prolog_list_content COMMA prolog_arg {;}
 %%
 
 				   
@@ -227,6 +225,7 @@ theory* clpl_parser(FILE* f){
   th = create_theory();
   clpl_in = f;
   clpl_lineno = 1;
+  //yydebug = 1;
   clpl_parse();
   return th;
 }

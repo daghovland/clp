@@ -55,7 +55,6 @@ symbol     [\'\"_]
 <INITIAL>"goal"                                  {  return GOAL;                       }
 <INITIAL>"axiom"                                  { return AXIOM_NAME; }
 <INITIAL>"dynamic"                                { return DYNAMIC;                      }
-<INITIAL>^%+                                { return SECTION_MARKER;                      }
 <INITIAL>{Letter}({letter}|{digit}|{symbol})* {
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);

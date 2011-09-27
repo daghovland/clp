@@ -24,6 +24,14 @@
 #define _GNU_SOURCE
 
 /**
+   Debugs the parsers
+   
+   Remember to also uncomment yydebug = 1 in the parser function
+**/
+//#define YYDEBUG 1
+//#include <stdio.h>
+
+/**
    Set the maximum number of steps in a proof
 **/
 #define   MAX_PROOF_STEPS 300
