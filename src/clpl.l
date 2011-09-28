@@ -1,6 +1,5 @@
 
 %option prefix="clpl_"
-%option outfile="lex.yy.c" header-file="clpl_scanner.h"
 %option noyywrap
 %option 8bit
 %option bison-bridge
@@ -43,6 +42,9 @@ symbol     [\'\"_]
 <INITIAL>"/"                             { return SLASH; }
 <INITIAL>":"                                { return COLON; }
 <INITIAL>"-"                                { return DASH; }
+<INITIAL>"="                                { return EQUALS; }
+<INITIAL>"\\="                                { return NOT_EQUALS; }
+<INITIAL>"*"                                { return TIMES; }
 <INITIAL>\[                                         {  return LSQPAREN;                  }
 <INITIAL>\]                                         {  return RSQPAREN;                 }
 <INITIAL>\|                                          { return HOR_BAR; }
@@ -50,7 +52,6 @@ symbol     [\'\"_]
 <INITIAL>"enabled"                                { return STRING_ENABLED;                      }
 <INITIAL>"true"                                  {  return TRUE;                       }
 <INITIAL>"name"                                  {  return STRING_NAME;                       }
-<INITIAL>"dom"                                  {  return STRING_DOM;                       }
 <INITIAL>"false"                                 {  return FALSE;                     }
 <INITIAL>"goal"                                  {  return GOAL;                       }
 <INITIAL>"axiom"                                  { return AXIOM_NAME; }
@@ -59,16 +60,13 @@ symbol     [\'\"_]
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);
                                               return VARIABLE;                   }
-<INITIAL>(\'[^\']*\')|({letter}|{digit}|{symbol}|"["|"]")+    {
+<INITIAL>(\'[^\']+\')|({digit}+"."{digit}+)|({letter}|{digit}|{symbol}|"["|"]")+    {
                                                yylval->str = malloc (strlen(yytext)+1);
                                                strcpy(yylval->str, yytext);
                                               return NAME;                   }
-<INITIAL>{digit}+                                { yylval->str = malloc (strlen(yytext)+1);
-                                               strcpy(yylval->str, yytext);
-                                               return INTEGER; }
 [ \t]                            {                                                  }
 [\n\r]                            {                                               }
-%[^\n]*$                        {                                                  }
+<INITIAL>"%"[^\n]*                        {                                                 }
 <INITIAL>.                                           { fprintf( stderr, "Error with symbol %s\n", yytext); exit( EXIT_FAILURE ); }
 %%
 

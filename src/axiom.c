@@ -45,7 +45,6 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
   ret_val->lhs = lhs;
   ret_val->rhs = rhs;
   ret_val->is_existential = false;
-  ret_val->has_domain_pred = false;
   ret_val->exist_vars = init_freevars();
   reset_freevars(lhs->bound_vars);
   for(i = 0; i < rhs->n_args; i++){
@@ -57,8 +56,6 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
       ret_val->is_existential = true;
       ret_val->exist_vars = plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
     }
-    if(rhs->args[i]->has_domain_pred)
-      ret_val->has_domain_pred = true;
   }
   return ret_val;
 }

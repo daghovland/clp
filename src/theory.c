@@ -43,7 +43,7 @@ theory* create_theory(void){
 
 
   ret_val->size_axioms = 100;
-  ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(axiom));
+  ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(axiom*));
   ret_val->n_axioms =  0;
 
   ret_val->size_func_names = 100;
@@ -75,7 +75,7 @@ void extend_theory(theory *th, axiom *ax){
   th->n_axioms++;
   if(th->n_axioms >= th->size_axioms){
     th->size_axioms *= 2;
-    th->axioms = realloc_tester(th->axioms, th->size_axioms * sizeof(axiom));
+    th->axioms = realloc_tester(th->axioms, th->size_axioms * sizeof(axiom*));
   }
   th->axioms[th->n_axioms-1] = ax;
   if(ax->lhs->n_args > th->max_lhs_conjuncts)
@@ -182,32 +182,17 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   fprintf(stream, "Section %s.\n\n", th->name);
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
 
-  fprintf(stream, "Variable %s : Set.\n", DOMAIN_PREDICATE_NAME);
   fprintf(stream, "Variable goal : Prop.\n");
 
-  for(i = 0; i < th->n_predicates; i++){
-    if((!th->predicates[i]->is_domain))
-      print_coq_predicate(th->predicates[i], stream);
-  }
+  for(i = 0; i < th->n_predicates; i++)
+    print_coq_predicate(th->predicates[i], stream);
+
   print_coq_constants(th, stream);
   fprintf(stream, "\n");
   
-  for(i = 0; i < th->n_axioms; i++){
-    const axiom* a = th->axioms[i];
-    if(a->type == fact && a->rhs->n_args == 1){
-      conjunction* rhs = a->rhs->args[0];
-      bool only_domain = true;
-      for(j = 0; j < rhs->n_args; j++){
-	if(! rhs->args[j]->pred->is_domain){
-	  only_domain=false;
-	  break;
-	}
-      }
-      if(only_domain)
-	continue;
-    }
+  for(i = 0; i < th->n_axioms; i++)
     print_coq_axiom(th->axioms[i], stream);
-  }
+  
   fprintf(stream, "Theorem %s : goal.\n", th->name);
   fprintf(stream, "Proof.\n");
 }

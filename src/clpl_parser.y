@@ -36,7 +36,7 @@
 
  
 
-  void clpl_error(char*);
+  //  void clpl_error(struct YYLTYPE*);
   int clpl_lex();
   
   theory *th;
@@ -54,6 +54,8 @@
 %name-prefix "clpl_"
 %locations
 %error-verbose
+%glr-parser
+
 
 %union{
   char* str;
@@ -78,7 +80,6 @@
 %token PERIOD
 %token FALSE
 %token STRING_NAME
-%token STRING_DOM
 %token STRING_NEXT
 %token STRING_ENABLED
 %token SECTION_MARKER
@@ -89,11 +90,13 @@
 %token DYNAMIC
 %token AXIOM_NAME
 %token UNDERSCORE
-%token <str> INTEGER
 %token COLON
 %token SLASH
+%token EQUALS
+%token NOT_EQUALS
+%token TIMES
 %token DASH
-%token COMMENT
+
 
 
 %type <atom> atom
@@ -103,7 +106,6 @@
 %type <conj> conjunction
 %type <axiom> axiom
 %type <axiom> axiomw
-%type <axiom> domain_line
 %type <str> axiom_name
 %start theory
 
@@ -112,37 +114,34 @@
 %%
 
 theory:   theory_line {;}
-                | theory_line theory {;}
+        | theory_line theory {;}
 ;
 theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th, $3); }
 ;
 dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
 ;
-domain_line: STRING_DOM LPAREN term RPAREN PERIOD {$$ = create_fact(create_disjunction(create_conjunction(create_dom_atom($3,th))), th);} // dom(constant).
+redefine_axiom_prolog:     LPAREN UNDERSCORE AXIOM_NAME LPAREN prolog_arg COLON VARIABLE RPAREN RPAREN COLON DASH VARIABLE PERIOD {;}
 ;
-
-theory_line:    axiomw { extend_theory(th, $1); }
+theory_line:   redefine_axiom_prolog {;}
+               | axiomw { extend_theory(th, $1); }
                | strategy_def { ; }
-               | domain_line { extend_theory(th, $1);}
                | theory_name_line { ; }
                | dynamicline { ; }
-               | COMMENT { ; }
 ;
-axiomw:     axiom_name AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
+axiomw:               axiom PERIOD { $$ = $1;}
+|   axiom_name AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 |     UNDERSCORE AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
 ;
 
-;
 
 axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
                       | NAME LPAREN RPAREN { $$ = $1;}
                       | NAME { $$ = $1;}
 ;
-axmno:     NAME {;}
-| UNDERSCORE {;}
+predicate_def : NAME SLASH NAME {;}
 ;
-predlist:   NAME SLASH NAME {;}
-           | NAME SLASH NAME COMMA predlist {;}
+predlist:   predicate_def COMMA predlist {;}
+           | predicate_def  {;}
 ;
 
 varlist:      VARIABLE { ; }
@@ -162,7 +161,6 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
                           ;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
-          | STRING_DOM LPAREN term RPAREN { $$ = create_dom_atom($3,th); }
           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
           | NAME {$$ = create_prop_variable($1, th);}
                ;
@@ -173,16 +171,14 @@ terms:         terms COMMA term
                    ;
 term:              NAME LPAREN terms RPAREN 
                    { $$ = create_term($1, $3); }
-                   | INTEGER
-                   { $$ = parser_create_constant_term(th, $1); }
                    | NAME
                    { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 
                    { $$ = create_variable($1, th); }
                    ;
 disjunction:            conjunction  { $$ = create_disjunction($1);}
-| FALSE OR_SEPARATOR disjunction { $$ = $3; }
-| disjunction OR_SEPARATOR FALSE { $$ = $1; }
+                    | FALSE OR_SEPARATOR disjunction { $$ = $3; }
+                     | disjunction OR_SEPARATOR FALSE { $$ = $1; }
                                  | disjunction OR_SEPARATOR conjunction { $$ = extend_disjunction($1, $3);}
 ;
 
@@ -196,7 +192,12 @@ prolog_atom_list : prolog_atom COMMA prolog_atom_list { ; }
 ;
 prolog_atom :  NAME LPAREN RPAREN {;}
              | NAME LPAREN prolog_arg_list RPAREN {;}
+             | prolog_arg prolog_infix_op prolog_arg {;}
 ;
+prolog_infix_op: EQUALS {;}
+               | NOT_EQUALS { ; }
+               | TIMES {;}
+               | SLASH {;}
 prolog_arg_list:     prolog_arg COMMA prolog_arg_list {;}
                      | prolog_arg {;}
 ;
@@ -205,7 +206,6 @@ prolog_arg:         UNDERSCORE {;}
                           | LSQPAREN prolog_list_content RSQPAREN { ; }
                           | LSQPAREN RSQPAREN { ; }
                           | NAME {;}
-                          | INTEGER {;}
                           | NAME LPAREN prolog_arg_list RPAREN {;}
 ;
 prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
@@ -215,11 +215,13 @@ prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
 
 				   
 
+
 void clpl_error(char* s){
   fprintf(stderr, "Error in parsing file: %s",s);
   fprintf(stderr, " line  %d\n", clpl_lineno);
   exit(2);
 }
+
 
 theory* clpl_parser(FILE* f){
   th = create_theory();

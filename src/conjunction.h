@@ -29,7 +29,6 @@ typedef struct conjunction_t {
   const atom **args;
   unsigned int n_args;
   size_t size_args;
-  bool has_domain_pred;
   bool is_existential;
   freevars *bound_vars;
   freevars *free_vars;

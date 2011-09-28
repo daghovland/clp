@@ -45,7 +45,6 @@ enum axiom_type { fact, goal, normal };
 typedef struct axiom_t {
   enum axiom_type type;
   int axiom_no;
-  bool has_domain_pred;
   const conjunction * lhs;
   const disjunction * rhs;
   const char* name;

@@ -162,11 +162,6 @@ void insert_rete_net_conjunction(rete_net_state* state,
     
     assert(test_ground_atom(ground));
     
-    if(ground->pred->is_domain){
-      assert(ground->args->n_args == 1);
-      assert(ground->args->args[0]->type != variable_term);
-      insert_domain_elem(state, ground->args->args[0]);
-    }
     
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");

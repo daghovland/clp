@@ -45,7 +45,6 @@ conjunction* create_conjunction(const atom *at){
   ret_val->free_vars = free_atom_variables(at, ret_val->free_vars);
   ret_val->bound_vars =  init_freevars();
   ret_val->bound_vars = free_atom_variables(at, ret_val->bound_vars);
-  ret_val->has_domain_pred  = at->pred->is_domain;
   return ret_val;
 }
 
@@ -57,7 +56,6 @@ conjunction* create_empty_conjunction(theory* th){
   (ret_val->args)[0] = create_prop_variable("true", th);
   ret_val->free_vars = init_freevars();
   ret_val->bound_vars = init_freevars();
-  ret_val->has_domain_pred = false;
   return ret_val;
 }
 
@@ -71,7 +69,6 @@ conjunction* extend_conjunction(conjunction *conj, const atom* at){
 
   conj->free_vars = free_atom_variables(at, conj->free_vars);
   conj->bound_vars = free_atom_variables(at, conj->bound_vars);
-  conj->has_domain_pred = conj->has_domain_pred || at->pred->is_domain;
 
   return conj;
 }
@@ -99,7 +96,6 @@ disjunction* create_disjunction(conjunction* disj){
   ret_val->args = calloc_tester(ret_val->size_args, sizeof(conjunction*));
   ret_val->args[0] = disj;
   ret_val->free_vars = init_freevars();
-  ret_val->has_domain_pred = disj->has_domain_pred;
   return ret_val;
 }
 
@@ -109,7 +105,6 @@ disjunction*create_empty_disjunction(){
   ret_val->size_args = 0;
   ret_val->args = NULL;
   ret_val->free_vars = init_freevars();
-  ret_val->has_domain_pred = false;
   return ret_val;
 }
 
@@ -120,7 +115,6 @@ disjunction* extend_disjunction(disjunction *disj, conjunction *conj){
     disj->args = realloc_tester(disj->args, disj->size_args * sizeof(conjunction*));
   }
   disj->args[disj->n_args-1] = conj;
-  disj->has_domain_pred = disj->has_domain_pred || conj->has_domain_pred;
   return disj;
 }
 
@@ -289,12 +283,10 @@ bool print_coq_conj(const conjunction* con, FILE* stream){
   unsigned int i;
   bool has_printed_one = false;
   for(i = 0; i < con->n_args; i++){
-    if(!con->args[i]->pred->is_domain){
-      if(has_printed_one)
-	fprintf(stream, " /\\ ");
-      print_coq_atom(con->args[i], stream);
-      has_printed_one = true;
-    }
+    if(has_printed_one)
+      fprintf(stream, " /\\ ");
+    print_coq_atom(con->args[i], stream);
+    has_printed_one = true;
   }
   return has_printed_one;
 }

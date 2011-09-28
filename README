@@ -1,15 +1,23 @@
+General information
+
 A prover for coherent logic
 
 Executable: clp
 
 Takes a theory in geolog-format or CL.pl-format from standard input or files
 
+
+----------------------------------------------------------------------------------
+
+Information about compiling and installing
+
 Requires recent versions of bison and flex. I use bison 2.4.3 and flex 2.5.4. It does e.g. not work with bison 1
 
 If you are building from mercurial repository (not from tarball) remember to first run:
-
 autoreconf --install
 
-See INSTALL for the rest of installation and building procedures
+Note also that the macro AM_MAINTAINER_MODE has been added to configure.ac. If you need to regenerate some of the autotools-generated stuff, you must give configure the option "--enable-maintainer-mode".
+
+See INSTALL for the rest of installation and building procedures. (I would recommend to add "CFLAGS=-O4" for normal non-debugging usage.)
 
 

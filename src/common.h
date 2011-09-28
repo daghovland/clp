@@ -28,18 +28,14 @@
    
    Remember to also uncomment yydebug = 1 in the parser function
 **/
-//#define YYDEBUG 1
-//#include <stdio.h>
+#define YYDEBUG 1
+#include <stdio.h>
 
 /**
    Set the maximum number of steps in a proof
 **/
 #define   MAX_PROOF_STEPS 300
 
-/**
-   The name of the special "domain" predicate
-**/
-#define DOMAIN_PREDICATE_NAME "dom"
 /**
    Uncomment the line below to test the fresh_constants.c without gcc extensions __sync_fetch ...
 **/

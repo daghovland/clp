@@ -1,6 +1,5 @@
 
 %option prefix="geolog_"
-%option outfile="lex.yy.c" header-file="geolog_scanner.h"
 %option noyywrap
 %option 8bit
 %option bison-bridge

@@ -57,7 +57,8 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset atexit strtoul])
 
-
+#For not generating files in the maintainer's repo
+AM_MAINTAINER_MODE
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])

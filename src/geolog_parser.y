@@ -35,7 +35,7 @@
   extern int geolog_lex();
   extern int fileno(FILE*);
   
-  void geolog_error(char*);
+  //  void geolog_error(char*);
   theory *th;
   
   extern FILE* geolog_in;
@@ -49,6 +49,7 @@
 %name-prefix "geolog_"
 %error-verbose
 %locations
+%glr-parser
 
 
 %union{

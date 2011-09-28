@@ -26,7 +26,6 @@
 
 typedef struct disjunction_t {
   conjunction **args;
-  bool has_domain_pred;
   size_t n_args;
   size_t size_args;
   freevars *free_vars;

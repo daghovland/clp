@@ -27,7 +27,6 @@
 
 typedef struct predicate_t {
   const char* name;
-  bool is_domain;
   size_t arity;
   size_t pred_no;
 } predicate;

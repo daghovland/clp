@@ -89,7 +89,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
       if( (rule->type == goal || rule->type == fact) && axiom_has_new_instance(axiom_no, state))
 	return pop_axiom_rule_queue(state, axiom_no);
       
-      if(!rule->is_existential && !rule->has_domain_pred && axiom_has_new_instance(axiom_no, state)){
+      if(!rule->is_existential && axiom_has_new_instance(axiom_no, state)){
 	has_definite = true;
 	definite_rule = axiom_no;
 	if(rule->rhs->n_args == 1){

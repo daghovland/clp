@@ -247,26 +247,6 @@ void delete_term_list(term_list* tl){
   free(tl);
 }
 
-/**
-   Used for CL.pl dom predicate instances in axioms
-   Called from clpl_parser.y in atom rule
-**/
-atom* create_dom_atom(const term* arg, theory* th){
-  atom* ret_val;
-  term_list* args; 
-  size_t dom_pred_len;
-  char* dom_name;
-
-  dom_pred_len = strlen(DOMAIN_PREDICATE_NAME) + 1;
-  dom_name = calloc_tester(dom_pred_len, 1);
-  strncpy(dom_name, DOMAIN_PREDICATE_NAME, dom_pred_len);
-
-  args = create_term_list(arg);
-  ret_val =  _common_create_atom(args);
-  assert(args->n_args == 1);
-  ret_val->pred = parser_new_predicate(th, dom_name, 1);
-  return ret_val;
-}
 
 
 /**
