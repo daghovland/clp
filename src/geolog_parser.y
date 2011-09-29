@@ -50,7 +50,7 @@
 %error-verbose
 %locations
 %glr-parser
-
+%expect 0
 
 %union{
   char* str;
@@ -96,7 +96,11 @@
 
 %start file
 
+%{
 
+void geolog_error(YYLTYPE*, char const *);				   
+
+ %}
 
 %%
 file:          theory { ; }
@@ -144,9 +148,8 @@ disjunction:            conjunction  { $$ = create_disjunction($1);}
 ;
 %%
 
-				   
 
-void geolog_error(char* s){
+void geolog_error(YYLTYPE* locp, char const * s){
   fprintf(stderr, "Error in parsing file: %s",s);
   fprintf(stderr, " line  %d\n", geolog_lineno);
   exit(2);

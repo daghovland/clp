@@ -36,7 +36,6 @@
 
  
 
-  //  void clpl_error(struct YYLTYPE*);
   int clpl_lex();
   
   theory *th;
@@ -55,6 +54,8 @@
 %locations
 %error-verbose
 %glr-parser
+%expect-rr 1
+%expect 1
 
 
 %union{
@@ -109,7 +110,9 @@
 %type <str> axiom_name
 %start theory
 
-
+%{
+  void clpl_error(YYLTYPE*, char const*);
+  %}
 
 %%
 
@@ -216,9 +219,10 @@ prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
 				   
 
 
-void clpl_error(char* s){
-  fprintf(stderr, "Error in parsing file: %s",s);
+void clpl_error(YYLTYPE *locp, char const *msg){
+  fprintf(stderr, "Error in parsing file: %s",msg);
   fprintf(stderr, " line  %d\n", clpl_lineno);
+  //fprintf(stderr, " line  %d\n", locp->last_line);
   exit(2);
 }
 

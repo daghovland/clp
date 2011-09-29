@@ -8,7 +8,9 @@ AM_INIT_AUTOMAKE([parallel-tests -Wall  -Werror dist-bzip2])
 AC_CONFIG_SRCDIR([src/prover.c])
 AC_CONFIG_HEADERS([config.h])
 
+
 # Checks for programs.
+
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
@@ -20,6 +22,10 @@ AC_PROG_CPP
 
 # For per-target flags
 AM_PROG_CC_C_O
+
+
+
+
 
 # Checks for pthreads functionality. 
 AX_PTHREAD
@@ -59,6 +65,10 @@ AC_CHECK_FUNCS([memset atexit strtoul])
 
 #For not generating files in the maintainer's repo
 AM_MAINTAINER_MODE
+
+AM_GNU_GETTEXT(external)
+BISON_I18N
+
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
