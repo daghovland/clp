@@ -129,6 +129,7 @@ rule_instance* pop_youngest_axiom_rule_queue(rete_net_state*, size_t);
 rule_instance* peek_axiom_rule_queue(const rete_net_state*, size_t);
 void remove_rule_instance(rete_net_state*, const substitution*, size_t);
 void add_rule_to_queue(const axiom*, substitution*, rete_net_state*);
+bool is_empty_axiom_rule_queue(rete_net_state*, size_t);
 
 const term* find_substitution(const substitution*, const variable*);
 

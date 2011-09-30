@@ -172,7 +172,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
     if(state->net->has_factset){
       insert_state_fact_set(state, ground);
     }
-    if(!state->net->factset_lhs || state->net->use_beta_not)
+    if(!state->net->factset_lhs && state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
 
     /*    if(!state->net->has_factset)
@@ -198,7 +198,8 @@ bool return_found_model(rete_net_state* state){
 }
 
 /**
-   Called from run_prover_rete_coq when not finding new instance
+   Called from run_prover_rete_coq when reaching max steps, as given with the 
+   commandline option -m|--max=LIMIT
 **/
 bool return_reached_max_steps(rete_net_state* state, rule_instance* ri){
   printf("Reached %i proof steps, higher than given maximum\n", get_latest_global_step_no(state));
@@ -604,7 +605,10 @@ unsigned int prover(const rete_net* rete, bool multithread){
   }
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
-  if(!state->net->factset_lhs || state->net->use_beta_not)
+  if(state->net->has_factset)
+    insert_state_fact_set(state, true_atom);
+
+  if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact(state, true_atom);
   
   push_ri_state_stack(disj_ri_stack, NULL, state, get_current_state_step_no(state));

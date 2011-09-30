@@ -151,9 +151,13 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   pthread_mutexattr_settype(&p_attr, PTHREAD_MUTEX_ERRORCHECK_NP);
 #endif
   net->sub_mutexes = calloc_tester(net->n_subs, sizeof(pthread_mutex_t));
-  for(i = 0; i < net->n_subs; i++){
+  for(i = 0; i < net->n_subs; i++)
     pthread_mutex_init(&net->sub_mutexes[i], &p_attr);
-  }
+
+  net->factset_mutexes = calloc_tester(th->n_predicates, sizeof(pthread_mutex_t));
+  for(i = 0; i < th->n_predicates; i++)
+    pthread_mutex_init(&net->factset_mutexes[i], &p_attr);
+
   pthread_mutexattr_destroy(&p_attr);
 #endif
   return net;
@@ -183,6 +187,7 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
 
   fprintf(stream, "Variable goal : Prop.\n");
+  fprintf(stream, "Variable %s : Set.\n", DOMAIN_SET_NAME);
 
   for(i = 0; i < th->n_predicates; i++)
     print_coq_predicate(th->predicates[i], stream);

@@ -249,7 +249,7 @@ void print_coq_axiom(const axiom* a, FILE* stream){
     fprintf(stream, "forall ");
     for(i = 0; i < f->n_vars; i++)
       fprintf(stream, "%s ", f->vars[i]->name);
-    fprintf(stream, ": dom,\n");
+    fprintf(stream, ": %s,\n", DOMAIN_SET_NAME);
   }
   if(a->type != fact){
     if(print_coq_conj(a->lhs, stream))

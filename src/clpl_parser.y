@@ -157,28 +157,28 @@ axiom:    LPAREN axiom RPAREN { $$ = $2; }
               | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
               | conjunction ARROW FALSE  { $$ = create_goal($1);}
-               ;
+;
 conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA TRUE { $$ = $1;}
                          | TRUE COMMA conjunction { $$ = $3;}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
-                          ;
+;
 atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
           | NAME {$$ = create_prop_variable($1, th);}
-               ;
+;
 terms:         terms COMMA term
                     { $$ = extend_term_list($1, $3); }
                    | term 
                    { $$ = create_term_list($1); }
-                   ;
+;
 term:              NAME LPAREN terms RPAREN 
                    { $$ = create_term($1, $3); }
                    | NAME
                    { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 
                    { $$ = create_variable($1, th); }
-                   ;
+;
 disjunction:            conjunction  { $$ = create_disjunction($1);}
                     | FALSE OR_SEPARATOR disjunction { $$ = $3; }
                      | disjunction OR_SEPARATOR FALSE { $$ = $1; }

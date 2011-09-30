@@ -21,6 +21,11 @@ predicate* _create_predicate(const char* name, size_t arity, size_t pred_no){
 const predicate* parser_new_predicate(theory* th, const char* new, size_t arity){
   unsigned int i;
   predicate * p;
+  if(strcmp(new, DOMAIN_SET_NAME) == 0){
+    fprintf(stderr, "The predicate name \"%s\" cannot be used, as it is reserved for the domain of the prover.\n", DOMAIN_SET_NAME);
+    exit(EXIT_FAILURE);
+  }
+    
   for(i = 0; i < th->n_predicates; i++){
     p = th->predicates[i];
     if(strcmp(p->name, new) == 0 && arity == p->arity)
@@ -41,7 +46,7 @@ void print_coq_predicate(const predicate* p, FILE* stream){
   unsigned int j;
   fprintf(stream, "Variable %s : ", p->name);
   for(j = 0; j < p->arity; j++)
-    fprintf(stream, "dom -> ");
+    fprintf(stream, "%s -> ", DOMAIN_SET_NAME);
   fprintf(stream, "Prop.\n");
 }
 

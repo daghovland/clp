@@ -267,9 +267,9 @@ void print_state_fact_set(rete_net_state* state, FILE* stream){
 }
 
 /**
-   For testing whether a conjunction is true in the fact set
+   For testing whether a conjunction with some substitutions already done, is true in the fact set
 
-   Not done.
+   Note that sub is changed if it returns true.
 **/
 bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
   const fact_set * fs;
@@ -290,6 +290,11 @@ bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const c
   return false;
 }
 
+/**
+   Returns true if the conjunction is true in the factset.
+   In that case, the given substitution is extended to such an instance.
+   sub must have been instantiated and later freed by the calling function.
+**/
 bool conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, substitution* sub){
   return remaining_conjunction_true_in_fact_set(state, con, 0, sub);
 }
@@ -300,6 +305,62 @@ bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction
     if(conjunction_true_in_fact_set(state, dis->args[i], sub))
       return true;
   }
+  return false;
+}
+
+/**
+   returns true if the axiom has an instance such that the lhs is true 
+   in the factset, while the rhs is false. If this is indeed the case, 
+   then sub is instantiated with the corresponding substitution
+
+   The calling function must in that case free sub.
+**/
+bool remaining_axiom_false_in_fact_set(rete_net_state* state, const axiom* axm, size_t arg_no, substitution** sub){
+  fact_set * fs;
+  size_t pred_no;
+  if(arg_no >= axm->lhs->n_args)
+    return !disjunction_true_in_fact_set(state, axm->rhs, sub);
+  pred_no = axm->lhs->args[arg_no]->pred->pred_no;
+  fs = state->factset[pred_no];
+  if(fs == NULL)
+    return false;
+#ifdef HAVE_PTHREAD
+  if(pthread_mutex_lock(&state->net->factset_mutexes[pred_no]) != 0)
+    perror("rete_state.c: remaining_axiom_false_in_fact_set: Could not lock mutex: ");
+#endif
+  fs->prev = NULL;
+  while(fs->next != NULL){
+    fs->next->prev = fs;
+    fs = fs->next;
+  }
+  do{
+    substitution* sub2 = copy_substitution(*sub);
+    if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2)){
+      if(remaining_axiom_false_in_fact_set(state, axm, arg_no+1, &sub2)){
+#ifdef HAVE_PTHREAD
+	pthread_mutex_unlock(&state->net->factset_mutexes[pred_no]);
+#endif
+	*sub = sub2;
+	return true;
+      }
+    }
+    delete_substitution(sub2);
+    fs = fs->prev;
+  } while (fs != NULL);
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(&state->net->factset_mutexes[pred_no]);
+#endif
+  return false;
+}
+
+bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub){
+  substitution* sub2 = create_substitution(state->net->th, get_current_state_step_no(state));
+  
+  if(remaining_axiom_false_in_fact_set(state, state->net->th->axioms[axiom_no], 0, &sub2)){
+    *sub = sub2;
+    return true;
+  }
+  delete_substitution(sub2);
   return false;
 }
 

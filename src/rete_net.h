@@ -74,6 +74,7 @@ typedef struct rete_net_t {
   strategy strat;
 #ifdef HAVE_PTHREAD
   pthread_mutex_t * sub_mutexes;
+  pthread_mutex_t * factset_mutexes;
 #endif
   //unsigned int size_history;
   // rule_instance ** history;
@@ -109,7 +110,7 @@ typedef struct rete_net_t {
 
    The size of "branches" equals end_of_branch->rule->rhs->n_args
 
-   The fact_set is an array of length net->n_predicates containing the substitutions
+   The fact_set is an array of length net->th->n_predicates containing the substitutions
    of the respective atoms
 **/
 typedef struct rete_net_state_t {
@@ -149,5 +150,6 @@ void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child);
 void print_state_fact_set(rete_net_state* state, FILE* stream);
 bool conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, substitution* sub);
 bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction* dis, substitution* sub);
+bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub);
 
 #endif

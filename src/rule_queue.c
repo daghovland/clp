@@ -381,7 +381,14 @@ rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
 
   return retval;
 }
-  
+size_t size_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+  assert(state->axiom_inst_queue[axiom_no]->n_queue >= 0);
+  return state->axiom_inst_queue[axiom_no]->n_queue;
+}
+
+bool is_empty_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+  return (size_axiom_rule_queue(state, axiom_no) == 0);
+}
 
 /**
    Called from detrect_rete_beta_sub in prover.c

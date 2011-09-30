@@ -22,6 +22,7 @@
 #include "common.h"
 #include "strategy.h"
 #include "rete.h"
+#include "rete_net.h"
 #include "theory.h"
 #include "rule_queue.h"
 #include "sub_alpha_queue.h"
@@ -59,24 +60,32 @@ rule_instance* normal_next_instance(rete_net_state* state){
   unsigned int max_weight = 40 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
   rule_instance* retval;
 
-  /*
-    for(i = 0; i < th->n_axioms; i++){
-    if(th->axioms[i]->type != goal && th->axioms[i]->type != fact){
-    unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
-    axiom_weights[i] = (rule_queue_possible_age(i, state) + rule_previously_applied) 
-    * (th->axioms[i]->lhs->n_args) 
-    * (1 + rand() / RAND_DIV);
-    if(max_weight <= axiom_weights[i])
-    max_weight = axiom_weights[i];
-    }
-    }
-  if(max_weight = 0)
-    max_weight = 20 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
-  */
+    
+ 
   for(i = 0; i < th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);
+    
+    if(state->net->factset_lhs){
+      substitution* sub;
+      bool found_new_instance = false;
+      if(rule->type == fact && !is_empty_axiom_rule_queue(state, axiom_no))
+	continue;
+      while(!found_new_instance && !is_empty_axiom_rule_queue(state, axiom_no)){
+	rule_instance* ri = peek_axiom_rule_queue(state, axiom_no);
+	if(disjunction_true_in_fact_set(state, state->net->th->axioms[axiom_no]->rhs, & ri->substitution))
+	  ri = pop_axiom_rule_queue(state, axiom_no);
+	else
+	  found_new_instance = true;
+      }
+      if(!found_new_instance){
+	if(axiom_false_in_fact_set(state, axiom_no, & sub))
+	  add_rule_to_queue(rule, sub, state);
+	else
+	  continue;
+      }
+    }
     if(axiom_may_have_new_instance(axiom_no, state)){
       unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
       axiom_weights[axiom_no] = 
@@ -162,9 +171,6 @@ rule_instance* clpl_next_instance(rete_net_state* state){
 }
 
 
-rule_instance* factset_next_instance(const theory* th, const fact_set* fs){
-  return create_rule_instance(th->axioms[0], create_substitution(th, 1));
-}
 
 /**
    Returns next rule instance, or NULL if there is no more instances

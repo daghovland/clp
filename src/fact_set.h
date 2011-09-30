@@ -28,9 +28,13 @@
 
    Note that each fact-set is for a specific predicate, so it is unnecessary
    to have the whole atom. It would suffice with an array of constants
+
+   prev is used during top-down iteration and is different in different states.
+   The corresponding mutex must be locked before this can be changed or read.
 **/
 typedef struct fact_set_t {
   struct fact_set_t * next;
+  struct fact_set_t * prev;
   bool split_point;
   const atom* fact;
 } fact_set;

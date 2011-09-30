@@ -211,10 +211,10 @@ void print_help(char* exec){
   printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
-  printf("\t-e, --eager\t\tUses the eager version of RETE. This is slower in all cases I have seen.\n");
+  printf("\t-e, --eager\t\tUses the eager version of RETE. This is probably always slower.\n");
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory. The file has postfix 'v', and prefix equal to the value of the 'name' predicate in the theory file. If the file exists it is overwritten.\n");
   printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. Without --lazy, it also tries to emulate the actual strategy used by CL.pl.\n");
-  printf("\t-f, --factset_lhs\t\tUses standard fact-set method to determine whether the lhs of an instance is satisified. The default is to use rete. Not finished.\n");
+  printf("\t-f, --factset_lhs\t\tUses standard fact-set method to determine whether the lhs of an instance is satisified. The default is to use rete. Implies -n|--not. Work in progress.\n");
   printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");

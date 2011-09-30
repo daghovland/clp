@@ -24,6 +24,10 @@
 #define _GNU_SOURCE
 
 /**
+   The name used in the coq proof writer for the set domain
+**/
+#define DOMAIN_SET_NAME "domain_set"
+/**
    Debugs the parsers
    
    Remember to also uncomment yydebug = 1 in the parser function

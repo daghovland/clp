@@ -102,13 +102,19 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
    with a rhs not fulfilled, and discards the others
 **/
 bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state){
-  while(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+  
+  while(!is_empty_axiom_rule_queue(state, axiom_no)){
+    substitution* sub;
     rule_instance* next;
     if(state->net->use_beta_not)
       return true;
     next = peek_axiom_rule_queue(state, axiom_no);
-    if(!disjunction_true_in_fact_set(state, next->rule->rhs, next->substitution))
+    sub = copy_substitution(next->substitution);
+    if(!disjunction_true_in_fact_set(state, next->rule->rhs, &sub)){
+      delete_substitution(sub);
       return true;
+    }
+    delete_substitution(sub);
     //delete_rule_instance(pop_axiom_rule_queue(state, axiom_no));
     pop_axiom_rule_queue(state, axiom_no);
   }
@@ -128,39 +134,45 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
 */
 
 bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
-  sub_alpha_queue * sub_list = state->sub_alpha_queues[axiom_no];
-  sub_alpha_queue * sub_list_root = state->sub_alpha_queue_roots[axiom_no];
-  if(axiom_queue_has_interesting_instance(axiom_no, state))
-    return true;
-
-  while(sub_list != sub_list_root && sub_list != NULL){
-    sub_alpha_queue* new_root;
-
-    // TODO: This might be a performance hit if the queues become very long. 
-    for( new_root = sub_list; new_root->next != sub_list_root; new_root = new_root->next)
-      ;
-    
-    insert_rete_alpha_fact_children(state, 
-				    new_root->alpha_node, 
-				    new_root->fact, 
-				    copy_substitution(new_root->sub), 
-				    true);
-
-    state->sub_alpha_queue_roots[axiom_no] = new_root;
-    
-    sub_list_root = new_root; 
-    
+  if(state->net->factset_lhs)
+    return !is_empty_axiom_rule_queue(state, axiom_no);
+  else {
+    sub_alpha_queue * sub_list = state->sub_alpha_queues[axiom_no];
+    sub_alpha_queue * sub_list_root = state->sub_alpha_queue_roots[axiom_no];
     if(axiom_queue_has_interesting_instance(axiom_no, state))
       return true;
+    
+    while(sub_list != sub_list_root && sub_list != NULL){
+      sub_alpha_queue* new_root;
+      
+      // TODO: This might be a performance hit if the queues become very long. 
+      for( new_root = sub_list; new_root->next != sub_list_root; new_root = new_root->next)
+	;
+      
+      insert_rete_alpha_fact_children(state, 
+				      new_root->alpha_node, 
+				      new_root->fact, 
+				      copy_substitution(new_root->sub), 
+				      true);
+      
+      state->sub_alpha_queue_roots[axiom_no] = new_root;
+      
+      sub_list_root = new_root; 
+      
+      if(axiom_queue_has_interesting_instance(axiom_no, state))
+	return true;
+    }
+    return false;
   }
-  return false;
 }
 
 /**
    Necessary for the efficiency of the lazy version of rete
 **/
 bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state){
-  return(state->axiom_inst_queue[axiom_no]->n_queue > 0 || state->sub_alpha_queues[axiom_no] != state->sub_alpha_queue_roots[axiom_no]);
+   if(state->net->factset_lhs)
+     return !is_empty_axiom_rule_queue(state, axiom_no);
+   return( (!is_empty_axiom_rule_queue(state, axiom_no)) || (state->sub_alpha_queues[axiom_no] != state->sub_alpha_queue_roots[axiom_no]));
 }
 
 /**
@@ -170,7 +182,7 @@ bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state){
    This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
 **/
 unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state){
-  if(state->axiom_inst_queue[axiom_no]->n_queue > 0){
+  if(!is_empty_axiom_rule_queue(state, axiom_no)){
     rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
     return ri->substitution->timestamps[0];
   } else {

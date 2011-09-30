@@ -32,6 +32,6 @@ void print_coq_constants(const theory* th, FILE* stream){
     fprintf(stream, "Variables ");
     for(i = 0; i < th->n_constants; i++)
       fprintf(stream, "%s ", th->constants[i]);
-    fprintf(stream, ": dom.\n");
+    fprintf(stream, ": %s.\n", DOMAIN_SET_NAME);
   }
 }
