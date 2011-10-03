@@ -1,4 +1,4 @@
-/* substitution.c
+/* substitution.h
 
    Copyright 2011 
 

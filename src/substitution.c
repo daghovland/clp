@@ -27,47 +27,8 @@
 #include "rete.h"
 #include "theory.h"
 #include "substitution.h"
+#include "substitution_memory.h"
 
-substitution** substitution_stores = NULL;
-size_t size_substitution_store;
-size_t size_substitution = 0;
-size_t n_cur_substitution_store;
-size_t n_substitution_stores;
-size_t size_substitution_stores;
-
-bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
-
-void init_substitution_memory(const theory* t){
-  size_substitution = sizeof(substitution) + t->vars->n_vars * sizeof(term*);
-  size_substitution_store = 1000000;
-  size_substitution_stores = 10;
-  substitution_stores = calloc(size_substitution_stores, sizeof(substitution*));
-  n_substitution_stores = 0;
-}
-
-void new_substitution_store(){
-  n_substitution_stores++;
-  if(n_substitution_stores >= size_substitution_stores){
-    size_substitution_stores *= 2;
-    substitution_stores = realloc(substitution_stores, size_substitution_stores);
-  }
-  substitution_stores[n_substitution_stores] = malloc(size_substitution_store * size_substitution);
-  n_cur_substitution_store = 0;  
-}
-
-substitution* get_substitution_memory(){
-  assert(size_substitution > 0 && substitution_stores != NULL);
-  n_cur_substitution_store++;
-  if(n_cur_substitution_store >= size_substitution_store)
-    new_substitution_store();
-  return substitution_stores[n_substitution_stores-1] + n_cur_substitution_store - 1;
-}
-
-void destroy_substitution_memory(){
-  unsigned int i;
-  for(i = 0; i < n_substitution_stores)
-    free(substitution_stores[i]);
-  free(substitution_stores);
 
 /**
    Substitution constructor and destructor.
@@ -114,7 +75,7 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
 substitution* copy_substitution(const substitution* orig){
 
   substitution* copy = get_substitution_memory();
-  memcpy(copy, orig, size);
+  memcpy(copy, orig, get_size_substitution());
   
   copy->timestamps = calloc_tester(sizeof(unsigned int), copy->size_timestamps);
   memcpy(copy->timestamps, orig->timestamps, copy->size_timestamps * sizeof(unsigned int));

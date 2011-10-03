@@ -27,6 +27,7 @@
 #include "rete.h"
 #include "proof_writer.h"
 #include "substitution.h"
+#include "substitution_memory.h"
 #include "rule_instance_state_stack.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
