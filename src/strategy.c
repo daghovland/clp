@@ -74,7 +74,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
 	continue;
       while(!found_new_instance && !is_empty_axiom_rule_queue(state, axiom_no)){
 	rule_instance* ri = peek_axiom_rule_queue(state, axiom_no);
-	if(disjunction_true_in_fact_set(state, state->net->th->axioms[axiom_no]->rhs, & ri->substitution))
+	if(disjunction_true_in_fact_set(state, state->net->th->axioms[axiom_no]->rhs, ri->substitution))
 	  ri = pop_axiom_rule_queue(state, axiom_no);
 	else
 	  found_new_instance = true;

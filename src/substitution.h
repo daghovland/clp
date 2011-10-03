@@ -72,10 +72,13 @@ typedef struct substitution_list_t {
 **/
 typedef substitution_list* sub_list_iter;
 
+substitution* create_empty_substitution(const theory*);
 substitution* create_substitution(const theory*, signed int);
 substitution* copy_substitution(const substitution*);
 substitution* create_empty_fact_substitution(const theory*, const axiom*);
 
+void init_substitution_memory(const theory*);
+void destroy_substitution_memory();
 
 
 sub_list_iter* get_sub_list_iter(substitution_list*);
@@ -90,6 +93,7 @@ bool unify_substitution_term_lists(const term_list*, const term_list*, substitut
 bool equal_substitutions(const substitution*, const substitution*, const freevars*);
 bool subs_equal_intersection(const substitution*, const substitution*);
 substitution* union_substitutions(const substitution*, const substitution*);
+void add_timestamp(substitution*, unsigned int);
 
 void delete_substitution(substitution*);
 void delete_substitution_list(substitution_list*);

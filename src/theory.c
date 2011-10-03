@@ -131,7 +131,7 @@ bool has_theory_name(const theory* th){
 /**
    Creates new rete network for the whole theory
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts){
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t p_attr;
 #endif
@@ -142,6 +142,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   net->th = th;
   net->existdom = existdom;
   net->strat = strat;
+  net->treat_all_disjuncts = all_disjuncts;
   net->use_beta_not = use_beta_not;
   net->factset_lhs = factset_lhs;
   net->has_factset = factset_lhs || !use_beta_not || print_model;
@@ -153,10 +154,6 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   net->sub_mutexes = calloc_tester(net->n_subs, sizeof(pthread_mutex_t));
   for(i = 0; i < net->n_subs; i++)
     pthread_mutex_init(&net->sub_mutexes[i], &p_attr);
-
-  net->factset_mutexes = calloc_tester(th->n_predicates, sizeof(pthread_mutex_t));
-  for(i = 0; i < th->n_predicates; i++)
-    pthread_mutex_init(&net->factset_mutexes[i], &p_attr);
 
   pthread_mutexattr_destroy(&p_attr);
 #endif

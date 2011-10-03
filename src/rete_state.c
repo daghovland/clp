@@ -21,7 +21,7 @@
 
 #include "common.h"
 #include "rete.h"
-
+#include <string.h>
 
 /**
    Called after the rete net is created.
@@ -247,7 +247,7 @@ void insert_state_fact_set(rete_net_state* s, const atom* a){
   unsigned int pred_no = a->pred->pred_no;
   assert(s->net->has_factset);
   assert(s->factset[pred_no] == NULL || s->factset[pred_no]->fact->pred->pred_no == pred_no);
-  s->factset[pred_no] = insert_in_fact_set(s->factset[pred_no], a);
+  s->factset[pred_no] = insert_in_fact_set(s->factset[pred_no], a, get_current_state_step_no(s));
 }
 
 
@@ -315,19 +315,20 @@ bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction
 
    The calling function must in that case free sub.
 **/
-bool remaining_axiom_false_in_fact_set(rete_net_state* state, const axiom* axm, size_t arg_no, substitution** sub){
+bool remaining_axiom_false_in_fact_set(rete_net_state* state, 
+				       const axiom* axm, 
+				       size_t arg_no, 
+				       substitution** sub){
   fact_set * fs;
   size_t pred_no;
+  int rq;
   if(arg_no >= axm->lhs->n_args)
-    return !disjunction_true_in_fact_set(state, axm->rhs, sub);
+    return !disjunction_true_in_fact_set(state, axm->rhs, *sub);
   pred_no = axm->lhs->args[arg_no]->pred->pred_no;
   fs = state->factset[pred_no];
   if(fs == NULL)
     return false;
-#ifdef HAVE_PTHREAD
-  if(pthread_mutex_lock(&state->net->factset_mutexes[pred_no]) != 0)
-    perror("rete_state.c: remaining_axiom_false_in_fact_set: Could not lock mutex: ");
-#endif
+
   fs->prev = NULL;
   while(fs->next != NULL){
     fs->next->prev = fs;
@@ -336,10 +337,8 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state, const axiom* axm, 
   do{
     substitution* sub2 = copy_substitution(*sub);
     if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2)){
+      add_timestamp(sub2, get_fact_set_timestamp(fs));
       if(remaining_axiom_false_in_fact_set(state, axm, arg_no+1, &sub2)){
-#ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&state->net->factset_mutexes[pred_no]);
-#endif
 	*sub = sub2;
 	return true;
       }
@@ -347,14 +346,11 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state, const axiom* axm, 
     delete_substitution(sub2);
     fs = fs->prev;
   } while (fs != NULL);
-#ifdef HAVE_PTHREAD
-  pthread_mutex_unlock(&state->net->factset_mutexes[pred_no]);
-#endif
   return false;
 }
 
 bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub){
-  substitution* sub2 = create_substitution(state->net->th, get_current_state_step_no(state));
+  substitution* sub2 = create_empty_substitution(state->net->th);
   
   if(remaining_axiom_false_in_fact_set(state, state->net->th->axioms[axiom_no], 0, &sub2)){
     *sub = sub2;

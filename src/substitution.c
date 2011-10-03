@@ -28,28 +28,78 @@
 #include "theory.h"
 #include "substitution.h"
 
+substitution** substitution_stores = NULL;
+size_t size_substitution_store;
+size_t size_substitution = 0;
+size_t n_cur_substitution_store;
+size_t n_substitution_stores;
+size_t size_substitution_stores;
+
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
 
+void init_substitution_memory(const theory* t){
+  size_substitution = sizeof(substitution) + t->vars->n_vars * sizeof(term*);
+  size_substitution_store = 1000000;
+  size_substitution_stores = 10;
+  substitution_stores = calloc(size_substitution_stores, sizeof(substitution*));
+  n_substitution_stores = 0;
+}
+
+void new_substitution_store(){
+  n_substitution_stores++;
+  if(n_substitution_stores >= size_substitution_stores){
+    size_substitution_stores *= 2;
+    substitution_stores = realloc(substitution_stores, size_substitution_stores);
+  }
+  substitution_stores[n_substitution_stores] = malloc(size_substitution_store * size_substitution);
+  n_cur_substitution_store = 0;  
+}
+
+substitution* get_substitution_memory(){
+  assert(size_substitution > 0 && substitution_stores != NULL);
+  n_cur_substitution_store++;
+  if(n_cur_substitution_store >= size_substitution_store)
+    new_substitution_store();
+  return substitution_stores[n_substitution_stores-1] + n_cur_substitution_store - 1;
+}
+
+void destroy_substitution_memory(){
+  unsigned int i;
+  for(i = 0; i < n_substitution_stores)
+    free(substitution_stores[i]);
+  free(substitution_stores);
+
+/**
+   Substitution constructor and destructor.
+   Only used directly by the factset_lhs implementation 
+   in axiom_false_in_fact_set in rete_state.c
+**/
+substitution* create_empty_substitution(const theory* t){
+  unsigned int i;
+  substitution* ret_val = get_substitution_memory();
+  ret_val->allvars = t->vars;
+  ret_val->n_subs = 0;
+
+  ret_val->size_timestamps = t->max_lhs_conjuncts;
+  ret_val->timestamps = calloc_tester(sizeof(int), ret_val->size_timestamps);
+  ret_val->n_timestamps = 0;
+
+  for(i = 0; i < t->vars->n_vars; i++)
+    ret_val->values[i] = NULL;
+  return ret_val;
+}
 
 
 /**
    Substitution constructor and destructor
 **/
 substitution* create_substitution(const theory* t, signed int timestamp){
-  unsigned int i;
-  substitution* ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*) );
-  ret_val->allvars = t->vars;
-  ret_val->n_subs = 0;
-
-  ret_val->size_timestamps = t->max_lhs_conjuncts;
-  ret_val->timestamps = calloc_tester(sizeof(int), ret_val->size_timestamps);
-  ret_val->timestamps[0] = timestamp;
-  ret_val->n_timestamps = 1;
-
-  for(i = 0; i < t->vars->n_vars; i++)
-    ret_val->values[i] = NULL;
+  substitution* ret_val = create_empty_substitution(t);
+  add_timestamp(ret_val, timestamp);
   return ret_val;
 }
+
+
 
 /**
    Only called from prover() in prover.c, when creating empty substitutions for facts.
@@ -62,9 +112,8 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
 }
 
 substitution* copy_substitution(const substitution* orig){
-  size_t size = sizeof(substitution) + orig->allvars->n_vars * sizeof(term*);
 
-  substitution* copy = malloc_tester(size );
+  substitution* copy = get_substitution_memory();
   memcpy(copy, orig, size);
   
   copy->timestamps = calloc_tester(sizeof(unsigned int), copy->size_timestamps);
@@ -72,6 +121,7 @@ substitution* copy_substitution(const substitution* orig){
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
+  assert(orig->allvars == copy->allvars);
 
   return copy;
 }
@@ -410,6 +460,23 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
   assert(test_substitution(a));
   
   return true;
+}
+
+/**
+   Adds a single timestamp to the list in the substitution
+
+   Called from reamining_axiom_false_in_factset in rete_state.c
+
+   Necessary for the output of correct coq proofs
+**/
+void add_timestamp(substitution* sub, unsigned int timestamp){  
+  sub->n_timestamps ++;
+  if(sub->size_timestamps <= sub->n_timestamps){
+    while(sub->size_timestamps <= sub->n_timestamps)
+      sub->size_timestamps *= 2;
+    sub->timestamps = realloc_tester(sub->timestamps, sub->size_timestamps * sizeof(unsigned int));
+  }
+  sub->timestamps[sub->n_timestamps-1] = timestamp;
 }
 
 /**

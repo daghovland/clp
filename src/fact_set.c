@@ -51,7 +51,7 @@ void split_fact_set(fact_set* f){
     f->split_point = true;
 }
 
-fact_set* insert_in_fact_set(fact_set* f, const atom* a){
+fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts){
   fact_set* new;
   if(is_in_fact_set(f, a))
     return f;
@@ -59,6 +59,7 @@ fact_set* insert_in_fact_set(fact_set* f, const atom* a){
   new->next = f;
   new->split_point = false;
   new->fact = a;
+  new->timestamp = ts;
   return new;
 }
 
@@ -102,6 +103,8 @@ bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub)
   return false;
 }
 
-
+unsigned int get_fact_set_timestamp(const fact_set* fs){
+  return fs->timestamp;
+}
 
 

@@ -110,7 +110,7 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
       return true;
     next = peek_axiom_rule_queue(state, axiom_no);
     sub = copy_substitution(next->substitution);
-    if(!disjunction_true_in_fact_set(state, next->rule->rhs, &sub)){
+    if(!disjunction_true_in_fact_set(state, next->rule->rhs, sub)){
       delete_substitution(sub);
       return true;
     }

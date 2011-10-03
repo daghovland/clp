@@ -68,13 +68,13 @@ typedef struct rete_net_t {
   bool existdom;
   bool lazy;
   bool coq;
+  bool treat_all_disjuncts;
   bool factset_lhs;
   bool use_beta_not;
   bool has_factset;
   strategy strat;
 #ifdef HAVE_PTHREAD
   pthread_mutex_t * sub_mutexes;
-  pthread_mutex_t * factset_mutexes;
 #endif
   //unsigned int size_history;
   // rule_instance ** history;

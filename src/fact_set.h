@@ -31,10 +31,14 @@
 
    prev is used during top-down iteration and is different in different states.
    The corresponding mutex must be locked before this can be changed or read.
+
+   The timestamp is necessary for output of coq proofs.
+   This should be the step at which the fact is inserted into the set.
 **/
 typedef struct fact_set_t {
   struct fact_set_t * next;
   struct fact_set_t * prev;
+  unsigned int timestamp;
   bool split_point;
   const atom* fact;
 } fact_set;
@@ -45,10 +49,10 @@ void split_fact_set(fact_set*);
 
 void delete_fact_set(fact_set*);
 
-fact_set* insert_in_fact_set(fact_set*, const atom*);
+fact_set* insert_in_fact_set(fact_set*, const atom*, unsigned int);
 
 fact_set* print_fact_set(fact_set*, FILE*);
 bool is_in_fact_set(const fact_set*, const atom*);
 bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub);
-
+unsigned int get_fact_set_timestamp(const fact_set*);
 #endif
