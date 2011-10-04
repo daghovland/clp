@@ -38,13 +38,13 @@
    The timestamps are used to know when substitutions were inserted into the rete network.
    This is necessary for the emulation of the prolog search strategy in CL.pl
    The timestamps are a list of the timestamps when each conjunct in the precedent was 
-   matched by the factset
+   matched by the factset. The length of timestamps is given by get_size_timestamps in
+   substitution_memory, which is set by theory->max_lhs_conjuncts in init_substitution_memory
 **/
 typedef struct substitution_t {
   unsigned int n_subs;
   signed int * timestamps;
   unsigned int n_timestamps;
-  size_t size_timestamps;
   const freevars* allvars;
   const term* values[];
 } substitution;
@@ -95,7 +95,6 @@ bool subs_equal_intersection(const substitution*, const substitution*);
 substitution* union_substitutions(const substitution*, const substitution*);
 void add_timestamp(substitution*, unsigned int);
 
-void delete_substitution(substitution*);
 void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);
 

@@ -208,10 +208,6 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
 
   if(proof){
     if(file_open){
-#ifdef RETE_STATE_DEBUG_DOT
-      print_dot_rule_queue(s->rule_queue, dot_fp);
-      fp_err( fprintf(dot_fp, "\\n" ), "Could not write proof node dot info\n");
-#endif
       print_dot_rule_instance(ri, dot_fp);
       fp_err( fprintf(dot_fp, "\"] \n" ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT

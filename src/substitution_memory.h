@@ -32,6 +32,8 @@
 
 void init_substitution_memory(const theory*);
 void destroy_substitution_memory(void);
+size_t get_size_full_substitution(void);
 size_t get_size_substitution(void);
+size_t get_size_timestamps(void);
 substitution* get_substitution_memory(void);
 #endif

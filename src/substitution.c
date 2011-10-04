@@ -29,6 +29,8 @@
 #include "substitution.h"
 #include "substitution_memory.h"
 
+// Defined in main.c
+extern bool use_substitution_store;
 
 /**
    Substitution constructor and destructor.
@@ -37,14 +39,22 @@
 **/
 substitution* create_empty_substitution(const theory* t){
   unsigned int i;
-  substitution* ret_val = get_substitution_memory();
+  substitution* ret_val;
+  if(use_substitution_store)
+    ret_val = get_substitution_memory();
+  else {
+    ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*));
+    ret_val->timestamps = calloc_tester(get_size_timestamps(), sizeof(int));
+  }
+    
   ret_val->allvars = t->vars;
   ret_val->n_subs = 0;
 
-  ret_val->size_timestamps = t->max_lhs_conjuncts;
-  ret_val->timestamps = calloc_tester(sizeof(int), ret_val->size_timestamps);
   ret_val->n_timestamps = 0;
-
+#ifndef NDEBUG
+  for(i = 0; i < get_size_timestamps(); i++)
+    assert(ret_val->timestamps[i] == 0);
+#endif
   for(i = 0; i < t->vars->n_vars; i++)
     ret_val->values[i] = NULL;
   return ret_val;
@@ -74,11 +84,20 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
 
 substitution* copy_substitution(const substitution* orig){
 
-  substitution* copy = get_substitution_memory();
-  memcpy(copy, orig, get_size_substitution());
-  
-  copy->timestamps = calloc_tester(sizeof(unsigned int), copy->size_timestamps);
-  memcpy(copy->timestamps, orig->timestamps, copy->size_timestamps * sizeof(unsigned int));
+  substitution* copy;
+  if(use_substitution_store){
+    int* new_timestamps;
+    copy = get_substitution_memory();
+    new_timestamps = copy->timestamps;
+    memcpy(copy, orig, get_size_substitution());
+    copy->timestamps = new_timestamps;
+  } else {
+    copy = malloc(sizeof(substitution) + orig->allvars->n_vars * sizeof(term*));
+    memcpy(copy, orig, sizeof(substitution) + orig->allvars->n_vars * sizeof(term*));
+    copy->timestamps = calloc_tester(get_size_timestamps(), sizeof(int));
+  }
+
+  memcpy(copy->timestamps, orig->timestamps, get_size_timestamps() * sizeof(int));
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -87,10 +106,7 @@ substitution* copy_substitution(const substitution* orig){
   return copy;
 }
 
-void delete_substitution(substitution* a){
-  //  free(a->timestamps);
-  free(a);
-}
+
 
 
 const term* find_substitution(const substitution* sub, const variable* key){
@@ -269,15 +285,20 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
 
   retval = copy_substitution(sub1);
   new_size = retval->n_timestamps + sub2->n_timestamps;
-  if(retval->size_timestamps <= new_size){
+  if(get_size_timestamps() < new_size){
+    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(), new_size);
+    exit(EXIT_FAILURE);
+  }
+    
+  /*  if(get_size_timestamps <= new_size){
     while(retval->size_timestamps <= new_size)
       retval->size_timestamps *= 2;
     retval->timestamps = realloc_tester(retval->timestamps, retval->size_timestamps * sizeof(unsigned int));
-  }
+    }*/
   for(i = 0; i < sub2->n_timestamps; i++)
     retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
 
-  assert(retval->n_timestamps <= retval->size_timestamps);
+  assert(retval->n_timestamps <= get_size_timestamps());
 
 
   for(i = 0; i < retval->allvars->n_vars; i++){
@@ -289,7 +310,6 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
 	retval->values[i] = val2;
       }
     } else if(val2 != NULL && !equal_terms(val1, val2)){
-      delete_substitution(retval);
       assert(! subs_equal_intersection(sub1, sub2));
       return NULL;
     }
@@ -323,7 +343,6 @@ bool equal_substitutions(const substitution* a, const substitution* b, const fre
 void delete_substitution_list(substitution_list* sub_list){
   while(sub_list != NULL){
     substitution_list* next = sub_list->next;
-    delete_substitution(sub_list->sub);
     free(sub_list);
     sub_list = next;
   }
@@ -332,7 +351,6 @@ void delete_substitution_list(substitution_list* sub_list){
 void delete_substitution_list_below(substitution_list* list, substitution_list* limit){
   while(list != limit){
     substitution_list* next = list->next;
-    delete_substitution(list->sub);
     free(list);
     list = next;
   }
@@ -432,11 +450,12 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
 **/
 void add_timestamp(substitution* sub, unsigned int timestamp){  
   sub->n_timestamps ++;
-  if(sub->size_timestamps <= sub->n_timestamps){
+  assert(get_size_timestamps() >= sub->n_timestamps);
+  /*  if(sub->size_timestamps <= sub->n_timestamps){
     while(sub->size_timestamps <= sub->n_timestamps)
       sub->size_timestamps *= 2;
     sub->timestamps = realloc_tester(sub->timestamps, sub->size_timestamps * sizeof(unsigned int));
-  }
+    }*/
   sub->timestamps[sub->n_timestamps-1] = timestamp;
 }
 

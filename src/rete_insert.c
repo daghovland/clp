@@ -62,7 +62,6 @@ void detract_rete_beta_sub(rete_net_state* state,
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
       }
   } // end   while(has_next_sub_list(iter)){
-  delete_substitution(sub);
   free_state_sub_list_iter(state, sub_no, iter);
 }
 
@@ -91,8 +90,7 @@ void insert_rete_beta_sub(rete_net_state* state,
       {
 	assert(test_substitution(sub));
 	add_rule_to_queue(node->val.rule.axm, sub, state);
-      } else
-      delete_substitution(sub);
+      }
   } else {
 
     assert(node->type == beta_and || node->type==beta_not);
@@ -115,7 +113,6 @@ void insert_rete_beta_sub(rete_net_state* state,
 	  }
 	  free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 	} else
-	delete_substitution(sub);
       break;
     case beta_not:
       if(parent == node->left_parent){
@@ -133,16 +130,13 @@ void insert_rete_beta_sub(rete_net_state* state,
 	    }
 	    free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
-	  } else 
-	  delete_substitution(sub);
+	  }
       } else // right parent 
 	if(insert_substitution(state, 
 			       node->val.beta.a_store_no, 
 			       sub, node->free_vars
 			       ))
 	  detract_rete_beta_sub(state, node->children[0], copy_substitution(sub));
-	else
-	  delete_substitution(sub);
       break;
     default:
       fprintf(stderr, "Encountered untreated node type: %i\n", node->type);
@@ -166,7 +160,6 @@ void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* nod
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++)
     insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub), propagate);
-  delete_substitution(sub);
 }
 
 /**
@@ -200,7 +193,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     arg = fact->args->args[node->val.alpha.argument_no];
     assert(test_term(arg));
     if( ! unify_substitution_terms(arg, node->val.alpha.value, sub)){
-      delete_substitution(sub);
       return false;
     }
 #ifdef LAZY_RETE
@@ -216,7 +208,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
   case beta_and:
     assert(node->n_children == 1);
     if(!insert_substitution(state, node->val.beta.a_store_no, sub, node->free_vars)){  
-      delete_substitution(sub);
       return false;
     }
     if(node->left_parent->type == beta_root){
@@ -238,7 +229,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
 			   ))
       detract_rete_beta_sub(state, node->children[0], sub);
     else {
-      delete_substitution(sub);
       return false;
     }
     break;

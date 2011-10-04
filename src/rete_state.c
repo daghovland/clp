@@ -280,11 +280,9 @@ bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const c
     substitution* sub2 = copy_substitution(sub);
     if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2)){
       if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
-	delete_substitution(sub2);
 	return true;
       }
     }
-    delete_substitution(sub2);
     fs = fs->next;
   }
   return false;
@@ -343,7 +341,6 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state,
 	return true;
       }
     }
-    delete_substitution(sub2);
     fs = fs->prev;
   } while (fs != NULL);
   return false;
@@ -356,7 +353,6 @@ bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitutio
     *sub = sub2;
     return true;
   }
-  delete_substitution(sub2);
   return false;
 }
 

@@ -59,11 +59,14 @@ theory* create_theory(void){
   ret_val->name = NULL;
   ret_val->has_name = false;
   ret_val->max_lhs_conjuncts = 0;
+  ret_val->max_rhs_conjuncts = 0;
+  ret_val->max_rhs_disjuncts = 0;
 
   return ret_val;
 }
 
 void extend_theory(theory *th, axiom *ax){
+  unsigned int i;
   ax->axiom_no = th->n_axioms;
 
   if(!ax->has_name){
@@ -80,6 +83,12 @@ void extend_theory(theory *th, axiom *ax){
   th->axioms[th->n_axioms-1] = ax;
   if(ax->lhs->n_args > th->max_lhs_conjuncts)
     th->max_lhs_conjuncts = ax->lhs->n_args; 
+  if(ax->rhs->n_args > th->max_rhs_disjuncts)
+    th->max_rhs_disjuncts = ax->rhs->n_args; 
+  for(i = 0; i < ax->rhs->n_args; i++){
+    if(ax->rhs->args[i]->n_args > th->max_rhs_conjuncts)
+      th->max_rhs_conjuncts = ax->rhs->args[i]->n_args; 
+  }
 }
 
 void delete_theory(theory* t){

@@ -48,7 +48,7 @@ check_clp.sh:
 #	echo "coqc anl.v" >> check_clp.sh
 #	echo "rm anl.v anl.vo" >> check_clp.sh
 	echo "ls -l $(srcdir)" > check_clp.sh
-#	echo "DUMA_FILL=0 DUMA_PROTECT_FREE=1 ./clpmemdebug -q $(srcdir)/anc.in" >> check_clp.sh
+	echo "DUMA_FILL=0 DUMA_PROTECT_FREE=1 ./clpmemdebug -q $(srcdir)/anc.in" >> check_clp.sh
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS) geolog_parser.h clpl_parser.h geolog_parser.c clpl_parser.c geolog_parser.tab.h clpl_parser.tab.h geolog_parser.tab.c clpl_parser.tab.c y.tab.c y.tab.h clpl.c geolog.c
 

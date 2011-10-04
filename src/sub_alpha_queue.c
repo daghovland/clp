@@ -86,7 +86,6 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
     assert(limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]);
     assert(list != NULL);
     sub_alpha_queue* next = list->next;
-    delete_substitution(list->sub);
     free(list);
     list = next;
   }
@@ -111,10 +110,8 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
     next = peek_axiom_rule_queue(state, axiom_no);
     sub = copy_substitution(next->substitution);
     if(!disjunction_true_in_fact_set(state, next->rule->rhs, sub)){
-      delete_substitution(sub);
       return true;
     }
-    delete_substitution(sub);
     //delete_rule_instance(pop_axiom_rule_queue(state, axiom_no));
     pop_axiom_rule_queue(state, axiom_no);
   }

@@ -47,6 +47,8 @@ typedef struct theory_t {
   size_t size_func_names;
   const char** func_names;
   unsigned int max_lhs_conjuncts;
+  unsigned int max_rhs_conjuncts;
+  unsigned int max_rhs_disjuncts;
   size_t n_constants;
   size_t size_constants;
   const char** constants;
