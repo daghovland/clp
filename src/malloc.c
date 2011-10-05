@@ -25,6 +25,8 @@
 #include "common.h"
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <string.h>
+#include <errno.h>
 
 /**
    Outputs some info about memory limits. 
@@ -47,10 +49,10 @@ void show_limit(int resource, FILE* s, const char* name){
     perror("utility.c: show_limit(): cannot call getrlimit");
     exit(EXIT_FAILURE);
   }
-  fprintf(s, "%s limits are ");
-  show_limit_value(limits->rlim_max, s);
+  fprintf(s, "%s limits are ", name);
+  show_limit_value(limits.rlim_max, s);
   fprintf(s, " (hard) and ");
-  show_limit_value(limits->rlim_cur, s);
+  show_limit_value(limits.rlim_cur, s);
   fprintf(s, " (soft).\n");
 }
 
@@ -59,13 +61,17 @@ void print_mem_limits(){
   show_limit(RLIMIT_AS, stderr, "Virtual memory (AS)");
 }
  
+void print_error(char* function, size_t size, int error_num){
+  fprintf(stderr, "malloc.c.: %s : Memory allocation failure: %zi bytes : %s.\n", function, size, strerror(error_num));
+  print_mem_limits();
+}
+
 void* malloc_tester(size_t size){
   void* ret_val = malloc(size);
   if(ret_val == NULL){
-    fprintf(stderr, "Memory allocation failure: malloc(%i)\n", (int) size);
-    perror("malloc returned null");
-    print_mem_limits();
-    exit(EXIT_FAILURE);
+    int error_num = errno;
+    print_error("malloc", size, error_num);
+    exit(EXIT_FAILURE);    
   }
   return ret_val;
 }
@@ -73,10 +79,9 @@ void* malloc_tester(size_t size){
 void* calloc_tester(size_t nmemb, size_t size){
   void* ret_val = calloc(nmemb, size);
   if(ret_val == NULL){
-    fprintf(stderr, "Memory allocation failure: calloc(%i, %i)\n", (int) nmemb, (int) size);
-    perror("calloc returned null");
-    print_mem_limits();
-    exit(EXIT_FAILURE);
+    int error_num = errno;
+    print_error("calloc", size * nmemb , error_num);
+    exit(EXIT_FAILURE);    
   }
   return ret_val;
 }
@@ -85,10 +90,9 @@ void* calloc_tester(size_t nmemb, size_t size){
 void* realloc_tester(void* ptr, size_t size){
   void* ret_val = realloc(ptr, size);
   if(ret_val == NULL){
-    fprintf(stderr, "Memory allocation failure: realloc(ptr, %i)\n", (int) size);
-    perror("realloc returned null");
-    print_mem_limits();
-    exit(EXIT_FAILURE);
+    int error_num = errno;
+    print_error("realloc", size, error_num);
+    exit(EXIT_FAILURE);    
   }
   return ret_val;
 }

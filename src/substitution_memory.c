@@ -46,7 +46,7 @@ pthread_cond_t sub_store_cond = PTHREAD_COND_INITIALIZER;
 
 
 char** substitution_stores = NULL;
-size_t size_substitution_store = 10000;
+size_t size_substitution_store = 1000;
 size_t size_substitution = 0;
 size_t size_full_substitution = 0;
 size_t size_timestamps;
