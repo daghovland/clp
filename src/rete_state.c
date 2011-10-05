@@ -32,6 +32,10 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   rete_net_state* state = malloc_tester(sizeof(rete_net_state) 
 					+ (net->th->n_axioms * sizeof(rule_queue*)));
   state->subs = calloc_tester(sizeof(substitution_list*), net->n_subs);
+
+  state->local_subst_mem = init_substitution_memory(net);
+  state->global_subst_mem = malloc(sizeof(substitution_memory));
+  * state->global_subst_mem = init_substitution_memory(net);
 					  
   state->verbose = verbose;
   for(i = 0; i < net->n_subs; i++){
@@ -112,6 +116,8 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
     }
   }
 
+  destroy_substitution_memory(& state->local_subst_mem);
+
   free(state);
 }
 
@@ -142,7 +148,8 @@ void delete_full_rete_state(rete_net_state* state){
       delete_fact_set(state->factset[i]);
     }
   }
-  
+  destroy_substitution_memory(& state->local_subst_mem);
+  destroy_substitution_memory(state->global_subst_mem);
   free(state);
 }
 
@@ -165,7 +172,7 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   memcpy(copy, orig, orig_size);
   copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
-
+  copy->local_subst_mem = init_substitution_memory(net);
   if(orig->net->has_factset){
     copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
     copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));

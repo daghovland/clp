@@ -35,7 +35,7 @@
 #include "strategy.h"
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
-#include "rete_net.h"
+#include "rete_state.h"
 
 typedef unsigned int domain_iter;
 typedef unsigned int constants_iter;

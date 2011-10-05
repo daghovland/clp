@@ -1,4 +1,4 @@
-/* substitution_memory.h
+/* substitution_state_store.h
 
    Copyright 2011 
 
@@ -19,32 +19,33 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUBSTITUTION_MEMORY_H
-#define __INCLUDE_SUBSTITUTION_MEMORY_H
+#ifndef __INCLUDE_SUBSTITUTION_STATE_STORE_H
+#define __INCLUDE_SUBSTITUTION_STATE_STORE_H
+
+#define INIT_SUBST_STORE_SIZE 1000
 
 #include "substitution.h"
-#include "rete_net.h"
-
-#define INIT_SUBST_MEM_SIZE 1000
 /**
-   A store of substitutions
+   A store of substitutions for use in states
 
+   Not thread-safe, since the assumption is that these are
+   only accessed from a single rete state.
+   
+   Uses information calculated in substitution_memory.c about
+   size needed for substitutions
 **/
-typedef struct substitution_memory_t {
-  char** substitution_stores;
-  size_t size_substitution_store;
-  size_t * n_cur_substitution_store;
-  size_t n_substitution_stores;
-  size_t size_substitution_stores;
-#ifdef HAVE_PTHREAD
-  pthread_mutex_t sub_store_mutex;
-  pthread_cond_t sub_store_cond;
-#endif
-} substitution_memory;
+
+typedef struct substitution_store_t {
+  char* store;
+  size_t size_store;
+  unsigned int max_n_subst;
+  unsigned int n_subst;
+} substitution_store;
 
 
-substitution_memory init_substitution_memory(const rete_net*);
-void destroy_substitution_memory(substitution_memory*);
-substitution* get_substitution_memory(substitution_memory*, const rete_net*);
-void destroy_substitution_memory(substitution_memory*);
+
+substitution_store init_state_subst_store(void);
+void destroy_state_subst_store(substitution_store*);
+unsigned int alloc_substitution(substitution_store*);
+substitution* get_substitution(unsigned int, substitution_store*);
 #endif

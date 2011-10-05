@@ -27,6 +27,7 @@
 #include "theory.h"
 #include "fresh_constants.h"
 #include "rete.h"
+#include "substitution.h"
 #include <math.h>
 #include <inttypes.h>
 #ifdef HAVE_PTHREAD
@@ -166,6 +167,15 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
 
   pthread_mutexattr_destroy(&p_attr);
 #endif
+
+  net->size_substitution = sizeof(substitution) + (net->th->vars->n_vars) * sizeof(term*) ;
+  net->size_timestamps = net->th->max_lhs_conjuncts;
+  net->substitution_timestamp_offset = net->size_substitution % sizeof(signed int);
+  if(net->substitution_timestamp_offset != 0)
+    net->substitution_timestamp_offset = sizeof(signed int) - net->substitution_timestamp_offset;
+  assert(net->substitution_timestamp_offset >= 0 && net->substitution_timestamp_offset < sizeof(signed int));
+  net->size_full_substitution = net->size_substitution + net->size_timestamps * sizeof(signed int) + net->substitution_timestamp_offset;
+
   return net;
 }
    

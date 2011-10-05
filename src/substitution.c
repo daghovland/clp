@@ -37,11 +37,11 @@ extern bool use_substitution_store;
    Only used directly by the factset_lhs implementation 
    in axiom_false_in_fact_set in rete_state.c
 **/
-substitution* create_empty_substitution(const theory* t){
+substitution* create_empty_substitution(const theory* t, substitution_memory* store){
   unsigned int i;
   substitution* ret_val;
   if(use_substitution_store)
-    ret_val = get_substitution_memory();
+    ret_val = get_substitution_memory(store);
   else {
     ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*));
     ret_val->timestamps = calloc_tester(get_size_timestamps(), sizeof(int));

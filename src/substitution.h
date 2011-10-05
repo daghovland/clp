@@ -77,8 +77,7 @@ substitution* create_substitution(const theory*, signed int);
 substitution* copy_substitution(const substitution*);
 substitution* create_empty_fact_substitution(const theory*, const axiom*);
 
-void init_substitution_memory(const theory*);
-void destroy_substitution_memory();
+
 
 
 sub_list_iter* get_sub_list_iter(substitution_list*);

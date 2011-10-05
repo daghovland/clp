@@ -641,8 +641,6 @@ unsigned int prover(const rete_net* rete, bool multithread){
 
   srand(1000);
   
-  init_substitution_memory(rete->th);
-
   has_fact = false;
   for(i = 0; i < rete->th->n_axioms; i++){
     if(rete->th->axioms[i]->type == fact){
@@ -682,7 +680,7 @@ unsigned int prover(const rete_net* rete, bool multithread){
   retval = get_latest_global_step_no(state);
   delete_full_rete_state(state);
   delete_ri_state_stack(disj_ri_stack);
-  destroy_substitution_memory();
+
   if(foundproof)
     return retval;
   else
