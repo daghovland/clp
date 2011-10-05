@@ -51,10 +51,10 @@ substitution* create_empty_substitution(const theory* t){
   ret_val->n_subs = 0;
 
   ret_val->n_timestamps = 0;
-#ifndef NDEBUG
+
   for(i = 0; i < get_size_timestamps(); i++)
-    assert(ret_val->timestamps[i] == 0);
-#endif
+    ret_val->timestamps[i] = 0;
+
   for(i = 0; i < t->vars->n_vars; i++)
     ret_val->values[i] = NULL;
   return ret_val;

@@ -1,4 +1,4 @@
-/* utility.c
+/* malloc.c
 
    Copyright 2011 ?
 
@@ -23,12 +23,48 @@
    Functions used by several parts of the program
 **/
 #include "common.h"
+#include <sys/time.h>
+#include <sys/resource.h>
 
+/**
+   Outputs some info about memory limits. 
+   Might be useful in case of allocation failures.
+**/
+void show_limit_value(rlim_t lim, FILE* s){
+  if(lim == RLIM_INFINITY)
+    fprintf(s, "RLIM_INFINITY");
+  else if (lim == RLIM_SAVED_CUR)
+    fprintf(s, "RLIM_SAVED_CUR");
+  else if (lim == RLIM_SAVED_MAX)
+    fprintf(s, "RLIM_SAVED_MAX");
+  else
+    fprintf(s, "%llu", (unsigned long long) lim);
+}
+
+void show_limit(int resource, FILE* s, const char* name){
+  struct rlimit limits;
+  if(getrlimit(resource, &limits) != 0){
+    perror("utility.c: show_limit(): cannot call getrlimit");
+    exit(EXIT_FAILURE);
+  }
+  fprintf(s, "%s limits are ");
+  show_limit_value(limits->rlim_max, s);
+  fprintf(s, " (hard) and ");
+  show_limit_value(limits->rlim_cur, s);
+  fprintf(s, " (soft).\n");
+}
+
+void print_mem_limits(){
+  show_limit(RLIMIT_DATA, stderr, "Data segment (DATA)");
+  show_limit(RLIMIT_AS, stderr, "Virtual memory (AS)");
+}
+ 
 void* malloc_tester(size_t size){
   void* ret_val = malloc(size);
   if(ret_val == NULL){
     fprintf(stderr, "Memory allocation failure: malloc(%i)\n", (int) size);
-    perror("malloc returned null\n");
+    perror("malloc returned null");
+    print_mem_limits();
     exit(EXIT_FAILURE);
   }
   return ret_val;
@@ -38,7 +74,8 @@ void* calloc_tester(size_t nmemb, size_t size){
   void* ret_val = calloc(nmemb, size);
   if(ret_val == NULL){
     fprintf(stderr, "Memory allocation failure: calloc(%i, %i)\n", (int) nmemb, (int) size);
-    perror("calloc returned null\n");
+    perror("calloc returned null");
+    print_mem_limits();
     exit(EXIT_FAILURE);
   }
   return ret_val;
@@ -49,7 +86,8 @@ void* realloc_tester(void* ptr, size_t size){
   void* ret_val = realloc(ptr, size);
   if(ret_val == NULL){
     fprintf(stderr, "Memory allocation failure: realloc(ptr, %i)\n", (int) size);
-    perror("realloc returned null\n");
+    perror("realloc returned null");
+    print_mem_limits();
     exit(EXIT_FAILURE);
   }
   return ret_val;

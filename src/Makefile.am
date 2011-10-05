@@ -34,21 +34,12 @@ check_PROGRAMS = clpdebug clpmemdebug
 clpdebug_SOURCES = $(clp_SOURCES) 
 clpmemdebug_SOURCES = $(clp_SOURCES) 
 check_SCRIPTS = check_clp.sh
-check_DATA = $(srcdir)/anc.in 
+check_DATA = $(srcdir)/anc.in  $(srcdir)/anl.in 
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
-#	echo "./clpmemdebug -q $(srcdir)/nl.in" >> check_clp.sh
-#	echo "./clpdebug -q $(srcdir)/nl.in" > check_clp.sh
-#	echo "coqc nl.v" >> check_clp.sh
-#	echo "rm nl.v nl.vo" >> check_clp.sh
-#	echo "./clpdebug -q $(srcdir)/anl.in" >> check_clp.sh
-#	echo "coqc anl.v" >> check_clp.sh
-#	echo "rm anl.v anl.vo" >> check_clp.sh
-#	echo "./clp -q $(srcdir)/anl.in" > check_clp.sh
-#	echo "coqc anl.v" >> check_clp.sh
-#	echo "rm anl.v anl.vo" >> check_clp.sh
-	echo "ls -l $(srcdir)" > check_clp.sh
-	echo "DUMA_FILL=0 DUMA_PROTECT_FREE=1 ./clpmemdebug -q $(srcdir)/anc.in" >> check_clp.sh
+	echo "./clpmemdebug -q $(srcdir)/anl.in" > check_clp.sh
+	echo "coqc anl.v" >> check_clp.sh
+	echo "rm anl.v anl.vo" >> check_clp.sh
 	chmod +x check_clp.sh
 CLEANFILES = $(check_SCRIPTS) geolog_parser.h clpl_parser.h geolog_parser.c clpl_parser.c geolog_parser.tab.h clpl_parser.tab.h geolog_parser.tab.c clpl_parser.tab.c y.tab.c y.tab.h clpl.c geolog.c
 

@@ -46,7 +46,7 @@ pthread_cond_t sub_store_cond = PTHREAD_COND_INITIALIZER;
 
 
 char** substitution_stores = NULL;
-size_t size_substitution_store = 1000;
+size_t size_substitution_store = 10000;
 size_t size_substitution = 0;
 size_t size_full_substitution = 0;
 size_t size_timestamps;
@@ -140,7 +140,7 @@ void new_substitution_store(size_t store_index){
   }
   assert(new_store_index < size_substitution_stores);
 
-  substitution_stores[new_store_index] = calloc_tester(size_substitution_store * size_full_substitution, sizeof(char));
+  substitution_stores[new_store_index] = malloc_tester(size_substitution_store * size_full_substitution);
   n_cur_substitution_store[new_store_index] = 0;  
   n_substitution_stores++;
 #ifdef HAVE_PTHREAD
