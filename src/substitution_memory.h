@@ -26,9 +26,11 @@
 #include "theory.h"
 
 /**
-   A stor of substitutions
+   A store of substitutions
 
 **/
+
+
 
 void init_substitution_memory(const theory*);
 void destroy_substitution_memory(void);
