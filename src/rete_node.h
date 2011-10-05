@@ -91,6 +91,7 @@ struct rete_node_t {
   const freevars* free_vars;
   const struct rete_node_t** children;
   int n_children;
+  bool in_positive_lhs_part;
   size_t size_children;
   const struct rete_node_t* left_parent;
   size_t axiom_no;

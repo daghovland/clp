@@ -46,7 +46,7 @@ pthread_cond_t sub_store_cond = PTHREAD_COND_INITIALIZER;
 
 
 char** substitution_stores = NULL;
-size_t size_substitution_store = 1000;
+size_t size_substitution_store = 10000;
 size_t size_substitution = 0;
 size_t size_full_substitution = 0;
 size_t size_timestamps;
@@ -151,7 +151,7 @@ void new_substitution_store(size_t store_index){
 
 void init_substitution_memory(const theory* t){
   size_substitution = sizeof(substitution) + (t->vars->n_vars) * sizeof(term*) ;
-  size_timestamps = (t->max_lhs_conjuncts + t->max_rhs_conjuncts) * t->max_rhs_disjuncts;
+  size_timestamps = t->max_lhs_conjuncts;
   substitution_timestamp_offset = size_substitution % sizeof(signed int);
   if(substitution_timestamp_offset != 0)
     substitution_timestamp_offset = sizeof(signed int) - substitution_timestamp_offset;

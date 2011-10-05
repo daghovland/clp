@@ -57,7 +57,7 @@ void detract_rete_beta_sub(rete_net_state* state,
     substitution* sub2 = get_next_sub_list(iter);
     if(subs_equal_intersection(sub, sub2))
       if(node->type == beta_not)
-	detract_rete_beta_sub(state, node->children[0], union_substitutions(sub, sub2));
+	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2));
       else {
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
       }
@@ -107,7 +107,11 @@ void insert_rete_beta_sub(rete_net_state* state,
 	{
 	  iter = get_state_sub_list_iter(state, node->val.beta.a_store_no);
 	  while(has_next_sub_list(iter)){
-	    substitution* join = union_substitutions(sub, get_next_sub_list(iter));
+	    substitution* join;
+	    if(node->in_positive_lhs_part)
+	      join = union_substitutions_with_ts(sub, get_next_sub_list(iter));
+	    else
+	      join = union_substitutions_one_ts(sub, get_next_sub_list(iter));
 	    if(join != NULL) 
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
@@ -215,7 +219,11 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     } else {
       iter = get_state_sub_list_iter(state, node->val.beta.b_store_no);
       while(has_next_sub_list(iter)){
-	substitution* join = union_substitutions(get_next_sub_list(iter), sub);
+	substitution* join;
+	if(node->in_positive_lhs_part)
+	  join = union_substitutions_with_ts(get_next_sub_list(iter), sub);
+	else
+	  join = union_substitutions_one_ts(get_next_sub_list(iter), sub);
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }

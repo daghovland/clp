@@ -70,13 +70,13 @@ void delete_atom(atom* at){
 /**
    Creating rete network from atoms
 **/
-rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* vars, bool propagate, size_t axiom_no){
+rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* vars, bool propagate, bool in_positive_lhs_part, size_t axiom_no){
   unsigned int i;
   rete_node *p;
   p = get_selector(a->pred->pred_no, net);
   assert(p->size_children > 0);
   for(i = 0; i < a->args->n_args; i++){
-    rete_node* child = create_alpha_node(p, i, a->args->args[i], vars, true, axiom_no);
+    rete_node* child = create_alpha_node(p, i, a->args->args[i], vars, true, in_positive_lhs_part, axiom_no);
     assert(child->size_children > 0);
     p = child;
   }

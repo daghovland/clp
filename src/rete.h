@@ -68,10 +68,10 @@ bool inc_proof_step_counter(rete_net_state*);
 
 rete_node* create_beta_left_root(size_t axiom_no);
 
-rete_node* create_alpha_node(rete_node*, unsigned int, const term*, const freevars*, bool propagate, size_t axiom_no);
+rete_node* create_alpha_node(rete_node*, unsigned int, const term*, const freevars*, bool propagate, bool  in_positive_lhs_part, size_t axiom_no);
 /*rete_node* create_store_node(rete_net*, rete_node*, const freevars*);*/
-rete_node* create_beta_and_node(rete_net*, rete_node*, rete_node*, const freevars*, size_t axiom_no);
-rete_node* create_beta_or_node(rete_net*, rete_node*, rete_node*, const freevars*, size_t axiom_no);
+rete_node* create_beta_and_node(rete_net*, rete_node*, rete_node*, const freevars*, bool in_positive_lhs_part, size_t axiom_no);
+rete_node* create_beta_or_node(rete_net*, rete_node*, rete_node*, const freevars*, bool in_positive_lhs_part, size_t axiom_no);
 rete_node* create_beta_not_node(rete_net*, rete_node*, rete_node*, const freevars*, size_t axiom_no);
 rete_node* create_selector_node(rete_net*, const char*, unsigned int, const freevars*);
 void create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*, size_t axiom_no);
@@ -96,10 +96,10 @@ rete_node* get_selector(size_t, rete_net*);
 const rete_node* get_const_selector(size_t, const rete_net*);
 
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
-rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, size_t axiom_no);
+rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, bool in_positive_lhs_part, size_t axiom_no);
 void create_rete_axiom_node(rete_net*, const axiom*, size_t axiom_no, bool);
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool, bool, bool, bool, bool);
-rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, size_t axiom_no);
+rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, size_t axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, size_t axiom_no);
 
 // Defined in strategy.c

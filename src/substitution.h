@@ -92,7 +92,8 @@ bool unify_substitution_terms(const term*, const term*, substitution*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*);
 bool subs_equal_intersection(const substitution*, const substitution*);
-substitution* union_substitutions(const substitution*, const substitution*);
+substitution* union_substitutions_one_ts(const substitution*, const substitution*);
+substitution* union_substitutions_with_ts(const substitution*, const substitution*);
 void add_timestamp(substitution*, unsigned int);
 
 void delete_substitution_list(substitution_list*);

@@ -99,7 +99,7 @@ disjunction* create_disjunction(conjunction* disj){
   return ret_val;
 }
 
-disjunction*create_empty_disjunction(){
+disjunction* create_empty_disjunction(){
   disjunction * ret_val = malloc_tester(sizeof(disjunction));
   ret_val->n_args = 0;
   ret_val->size_args = 0;
@@ -165,6 +165,7 @@ rete_node * create_rete_conj_node(rete_net* net,
 				  const conjunction* con,  
 				  const freevars* vars,
 				  bool propagate,
+				  bool in_positive_lhs_part,
 				  size_t axiom_no){
   unsigned int i, j;
   rete_node * right_parent, *left_parent;
@@ -177,8 +178,8 @@ rete_node * create_rete_conj_node(rete_net* net,
     freevars* copy = copy_freevars(vars);
     for(j = i; j < con->n_args; j++)
       copy = free_atom_variables(con->args[j], copy);
-    right_parent = create_rete_atom_node(net, con->args[i], copy, propagate, axiom_no);
-    left_parent = create_beta_and_node(net, left_parent, right_parent, copy, axiom_no);
+    right_parent = create_rete_atom_node(net, con->args[i], copy, propagate, in_positive_lhs_part, axiom_no);
+    left_parent = create_beta_and_node(net, left_parent, right_parent, copy, in_positive_lhs_part, axiom_no);
   } // end for(i = 0; i < con->n_args; i++){
   return left_parent;
 }
@@ -188,7 +189,7 @@ rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const d
   rete_node* right_parent;
   assert(dis->n_args > 0);
   for(i = 0; i < dis->n_args; i++){
-    right_parent = create_rete_conj_node(net, dis->args[i], copy_freevars(dis->free_vars), true, axiom_no);
+    right_parent = create_rete_conj_node(net, dis->args[i], copy_freevars(dis->free_vars), true, false, axiom_no);
     left_parent = create_beta_not_node(net, left_parent, right_parent, copy_freevars(dis->free_vars), axiom_no);
   } // end for(i = 0; i < dis->n_args; i++)
   return left_parent;

@@ -128,6 +128,7 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, boo
 			       ax->lhs, 
 			       rule_free_vars,
 			       !(net->lazy),
+			       true,
 			       axiom_no);
   if(ax->type != goal && use_beta_not) {
     node = create_rete_disj_node(net, 

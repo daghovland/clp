@@ -276,8 +276,11 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
 
    If this is not possible, because they map variables in the intersection of the domain to
    different values, then NULL is returned
+
+   The timestamps are only those of sub1. sub2 timestamps are not part of the 
+   new substitution
 **/
-substitution* union_substitutions(const substitution* sub1, const substitution* sub2){
+substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2){
   unsigned int i, new_size;
   substitution *retval;
 
@@ -286,22 +289,6 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
   assert(sub1->allvars == sub2->allvars);
 
   retval = copy_substitution(sub1);
-  new_size = retval->n_timestamps + sub2->n_timestamps;
-  if(get_size_timestamps() < new_size){
-    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(), new_size);
-    exit(EXIT_FAILURE);
-  }
-    
-  /*  if(get_size_timestamps <= new_size){
-    while(retval->size_timestamps <= new_size)
-      retval->size_timestamps *= 2;
-    retval->timestamps = realloc_tester(retval->timestamps, retval->size_timestamps * sizeof(unsigned int));
-    }*/
-  for(i = 0; i < sub2->n_timestamps; i++)
-    retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
-
-  assert(retval->n_timestamps <= get_size_timestamps());
-
 
   for(i = 0; i < retval->allvars->n_vars; i++){
     const term* val1 = retval->values[i];
@@ -320,6 +307,40 @@ substitution* union_substitutions(const substitution* sub1, const substitution* 
   assert(subs_equal_intersection(sub1, sub2));
   assert(test_substitution(retval));
   
+  return retval;
+}
+
+/**
+   Creates a new substitution on the heap which is the union of two substitutions
+
+   If this is not possible, because they map variables in the intersection of the domain to
+   different values, then NULL is returned
+**/
+substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2){
+  
+  unsigned int i, new_size;
+  substitution *retval = union_substitutions_one_ts(sub1, sub2);
+  if(retval == NULL)
+    return NULL;
+
+  assert(test_substitution(retval));
+
+  new_size = retval->n_timestamps + sub2->n_timestamps;
+  if(get_size_timestamps() < new_size){
+    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(), new_size);
+    exit(EXIT_FAILURE);
+  }
+    
+  /*  if(get_size_timestamps <= new_size){
+    while(retval->size_timestamps <= new_size)
+      retval->size_timestamps *= 2;
+    retval->timestamps = realloc_tester(retval->timestamps, retval->size_timestamps * sizeof(unsigned int));
+    }*/
+  for(i = 0; i < sub2->n_timestamps; i++)
+    retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
+
+  assert(retval->n_timestamps <= get_size_timestamps());
+
   return retval;
 }
 
