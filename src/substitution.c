@@ -67,6 +67,7 @@ substitution* create_empty_substitution(const theory* t){
 substitution* create_substitution(const theory* t, signed int timestamp){
   substitution* ret_val = create_empty_substitution(t);
   add_timestamp(ret_val, timestamp);
+  assert(test_substitution(ret_val));
   return ret_val;
 }
 
@@ -79,6 +80,7 @@ substitution* create_substitution(const theory* t, signed int timestamp){
 substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
   substitution* sub = create_substitution(t, 1);
   sub->timestamps[0] = - a->axiom_no;
+  assert(test_substitution(sub));
   return sub;
 }
 

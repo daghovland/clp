@@ -45,7 +45,7 @@ pthread_cond_t sub_store_cond = PTHREAD_COND_INITIALIZER;
 
 
 
-void** substitution_stores = NULL;
+char** substitution_stores = NULL;
 size_t size_substitution_store = 1000;
 size_t size_substitution = 0;
 size_t size_full_substitution = 0;
@@ -53,6 +53,7 @@ size_t size_timestamps;
 size_t * n_cur_substitution_store;
 size_t n_substitution_stores = 0;
 size_t size_substitution_stores = 10;
+int substitution_timestamp_offset;
 
 /**
    Error-checking functions for locking and unlocking the mutex
@@ -134,12 +135,12 @@ void new_substitution_store(size_t store_index){
   assert(store_index == 0 || store_index == new_store_index - 1);
   if(new_store_index >= size_substitution_stores){
     size_substitution_stores *= 2;
-    substitution_stores = realloc_tester(substitution_stores, size_substitution_stores * sizeof(void*));
+    substitution_stores = realloc_tester(substitution_stores, size_substitution_stores * sizeof(char*));
     n_cur_substitution_store = realloc_tester(n_cur_substitution_store, size_substitution_stores * sizeof(size_t));
   }
   assert(new_store_index < size_substitution_stores);
 
-  substitution_stores[new_store_index] = calloc_tester(size_substitution_store, size_full_substitution);
+  substitution_stores[new_store_index] = calloc_tester(size_substitution_store * size_full_substitution, sizeof(char));
   n_cur_substitution_store[new_store_index] = 0;  
   n_substitution_stores++;
 #ifdef HAVE_PTHREAD
@@ -151,8 +152,12 @@ void new_substitution_store(size_t store_index){
 void init_substitution_memory(const theory* t){
   size_substitution = sizeof(substitution) + (t->vars->n_vars) * sizeof(term*) ;
   size_timestamps = (t->max_lhs_conjuncts + t->max_rhs_conjuncts) * t->max_rhs_disjuncts;
-  size_full_substitution = size_substitution + size_timestamps * sizeof(signed int);
-  substitution_stores = calloc(size_substitution_stores, sizeof(void*));
+  substitution_timestamp_offset = size_substitution % sizeof(signed int);
+  if(substitution_timestamp_offset != 0)
+    substitution_timestamp_offset = sizeof(signed int) - substitution_timestamp_offset;
+  assert(substitution_timestamp_offset >= 0 && substitution_timestamp_offset < sizeof(signed int));
+  size_full_substitution = size_substitution + size_timestamps * sizeof(signed int) + substitution_timestamp_offset;
+  substitution_stores = calloc(size_substitution_stores, sizeof(char*));
   n_cur_substitution_store = calloc(size_substitution_stores, sizeof(size_t));
   n_substitution_stores = 0;
   new_substitution_store(0);
@@ -168,6 +173,7 @@ void init_substitution_memory(const theory* t){
 substitution* get_substitution_memory(){
   size_t subst_index, store_index;
   substitution* new_subst;
+  char* memory_start;
   assert(size_substitution > 0 && substitution_stores != NULL && n_substitution_stores > 0);
   store_index = n_substitution_stores - 1;
   subst_index = get_sub_store_index(store_index);
@@ -186,9 +192,9 @@ substitution* get_substitution_memory(){
     }
     return get_substitution_memory();
   }
-  new_subst = substitution_stores[store_index] + subst_index * get_size_full_substitution();
-  //  new_subst->timestamps =  substitution_stores[store_index] + (subst_index + 1) * get_size_full_substitution() - n_timestamps * sizeof(term*);
-  new_subst->timestamps = new_subst + size_substitution;
+  memory_start =  substitution_stores[store_index] + subst_index * get_size_full_substitution();
+  new_subst = (substitution*) memory_start;
+  new_subst->timestamps = (signed int*) (memory_start + size_substitution + substitution_timestamp_offset);
   return new_subst;
 }
 
