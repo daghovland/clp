@@ -24,31 +24,32 @@
 #include "term.h"
 
 unsigned int get_size_substitution(substitution_size_info ssi){
-  return ssi->size_substitution;
+  return ssi.size_substitution;
 }
 
 unsigned int get_size_full_substitution(substitution_size_info ssi){
-  return ssi->size_full_substitution;
+  return ssi.size_full_substitution;
 }
+
 unsigned int get_size_timestamps(substitution_size_info ssi){
-  ssi->size_timestamps;
+  return ssi.size_timestamps;
 }
 unsigned int get_substitution_timestamp_offset(substitution_size_info ssi){
-  return ssl->substitution_timestamp_offset;
+  return ssi.substitution_timestamp_offset;
 }
 
 substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts){
   substitution_size_info ssi;
-  ssi->size_substitution = sizeof(substitution) + n_vars * sizeof(term*) ;
-  ssi->size_timestamps = max_lhs_conjuncts;
-  ssi->substitution_timestamp_offset = ssi->size_substitution % sizeof(signed int);
-  if(ssi->substitution_timestamp_offset != 0)
-    ssi->substitution_timestamp_offset = sizeof(signed int) - ssi->substitution_timestamp_offset;
-  assert(ssi->substitution_timestamp_offset >= 0 && ssi->substitution_timestamp_offset < sizeof(signed int));
-  ssi->size_full_substitution = ssi->size_substitution + ssi->size_timestamps * sizeof(signed int) + ssi->substitution_timestamp_offset;
+  ssi.size_substitution = sizeof(substitution) + n_vars * sizeof(term*) ;
+  ssi.size_timestamps = max_lhs_conjuncts;
+  ssi.substitution_timestamp_offset = ssi.size_substitution % sizeof(signed int);
+  if(ssi.substitution_timestamp_offset != 0)
+    ssi.substitution_timestamp_offset = sizeof(signed int) - ssi.substitution_timestamp_offset;
+  assert(ssi.substitution_timestamp_offset >= 0 && ssi.substitution_timestamp_offset < sizeof(signed int));
+  ssi.size_full_substitution = ssi.size_substitution + ssi.size_timestamps * sizeof(signed int) + ssi.substitution_timestamp_offset;
   return ssi;
 }
 
 
 
-#endif
+

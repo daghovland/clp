@@ -57,7 +57,7 @@ void detract_rete_beta_sub(rete_net_state* state,
     substitution* sub2 = get_next_sub_list(iter);
     if(subs_equal_intersection(sub, sub2))
       if(node->type == beta_not)
-	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2));
+	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2, & state->local_subst_mem, state->net->th->sub_size_info));
       else {
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
       }
@@ -109,9 +109,9 @@ void insert_rete_beta_sub(rete_net_state* state,
 	  while(has_next_sub_list(iter)){
 	    substitution* join;
 	    if(node->in_positive_lhs_part)
-	      join = union_substitutions_with_ts(sub, get_next_sub_list(iter));
+	      join = union_substitutions_with_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info);
 	    else
-	      join = union_substitutions_one_ts(sub, get_next_sub_list(iter));
+	      join = union_substitutions_one_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info);
 	    if(join != NULL) 
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
@@ -133,14 +133,14 @@ void insert_rete_beta_sub(rete_net_state* state,
 	      }
 	    }
 	    free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
-	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
+	    insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info));
 	  }
       } else // right parent 
 	if(insert_substitution(state, 
 			       node->val.beta.a_store_no, 
 			       sub, node->free_vars
 			       ))
-	  detract_rete_beta_sub(state, node->children[0], copy_substitution(sub));
+	  detract_rete_beta_sub(state, node->children[0], copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info));
       break;
     default:
       fprintf(stderr, "Encountered untreated node type: %i\n", node->type);
@@ -163,7 +163,7 @@ void insert_rete_alpha_fact_children(rete_net_state* state, const rete_node* nod
   unsigned int i;
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++)
-    insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub), propagate);
+    insert_rete_alpha_fact(state, node->children[i], fact, copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info), propagate);
 }
 
 /**
@@ -215,15 +215,15 @@ bool insert_rete_alpha_fact(rete_net_state* state,
       return false;
     }
     if(node->left_parent->type == beta_root){
-      insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub));
+      insert_rete_beta_sub(state, node, node->children[0], copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info));
     } else {
       iter = get_state_sub_list_iter(state, node->val.beta.b_store_no);
       while(has_next_sub_list(iter)){
 	substitution* join;
 	if(node->in_positive_lhs_part)
-	  join = union_substitutions_with_ts(get_next_sub_list(iter), sub);
+	  join = union_substitutions_with_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info);
 	else
-	  join = union_substitutions_one_ts(get_next_sub_list(iter), sub);
+	  join = union_substitutions_one_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info);
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }
@@ -260,6 +260,6 @@ void insert_rete_net_fact(rete_net_state* state,
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
   assert(test_atom(fact));
   assert(sel != NULL && sel->val.selector == fact->pred);
-  substitution* a = create_substitution(state->net->th, get_current_state_step_no(state));
+  substitution* a = create_substitution(state->net->th, get_current_state_step_no(state), & state->local_subst_mem);
   insert_rete_alpha_fact(state, sel, fact, a, false);
 }

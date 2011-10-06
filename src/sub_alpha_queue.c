@@ -108,12 +108,12 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
     if(state->net->use_beta_not)
       return true;
     next = peek_axiom_rule_queue(state, axiom_no);
-    sub = copy_substitution(next->substitution);
+    sub = copy_substitution(next->substitution, & state->local_subst_mem, state->net->th->sub_size_info);
     if(!disjunction_true_in_fact_set(state, next->rule->rhs, sub)){
       return true;
     }
     //delete_rule_instance(pop_axiom_rule_queue(state, axiom_no));
-    pop_axiom_rule_queue(state, axiom_no);
+    pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
   }
   return false;
 }
@@ -149,7 +149,7 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
       insert_rete_alpha_fact_children(state, 
 				      new_root->alpha_node, 
 				      new_root->fact, 
-				      copy_substitution(new_root->sub), 
+				      copy_substitution(new_root->sub, & state->local_subst_mem, state->net->th->sub_size_info), 
 				      true);
       
       state->sub_alpha_queue_roots[axiom_no] = new_root;

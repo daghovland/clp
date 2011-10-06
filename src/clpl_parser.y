@@ -233,5 +233,6 @@ theory* clpl_parser(FILE* f){
   clpl_lineno = 1;
   //yydebug = 1;
   clpl_parse();
+  finalize_theory(th);
   return th;
 }

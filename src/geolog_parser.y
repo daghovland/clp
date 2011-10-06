@@ -160,5 +160,6 @@ theory* geolog_parser(FILE* f){
   geolog_in = f;
   geolog_lineno = 1;
   geolog_parse();
+  finalize_theory(th);
   return th;
 }

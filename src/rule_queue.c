@@ -164,7 +164,7 @@ rule_queue* _add_rule_to_queue(rule_instance* ri, rule_queue* rq, bool clpl_sort
 
    The other instances are copied in the prover, when "used_in_proof" is set to true.
 **/
-rule_instance* _pop_rule_queue(rule_queue* rq){
+rule_instance* _pop_rule_queue(rule_queue* rq, substitution_memory* store, substitution_size_info ssi){
   rule_instance* retval;
 
   assert(rq->n_queue > 0);
@@ -178,7 +178,7 @@ rule_instance* _pop_rule_queue(rule_queue* rq){
 
 
   retval = copy_rule_instance(retval);
-  retval->substitution = copy_substitution(retval->substitution);
+  retval->substitution = copy_substitution(retval->substitution, store, ssi);
   return retval;
 }
 
@@ -193,7 +193,7 @@ rule_instance* _pop_rule_queue(rule_queue* rq){
    The other rule instances are copied in prover.c, if they are seen to be used
    (That is, if the "used_in_proof" is set to true.)
 **/
-rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
+rule_instance* _pop_youngest_rule_queue(rule_queue* rq, substitution_memory* store, substitution_size_info ssi){
   rule_instance* retval;
 
   assert(rq->n_queue > 0);
@@ -210,7 +210,7 @@ rule_instance* _pop_youngest_rule_queue(rule_queue* rq){
   assert(!retval->used_in_proof);
   
   retval = copy_rule_instance(retval);
-  retval->substitution = copy_substitution(retval->substitution);
+  retval->substitution = copy_substitution(retval->substitution, store, ssi);
   return retval;
 }
 
@@ -353,21 +353,21 @@ rule_instance* peek_axiom_rule_queue(const rete_net_state* state, size_t axiom_n
 
    Uses the rule queue as a stack, by taking the most recently added rule instance
 **/
-rule_instance* pop_youngest_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+rule_instance* pop_youngest_axiom_rule_queue(rete_net_state* state, size_t axiom_no, substitution_memory* store, substitution_size_info ssi){
   rule_queue* rq = state->axiom_inst_queue[axiom_no];
   assert(axiom_no < state->net->th->n_axioms);
 
   rq->n_appl ++;
   rq->previous_appl = get_current_state_step_no(state);
 
-  rule_instance* retval = _pop_youngest_rule_queue(rq);
+  rule_instance* retval = _pop_youngest_rule_queue(rq, store, ssi);
 
   assert(test_rule_instance(retval, state));
 
   return retval;
 }
   
-rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no, substitution_memory* store, substitution_size_info ssi){
   rule_queue* rq = state->axiom_inst_queue[axiom_no];
   assert(axiom_no < state->net->th->n_axioms);
   assert(rq->n_queue > 0);
@@ -375,7 +375,7 @@ rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
   rq->n_appl++;
   rq->previous_appl = get_current_state_step_no(state);
 
-  rule_instance* retval = _pop_rule_queue(rq);
+  rule_instance* retval = _pop_rule_queue(rq, store, ssi);
 
   assert(test_rule_instance(retval, state));
 

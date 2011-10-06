@@ -26,6 +26,7 @@
 #include "axiom.h"
 #include "term.h"
 #include "atom.h"
+#include "substitution_size_info.h"
 
 
 /**
@@ -51,6 +52,10 @@ typedef struct theory_t {
   unsigned int max_rhs_disjuncts;
   size_t n_constants;
   size_t size_constants;
+  substitution_size_info sub_size_info;
+#ifndef NDEBUG
+  bool finalized;
+#endif
   const char** constants;
 } theory;
 
@@ -59,6 +64,7 @@ theory* create_theory(void);
 void extend_theory(theory*, axiom*);
 void set_theory_name(theory*, const char*);
 bool has_theory_name(const theory*);
+void finalize_theory(theory*);
 
 void print_coq_proof_intro(const theory*, FILE*);
 void print_coq_proof_ending(const theory*, FILE*);

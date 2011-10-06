@@ -23,6 +23,8 @@
 #define __INCLUDE_SUBSTITUTION_STRUCT_H
 
 #include "common.h"
+#include "term.h"
+#include "variable.h"
 /**
    An substitution of variables
    to term values
@@ -49,19 +51,6 @@ typedef struct substitution_t {
 } substitution;
 
 
-/**
-   This structure is in the rete net and contains info about
-   the size usage of substitutions and the components.
-   
-   Used by substitution_memory
-**/
-
-typedef struct substitution_size_info_t {
-  size_t size_substitution;
-  size_t size_timestamps;
-  size_t size_full_substitution;
-  int substitution_timestamp_offset;
-} substitution_size_info;
 
 
 #endif

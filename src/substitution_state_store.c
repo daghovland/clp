@@ -21,10 +21,7 @@
 /**
    Memory helper for substitutions, to avoid millions of calls to malloc
 
-   The stores for substitutions are global, but this should not be a problem
-
-   Threadsafety assured only if the size_substitution_store is large enough that 
-   there will not be overlapping calls to new_substitution_store
+   These are not thread-safe 
 **/
 #include "common.h"
 #include "term.h"
@@ -33,10 +30,10 @@
 #include "substitution_state_store.h"
 
 
-substitution_store init_state_subst_store(void){
+substitution_store init_state_subst_store(substitution_size_info ssi){
   substitution_store new_store;
   new_store.max_n_subst = INIT_SUBST_STORE_SIZE;
-  new_store.size_store = new_store.max_n_subst * get_size_full_substitution();
+  new_store.size_store = new_store.max_n_subst * get_size_full_substitution(ssi);
   new_store.n_subst = 0;
   new_store.store = malloc_tester(new_store.size_store);
   return new_store;
@@ -46,7 +43,7 @@ void destroy_state_subst_store(substitution_store* store){
   free(store->store);
 }
 
-unsigned int alloc_substitution(substitution_store* store){
+unsigned int alloc_substitution(substitution_store* store, substitution_size_info ssi){
   char* new_ptr;
   unsigned int new_i = store->n_subst;
   store->n_subst ++;
@@ -55,13 +52,13 @@ unsigned int alloc_substitution(substitution_store* store){
     store->size_store *= 2;
     store->store = realloc_tester(store->store, store->size_store);
   }
-  new_ptr = store->store + (new_i * get_size_full_substitution());
-  ((substitution*) new_ptr)->timestamps =  (signed int*) (new_ptr + get_size_substitution() + get_substitution_timestamp_offset());
+  new_ptr = store->store + (new_i * get_size_full_substitution(ssi));
+  ((substitution*) new_ptr)->timestamps =  (signed int*) (new_ptr + get_size_substitution(ssi) + get_substitution_timestamp_offset(ssi));
   return store->n_subst - 1;
 }
 
 
-substitution* get_substitution(unsigned int i, substitution_store* store){
+substitution* get_substitution(unsigned int i, substitution_store* store, substitution_size_info ssi){
   assert(i < store->max_n_subst);
-  return (substitution*) (store->store + (i * get_size_full_substitution()));
+  return (substitution*) (store->store + (i * get_size_full_substitution(ssi)));
 }

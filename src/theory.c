@@ -62,14 +62,17 @@ theory* create_theory(void){
   ret_val->max_lhs_conjuncts = 0;
   ret_val->max_rhs_conjuncts = 0;
   ret_val->max_rhs_disjuncts = 0;
-
+#ifndef NDEBUG
+  ret_val->finalized = false;
+#endif
   return ret_val;
 }
 
 void extend_theory(theory *th, axiom *ax){
   unsigned int i;
   ax->axiom_no = th->n_axioms;
-
+  
+  assert(!th->finalized);
   if(!ax->has_name){
     char* axname = malloc_tester(10 + abs(log10(th->n_axioms)));
     sprintf(axname, "axiom_%i", th->n_axioms);
@@ -139,6 +142,16 @@ bool has_theory_name(const theory* th){
 }
 
 /**
+   This function must be called after all axioms are added.
+**/
+void finalize_theory(theory* th){
+  th->sub_size_info = init_sub_size_info(th->vars->n_vars, th->max_lhs_conjuncts);
+#ifndef NDEBUG
+  th->finalized = true;
+#endif
+}
+
+/**
    Creates new rete network for the whole theory
 **/
 rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts){
@@ -147,6 +160,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
 #endif
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps, lazy, coq);
+  assert(th->finalized);
   for(i = 0; i < th->n_axioms; i++)
     create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
   net->th = th;
@@ -168,7 +182,6 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   pthread_mutexattr_destroy(&p_attr);
 #endif
 
-  sub_size_info = init_sub_size_info(th->n_vars, th->max_lhs_conjuncts);
   return net;
 }
    

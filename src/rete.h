@@ -124,8 +124,8 @@ void print_state_new_facts(rete_net_state*, FILE*);
 void print_rete_node_type(const rete_node*, FILE*);
 
 
-rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t);
-rule_instance* pop_youngest_axiom_rule_queue(rete_net_state*, size_t);
+rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t, substitution_memory* store, substitution_size_info ssi);
+rule_instance* pop_youngest_axiom_rule_queue(rete_net_state*, size_t, substitution_memory* store, substitution_size_info ssi);
 rule_instance* peek_axiom_rule_queue(const rete_net_state*, size_t);
 void remove_rule_instance(rete_net_state*, const substitution*, size_t);
 void add_rule_to_queue(const axiom*, substitution*, rete_net_state*);

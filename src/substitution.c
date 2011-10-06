@@ -41,10 +41,10 @@ substitution* create_empty_substitution(const theory* t, substitution_memory* st
   unsigned int i;
   substitution* ret_val;
   if(use_substitution_store)
-    ret_val = get_substitution_memory(store);
+    ret_val = get_substitution_memory(store, t->sub_size_info);
   else {
-    ret_val = malloc_tester(sizeof(substitution) + t->vars->n_vars * sizeof(term*));
-    ret_val->timestamps = calloc_tester(get_size_timestamps(), sizeof(int));
+    ret_val = malloc_tester(get_size_substitution(t->sub_size_info));
+    ret_val->timestamps = calloc_tester(get_size_timestamps(t->sub_size_info), sizeof(int));
   }
     
   ret_val->allvars = t->vars;
@@ -52,7 +52,7 @@ substitution* create_empty_substitution(const theory* t, substitution_memory* st
 
   ret_val->n_timestamps = 0;
 
-  for(i = 0; i < get_size_timestamps(); i++)
+  for(i = 0; i < get_size_timestamps(t->sub_size_info); i++)
     ret_val->timestamps[i] = 0;
 
   for(i = 0; i < t->vars->n_vars; i++)
@@ -64,9 +64,9 @@ substitution* create_empty_substitution(const theory* t, substitution_memory* st
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t, signed int timestamp){
-  substitution* ret_val = create_empty_substitution(t);
-  add_timestamp(ret_val, timestamp);
+substitution* create_substitution(const theory* t, signed int timestamp, substitution_memory* store){
+  substitution* ret_val = create_empty_substitution(t, store);
+  add_timestamp(ret_val, timestamp, t->sub_size_info);
   assert(test_substitution(ret_val));
   return ret_val;
 }
@@ -77,29 +77,29 @@ substitution* create_substitution(const theory* t, signed int timestamp){
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
 **/
-substitution* create_empty_fact_substitution(const theory* t, const axiom* a){
-  substitution* sub = create_substitution(t, 1);
+substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_memory* store){
+  substitution* sub = create_substitution(t, 1, store);
   sub->timestamps[0] = - a->axiom_no;
   assert(test_substitution(sub));
   return sub;
 }
 
-substitution* copy_substitution(const substitution* orig){
+substitution* copy_substitution(const substitution* orig, substitution_memory* store, substitution_size_info ssi){
 
   substitution* copy;
   if(use_substitution_store){
     int* new_timestamps;
-    copy = get_substitution_memory();
+    copy = get_substitution_memory(store, ssi);
     new_timestamps = copy->timestamps;
-    memcpy(copy, orig, get_size_substitution());
+    memcpy(copy, orig, get_size_substitution(ssi));
     copy->timestamps = new_timestamps;
   } else {
-    copy = malloc(sizeof(substitution) + orig->allvars->n_vars * sizeof(term*));
-    memcpy(copy, orig, sizeof(substitution) + orig->allvars->n_vars * sizeof(term*));
-    copy->timestamps = calloc_tester(get_size_timestamps(), sizeof(int));
+    copy = malloc(get_size_substitution(ssi));
+    memcpy(copy, orig, get_size_substitution(ssi));
+    copy->timestamps = calloc_tester(get_size_timestamps(ssi), sizeof(int));
   }
 
-  memcpy(copy->timestamps, orig->timestamps, get_size_timestamps() * sizeof(int));
+  memcpy(copy->timestamps, orig->timestamps, get_size_timestamps(ssi) * sizeof(int));
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -280,7 +280,7 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
    The timestamps are only those of sub1. sub2 timestamps are not part of the 
    new substitution
 **/
-substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2){
+substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_memory* store, substitution_size_info ssi){
   unsigned int i, new_size;
   substitution *retval;
 
@@ -288,7 +288,7 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
   assert(test_substitution(sub2));
   assert(sub1->allvars == sub2->allvars);
 
-  retval = copy_substitution(sub1);
+  retval = copy_substitution(sub1, store, ssi);
 
   for(i = 0; i < retval->allvars->n_vars; i++){
     const term* val1 = retval->values[i];
@@ -316,18 +316,18 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
    If this is not possible, because they map variables in the intersection of the domain to
    different values, then NULL is returned
 **/
-substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2){
+substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_memory* store, substitution_size_info ssi){
   
   unsigned int i, new_size;
-  substitution *retval = union_substitutions_one_ts(sub1, sub2);
+  substitution *retval = union_substitutions_one_ts(sub1, sub2, store, ssi);
   if(retval == NULL)
     return NULL;
 
   assert(test_substitution(retval));
 
   new_size = retval->n_timestamps + sub2->n_timestamps;
-  if(get_size_timestamps() < new_size){
-    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(), new_size);
+  if(get_size_timestamps(ssi) < new_size){
+    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(ssi), new_size);
     exit(EXIT_FAILURE);
   }
     
@@ -339,7 +339,7 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
   for(i = 0; i < sub2->n_timestamps; i++)
     retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
 
-  assert(retval->n_timestamps <= get_size_timestamps());
+  assert(retval->n_timestamps <= get_size_timestamps(ssi));
 
   return retval;
 }
@@ -471,14 +471,9 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(substitution* sub, unsigned int timestamp){  
-  sub->n_timestamps ++;
-  assert(get_size_timestamps() >= sub->n_timestamps);
-  /*  if(sub->size_timestamps <= sub->n_timestamps){
-    while(sub->size_timestamps <= sub->n_timestamps)
-      sub->size_timestamps *= 2;
-    sub->timestamps = realloc_tester(sub->timestamps, sub->size_timestamps * sizeof(unsigned int));
-    }*/
+void add_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi){  
+  sub->n_timestamps ++;  
+  assert(get_size_timestamps(ssi) >= sub->n_timestamps);
   sub->timestamps[sub->n_timestamps-1] = timestamp;
 }
 

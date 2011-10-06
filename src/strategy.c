@@ -75,7 +75,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
       while(!found_new_instance && !is_empty_axiom_rule_queue(state, axiom_no)){
 	rule_instance* ri = peek_axiom_rule_queue(state, axiom_no);
 	if(disjunction_true_in_fact_set(state, state->net->th->axioms[axiom_no]->rhs, ri->substitution))
-	  ri = pop_axiom_rule_queue(state, axiom_no);
+	  ri = pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
 	else
 	  found_new_instance = true;
       }
@@ -96,7 +96,7 @@ rule_instance* normal_next_instance(rete_net_state* state){
       may_have_next_rule = true;
       
       if( (rule->type == goal || rule->type == fact) && axiom_has_new_instance(axiom_no, state))
-	return pop_axiom_rule_queue(state, axiom_no);
+	return pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
       
       if(!rule->is_existential && axiom_has_new_instance(axiom_no, state)){
 	has_definite = true;
@@ -127,15 +127,15 @@ rule_instance* normal_next_instance(rete_net_state* state){
   } // end for all axioms
 
   if(has_definite_non_splitting)
-    return pop_axiom_rule_queue(state, definite_non_splitting_rule);
+    return pop_axiom_rule_queue(state, definite_non_splitting_rule, & state->local_subst_mem, state->net->th->sub_size_info);
 
   if(has_definite)
-    return pop_axiom_rule_queue(state, definite_rule);
+    return pop_axiom_rule_queue(state, definite_rule, & state->local_subst_mem, state->net->th->sub_size_info);
 
   while(may_have_next_rule){
     assert(min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
     if(may_have_next_rule && axiom_has_new_instance(lightest_rule, state))
-      return pop_axiom_rule_queue(state, lightest_rule);
+      return pop_axiom_rule_queue(state, lightest_rule, & state->local_subst_mem, state->net->th->sub_size_info);
     axiom_weights[lightest_rule] = max_weight;
     min_weight = max_weight;
     may_have_next_rule = false;
@@ -163,7 +163,7 @@ rule_instance* clpl_next_instance(rete_net_state* state){
     assert(i == axiom_no);
     if(axiom_has_new_instance(axiom_no, state)){
       rule_instance* retval;
-      retval = pop_axiom_rule_queue(state, axiom_no);
+      retval = pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
       return retval;
     }
   } // end for i -- n_axioms

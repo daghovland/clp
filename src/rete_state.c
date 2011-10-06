@@ -33,9 +33,11 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
 					+ (net->th->n_axioms * sizeof(rule_queue*)));
   state->subs = calloc_tester(sizeof(substitution_list*), net->n_subs);
 
-  state->local_subst_mem = init_substitution_memory(net);
+  state->local_subst_mem = init_substitution_memory(net->th->sub_size_info);
   state->global_subst_mem = malloc(sizeof(substitution_memory));
-  * state->global_subst_mem = init_substitution_memory(net);
+  * state->global_subst_mem = init_substitution_memory(net->th->sub_size_info);
+
+
 					  
   state->verbose = verbose;
   for(i = 0; i < net->n_subs; i++){
@@ -172,7 +174,7 @@ rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
   memcpy(copy, orig, orig_size);
   copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
-  copy->local_subst_mem = init_substitution_memory(net);
+  copy->local_subst_mem = init_substitution_memory(orig->net->th->sub_size_info);
   if(orig->net->has_factset){
     copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
     copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
@@ -278,13 +280,13 @@ void print_state_fact_set(rete_net_state* state, FILE* stream){
 
    Note that sub is changed if it returns true.
 **/
-bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
+bool remaining_conjunction_true_in_fact_set(rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
   const fact_set * fs;
   if(conjunct >= con->n_args)
     return true;
   fs = state->factset[con->args[conjunct]->pred->pred_no];
   while(fs != NULL){
-    substitution* sub2 = copy_substitution(sub);
+    substitution* sub2 = copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info);
     if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2)){
       if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
 	return true;
@@ -300,11 +302,11 @@ bool remaining_conjunction_true_in_fact_set(const rete_net_state* state, const c
    In that case, the given substitution is extended to such an instance.
    sub must have been instantiated and later freed by the calling function.
 **/
-bool conjunction_true_in_fact_set(const rete_net_state* state, const conjunction* con, substitution* sub){
+bool conjunction_true_in_fact_set(rete_net_state* state, const conjunction* con, substitution* sub){
   return remaining_conjunction_true_in_fact_set(state, con, 0, sub);
 }
 
-bool disjunction_true_in_fact_set(const rete_net_state* state, const disjunction* dis, substitution* sub){
+bool disjunction_true_in_fact_set(rete_net_state* state, const disjunction* dis, substitution* sub){
   int i;
   for(i = 0; i < dis->n_args; i++){
     if(conjunction_true_in_fact_set(state, dis->args[i], sub))
@@ -340,9 +342,9 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state,
     fs = fs->next;
   }
   do{
-    substitution* sub2 = copy_substitution(*sub);
+    substitution* sub2 = copy_substitution(*sub, & state->local_subst_mem, state->net->th->sub_size_info);
     if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2)){
-      add_timestamp(sub2, get_fact_set_timestamp(fs));
+      add_timestamp(sub2, get_fact_set_timestamp(fs), state->net->th->sub_size_info);
       if(remaining_axiom_false_in_fact_set(state, axm, arg_no+1, &sub2)){
 	*sub = sub2;
 	return true;
@@ -354,7 +356,7 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state,
 }
 
 bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub){
-  substitution* sub2 = create_empty_substitution(state->net->th);
+  substitution* sub2 = create_empty_substitution(state->net->th, & state->local_subst_mem);
   
   if(remaining_axiom_false_in_fact_set(state, state->net->th->axioms[axiom_no], 0, &sub2)){
     *sub = sub2;

@@ -24,7 +24,6 @@
 
 #include "substitution_struct.h"
 #include "substitution_size_info.h"
-#include "rete_net.h"
 
 #define INIT_SUBST_MEM_SIZE 1000
 /**

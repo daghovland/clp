@@ -22,6 +22,8 @@
 #ifndef __INCLUDE_SUBSTITUTION_SIZE_INFO_H
 #define __INCLUDE_SUBSTITUTION_SIZE_INFO_H
 
+#include "common.h"
+
 /**
    This structure is in the rete net and contains info about
    the size usage of substitutions and the components.

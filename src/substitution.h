@@ -50,9 +50,9 @@ typedef struct substitution_list_t {
 typedef substitution_list* sub_list_iter;
 
 substitution* create_empty_substitution(const theory*, substitution_memory*);
-substitution* create_substitution(const theory*, signed int);
-substitution* copy_substitution(const substitution*);
-substitution* create_empty_fact_substitution(const theory*, const axiom*);
+substitution* create_substitution(const theory*, signed int, substitution_memory*);
+substitution* copy_substitution(const substitution*, substitution_memory*, substitution_size_info);
+substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_memory*);
 
 
 
@@ -68,9 +68,9 @@ bool unify_substitution_terms(const term*, const term*, substitution*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*);
 bool subs_equal_intersection(const substitution*, const substitution*);
-substitution* union_substitutions_one_ts(const substitution*, const substitution*);
-substitution* union_substitutions_with_ts(const substitution*, const substitution*);
-void add_timestamp(substitution*, unsigned int);
+substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_memory* store, substitution_size_info ssi);
+substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_memory* store, substitution_size_info ssi);
+void add_timestamp(substitution*, unsigned int, substitution_size_info);
 
 void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);

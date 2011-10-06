@@ -25,6 +25,8 @@
 #define INIT_SUBST_STORE_SIZE 1000
 
 #include "substitution.h"
+#include "substitution_size_info.h"
+
 /**
    A store of substitutions for use in states
 
@@ -44,8 +46,8 @@ typedef struct substitution_store_t {
 
 
 
-substitution_store init_state_subst_store(void);
+substitution_store init_state_subst_store(substitution_size_info);
 void destroy_state_subst_store(substitution_store*);
-unsigned int alloc_substitution(substitution_store*);
-substitution* get_substitution(unsigned int, substitution_store*);
+unsigned int alloc_substitution(substitution_store*, substitution_size_info);
+substitution* get_substitution(unsigned int, substitution_store*, substitution_size_info);
 #endif
