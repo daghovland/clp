@@ -22,7 +22,8 @@
 #ifndef __INCLUDE_SUBSTITUTION_MEMORY_H
 #define __INCLUDE_SUBSTITUTION_MEMORY_H
 
-#include "substitution.h"
+#include "substitution_struct.h"
+#include "substitution_size_info.h"
 #include "rete_net.h"
 
 #define INIT_SUBST_MEM_SIZE 1000
@@ -43,8 +44,8 @@ typedef struct substitution_memory_t {
 } substitution_memory;
 
 
-substitution_memory init_substitution_memory(const rete_net*);
+substitution_memory init_substitution_memory(substitution_size_info);
 void destroy_substitution_memory(substitution_memory*);
-substitution* get_substitution_memory(substitution_memory*, const rete_net*);
+substitution* get_substitution_memory(substitution_memory*, substitution_size_info);
 void destroy_substitution_memory(substitution_memory*);
 #endif

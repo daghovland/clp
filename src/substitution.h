@@ -22,32 +22,9 @@
 #ifndef __INCLUDE_SUBSTITUTION_H
 #define __INCLUDE_SUBSTITUTION_H
 
+#include "substitution_struct.h"
+#include "substitution_memory.h"
 #include "theory.h"
-
-/**
-   An substitution of variables
-   to term values
-
-   The variables are those found in the freevars 
-   set of the containing store
-   
-   Only "values" is used
-
-   The pointer allvars points to the freevar of _all_ variables in the theory. 
-
-   The timestamps are used to know when substitutions were inserted into the rete network.
-   This is necessary for the emulation of the prolog search strategy in CL.pl
-   The timestamps are a list of the timestamps when each conjunct in the precedent was 
-   matched by the factset. The length of timestamps is given by get_size_timestamps in
-   substitution_memory, which is set by theory->max_lhs_conjuncts in init_substitution_memory
-**/
-typedef struct substitution_t {
-  unsigned int n_subs;
-  signed int * timestamps;
-  unsigned int n_timestamps;
-  const freevars* allvars;
-  const term* values[];
-} substitution;
 
 
 /**
@@ -72,7 +49,7 @@ typedef struct substitution_list_t {
 **/
 typedef substitution_list* sub_list_iter;
 
-substitution* create_empty_substitution(const theory*);
+substitution* create_empty_substitution(const theory*, substitution_memory*);
 substitution* create_substitution(const theory*, signed int);
 substitution* copy_substitution(const substitution*);
 substitution* create_empty_fact_substitution(const theory*, const axiom*);

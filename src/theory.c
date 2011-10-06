@@ -168,14 +168,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   pthread_mutexattr_destroy(&p_attr);
 #endif
 
-  net->size_substitution = sizeof(substitution) + (net->th->vars->n_vars) * sizeof(term*) ;
-  net->size_timestamps = net->th->max_lhs_conjuncts;
-  net->substitution_timestamp_offset = net->size_substitution % sizeof(signed int);
-  if(net->substitution_timestamp_offset != 0)
-    net->substitution_timestamp_offset = sizeof(signed int) - net->substitution_timestamp_offset;
-  assert(net->substitution_timestamp_offset >= 0 && net->substitution_timestamp_offset < sizeof(signed int));
-  net->size_full_substitution = net->size_substitution + net->size_timestamps * sizeof(signed int) + net->substitution_timestamp_offset;
-
+  sub_size_info = init_sub_size_info(th->n_vars, th->max_lhs_conjuncts);
   return net;
 }
    

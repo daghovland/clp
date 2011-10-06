@@ -35,6 +35,7 @@
 #include "strategy.h"
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
+#include "substitution_size_info.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -77,12 +78,7 @@ typedef struct rete_net_t {
 #endif
   //unsigned int size_history;
   // rule_instance ** history;
-
-  size_t size_substitution;
-  size_t size_timestamps;
-  size_t size_full_substitution;
-  int substitution_timestamp_offset;
-
+  substitution_size_info sub_size_info;
   unsigned long maxsteps;
   rete_node selectors[];
 } rete_net;
