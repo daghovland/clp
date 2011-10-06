@@ -47,6 +47,7 @@ void show_limit(int resource, FILE* s, const char* name){
   struct rlimit limits;
   if(getrlimit(resource, &limits) != 0){
     perror("utility.c: show_limit(): cannot call getrlimit");
+    assert(false);
     exit(EXIT_FAILURE);
   }
   fprintf(s, "%s limits are ", name);
@@ -71,6 +72,7 @@ void* malloc_tester(size_t size){
   if(ret_val == NULL){
     int error_num = errno;
     print_error("malloc", size, error_num);
+    assert(false);
     exit(EXIT_FAILURE);    
   }
   return ret_val;
@@ -81,6 +83,7 @@ void* calloc_tester(size_t nmemb, size_t size){
   if(ret_val == NULL){
     int error_num = errno;
     print_error("calloc", size * nmemb , error_num);
+    assert(false);
     exit(EXIT_FAILURE);    
   }
   return ret_val;
@@ -92,6 +95,7 @@ void* realloc_tester(void* ptr, size_t size){
   if(ret_val == NULL){
     int error_num = errno;
     print_error("realloc", size, error_num);
+    assert(false);
     exit(EXIT_FAILURE);    
   }
   return ret_val;

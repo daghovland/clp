@@ -62,7 +62,7 @@ rete_net* init_rete(const theory*, unsigned long, bool lazy, bool coq);
     Creates a "copy" of a rete net state
     for threading. 
 **/
-rete_net_state* split_rete_state(const rete_net_state*, size_t);
+rete_net_state* split_rete_state(rete_net_state*, size_t);
 
 bool inc_proof_step_counter(rete_net_state*);
 

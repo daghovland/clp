@@ -86,7 +86,7 @@ typedef struct rete_net_state_t {
   fact_set ** factset;
   fact_set ** prev_factset;
   struct rete_net_state_t ** branches;
-  const struct rete_net_state_t * parent;
+  struct rete_net_state_t * parent;
   bool finished;
   rule_queue* axiom_inst_queue[];
 } rete_net_state;

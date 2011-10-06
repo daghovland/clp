@@ -21,7 +21,7 @@
 /**
    Memory helper for substitutions, to avoid millions of calls to malloc
 
-   These are not thread-safe 
+   These are not thread-safe, and used for the rete nodes 
 **/
 #include "common.h"
 #include "term.h"

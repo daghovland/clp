@@ -36,8 +36,6 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->local_subst_mem = init_substitution_memory(net->th->sub_size_info);
   state->global_subst_mem = malloc(sizeof(substitution_memory));
   * state->global_subst_mem = init_substitution_memory(net->th->sub_size_info);
-
-
 					  
   state->verbose = verbose;
   for(i = 0; i < net->n_subs; i++){
@@ -118,7 +116,7 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
     }
   }
 
-  destroy_substitution_memory(& state->local_subst_mem);
+  //  destroy_substitution_memory(& state->local_subst_mem);
 
   free(state);
 }
@@ -150,8 +148,8 @@ void delete_full_rete_state(rete_net_state* state){
       delete_fact_set(state->factset[i]);
     }
   }
-  destroy_substitution_memory(& state->local_subst_mem);
-  destroy_substitution_memory(state->global_subst_mem);
+  // destroy_substitution_memory(& state->local_subst_mem);
+  //destroy_substitution_memory(state->global_subst_mem);
   free(state);
 }
 
@@ -162,7 +160,7 @@ void delete_full_rete_state(rete_net_state* state){
 
    size_t is the number of the branch, numbered from left to right, starting at 0
 **/
-rete_net_state* split_rete_state(const rete_net_state* orig, size_t branch_no){
+rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
   unsigned int i;
   size_t orig_size = sizeof(rete_net_state) + orig->net->th->n_axioms * sizeof(rule_queue*);
   size_t n_subs = orig->net->n_subs;

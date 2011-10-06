@@ -25,7 +25,7 @@
 #include "substitution_struct.h"
 #include "substitution_size_info.h"
 
-#define INIT_SUBST_MEM_SIZE 1000
+#define INIT_SUBST_MEM_SIZE 10
 /**
    A store of substitutions
 

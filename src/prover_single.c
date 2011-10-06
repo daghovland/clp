@@ -1,4 +1,4 @@
-/* prover.c
+/* prover_single.c
 
    Copyright 2011 
 
@@ -19,6 +19,10 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
+/**
+   An attempt at a simpler prover with no or-parallellism
+**/
+
 #include "common.h"
 #include "theory.h"
 #include "strategy.h"
@@ -29,68 +33,35 @@
 #include "substitution.h"
 #include "substitution_memory.h"
 #include "rule_instance_state_stack.h"
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
 #include <errno.h>
 
 extern bool debug, verbose;
 
 bool foundproof;
 
-unsigned int provers_running;
 
-#ifdef HAVE_PTHREAD
-unsigned int num_threads;
-#define MAX_THREADS 20
 
-pthread_cond_t stack_increased_cond = PTHREAD_COND_INITIALIZER;
-pthread_cond_t prover_done_cond = PTHREAD_COND_INITIALIZER;
 
-pthread_mutex_t * history_mutex;// = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t * disj_ri_stack_mutex;// = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
-/*
-  A stack of used, but not proved disjunctive rules
-
-  Pushed in "check_used_rule_instance" and popped in run_prover
-
-  initialized by prover()
-**/
 rule_instance_state_stack* disj_ri_stack;
 
 rule_instance_state * * history;
 size_t size_history;
 
-bool insert_rete_net_disjunction(rete_net_state*, rule_instance*, bool);
-bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next);
-void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, unsigned int step);
-bool thread_runner_single_step(void);
-#ifdef HAVE_PTHREAD
-/**
-   Used by pthread error and pthread cancel
-**/
-void pthread_error_test(int retno, const char* msg){
-  if(retno != 0){
-    errno = retno;
-    perror(msg);
-    exit(EXIT_FAILURE);
-  }
-}
-#endif
+bool insert_rete_net_disjunction_coq_single(rete_net_state_single*, rule_instance*, bool);
+bool start_rete_disjunction_coq_single(rete_net_state_single* state, rule_instance* next);
+void insert_rete_disjunction_coq_single(rete_net_state_single* state, rule_instance* next, unsigned int step);
 
 
 
 /**
    Called at the end of a disjunctive branch
    Checks what rule instances were used
-   Called from run_prover_rete_coq_mt
+   Called from run_prover_rete_coq_single
 
    At the moment, all rule instances are unique in eqch branch (they are copied when popped from the queue)
    So we know that changing the "used_in_proof" here is ok.
 **/
-void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts, unsigned int current_ts){
+void check_used_rule_instances_coq_single(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
   assert(ri == history[historic_ts]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
@@ -104,7 +75,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
       int premiss_no = ri->substitution->timestamps[i];
       if(premiss_no > 0){
 	assert(premiss_no == history[premiss_no]->step_no);
-	check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no, current_ts);
+	check_used_rule_instances_coq_single((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no, current_ts);
       }
     }
     if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
@@ -216,8 +187,8 @@ bool return_reached_max_steps(rete_net_state* state, rule_instance* ri){
 
 /**
    Checks parent states as "finished" 
-   Called when reaching goal state in run_prover_rete_coq_mt
-   The finished is read from insert_rete_disjunction_coq_mt
+   Called when reaching goal state in run_prover_rete_coq_single
+   The finished is read from insert_rete_disjunction_coq_single
 **/
 void check_state_finished(rete_net_state* state){
   rete_net_state* parent = (rete_net_state*) state->parent;
@@ -249,10 +220,10 @@ void check_state_finished(rete_net_state* state){
    Should be thread-safe. 
 
    Note that the rule instance on the stack is discarded, as the 
-   conjunction is already inserted by insert_rete_net_disjunction_coq_mt below
+   conjunction is already inserted by insert_rete_net_disjunction_coq_single below
 **/
 
-bool run_prover_rete_coq_mt(rete_net_state* state){
+bool run_prover_rete_coq_single(rete_net_state* state){
     while(true){
       unsigned int i, ts;
       
@@ -272,7 +243,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 
 
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	check_used_rule_instances_coq_mt(next, state, ts, ts);
+	check_used_rule_instances_coq_single(next, state, ts, ts);
 	state->end_of_branch = next;
 	check_state_finished(state);
 	write_proof_node(state, next);
@@ -285,10 +256,10 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	if(next->rule->rhs->n_args > 1){
 	  write_proof_node(state, next);
 	  if(state->net->treat_all_disjuncts){
-	    insert_rete_disjunction_coq_mt(state, next, get_current_state_step_no(state));
+	    insert_rete_disjunction_coq_single(state, next, get_current_state_step_no(state));
 	    return true;
 	  } else { // !state->net->treat_all_disjuncts
-	    bool rv = start_rete_disjunction_coq_mt(state, next);
+	    bool rv = start_rete_disjunction_coq_single(state, next);
 	    return rv;
 	  }
 	} else { // rhs is single conjunction
@@ -302,7 +273,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
  }
 
 /**
-   Auxiliary function called from (insert|start)_rete_net_disjunction_coq_mt
+   Auxiliary function called from (insert|start)_rete_net_disjunction_coq_single
 **/
 rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* con, substitution* sub, unsigned int branch_no){
   rete_net_state* copy_state = split_rete_state(state, branch_no);
@@ -316,9 +287,9 @@ rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* c
 
    The disj_ri_stack_mutex MUST NOT be locked when this function is called.
 
-   If net->treat_all_disjuncts is false, the first branch has already been run by start_rete_disjunction_coq_mt below.
+   If net->treat_all_disjuncts is false, the first branch has already been run by start_rete_disjunction_coq_single below.
 **/
-void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, unsigned int step){
+void insert_rete_disjunction_coq_single(rete_net_state* state, rule_instance* next, unsigned int step){
   unsigned int i;
   assert(state->net->treat_all_disjuncts || state->branches[0]->finished);
 
@@ -431,11 +402,11 @@ bool thread_runner_single_step(void){
 #endif
   
   if(next == NULL){
-    rp_val = run_prover_rete_coq_mt(state);
+    rp_val = run_prover_rete_coq_single(state);
   } else {
     assert(!state->net->treat_all_disjuncts && state->branches[0]->finished);
     rp_val = true;
-    insert_rete_disjunction_coq_mt(state, next, step);
+    insert_rete_disjunction_coq_single(state, next, step);
   }
 
 #ifdef HAVE_PTHREAD
@@ -513,16 +484,16 @@ void thread_manager(int n_threads){
 #endif
 
 /**
-   Called from run_prover_rete_coq_mt when meeting a disjunction and net->treat_all_disjuncts is false
+   Called from run_prover_rete_coq_single when meeting a disjunction and net->treat_all_disjuncts is false
    Runs the first branch. 
    The remaining branches are then treated later, in 
-   insert_rete_disjunction_coq_mt, when we know if the disjunction 
+   insert_rete_disjunction_coq_single, when we know if the disjunction 
    needs to  be treated.
 
    Puts the disjunction on the stack. 
 
 **/
-bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
+bool start_rete_disjunction_coq_single(rete_net_state* state, rule_instance* next){
   const axiom* rule;
   unsigned int i;
   unsigned int step;
@@ -551,7 +522,7 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   pthread_mutex_unlock(disj_ri_stack_mutex);
 #endif
 
-  rp_val  = run_prover_rete_coq_mt(state->branches[0]);
+  rp_val  = run_prover_rete_coq_single(state->branches[0]);
   if(!rp_val)
     return false;
 
@@ -565,7 +536,7 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
    Writes the coq proof after the prover is done.
    Used by the multithreaded version
 **/
-void write_mt_coq_proof(rete_net_state* state){
+void write_single_coq_proof(rete_net_state* state){
   FILE* coq_fp = get_coq_fdes();
   unsigned int n_branches = state->end_of_branch->rule->rhs->n_args;
   unsigned int step = get_current_state_step_no(state);
@@ -590,7 +561,7 @@ void write_mt_coq_proof(rete_net_state* state){
       assert(state != state->branches[i]);
       if(i > 0)
 	write_disj_proof_start(state->end_of_branch, step, i);
-      write_mt_coq_proof(state->branches[i]);
+      write_single_coq_proof(state->branches[i]);
     }
     fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
     write_premiss_proof(state->end_of_branch, step, history);
@@ -677,7 +648,7 @@ unsigned int prover(const rete_net* rete, bool multithread){
     thread_runner(NULL);
 
   if(foundproof && rete->coq){
-    write_mt_coq_proof(state);
+    write_single_coq_proof(state);
     end_proof_coq_writer(rete->th);
   }
   retval = get_latest_global_step_no(state);
