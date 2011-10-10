@@ -49,8 +49,10 @@ void split_fact_set(fact_set*);
 
 void delete_fact_set(fact_set*);
 
+void insert_state_fact_set(fact_set**, const atom*, unsigned int step);
 fact_set* insert_in_fact_set(fact_set*, const atom*, unsigned int);
 
+void print_state_fact_set(fact_set**, FILE*, unsigned int n_predicates);
 fact_set* print_fact_set(fact_set*, FILE*);
 bool is_in_fact_set(const fact_set*, const atom*);
 bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub);

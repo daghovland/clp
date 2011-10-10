@@ -1,4 +1,4 @@
-/* constants.h
+/* rule_queue_state.h
 
    Copyright 2011 
 
@@ -18,32 +18,20 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+#ifndef __INCLUDED_RULE_QUEUE_STATE_H
+#define __INCLUDED_RULE_QUEUE_STATE_H
 
+#include "rete_state_struct.h"
+#include "rete_state_single_struct.h"
 /**
-   Used by parser and the rete states to keep track of constants
+   An interface for the argument to choose_next_instance in strategy.c
 **/
 
-#ifndef __INCLUDE_CONSTANTS_H
-#define __INCLUDE_CONSTANTS_H
 
-#include "common.h"
-#include "theory.h"
-#include "fresh_constants.h"
+typedef union rule_queue_state_t {
+  rete_net_state* state;
+  rete_state_single* single;
+} rule_queue_state;
+	
 
-/**
-   Used by the rete state to keep track of the constants
-**/
-typedef struct constants_t {
-  fresh_const_counter fresh;
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-} constants;
-
-const char* parser_new_constant(theory*, const char*);
-void print_coq_constants(const theory*,FILE* stream);
-constants init_constants(size_t);
-void destroy_constants(constants*);
-constants copy_constants(constants*);
-void insert_constant_name(constants* , const char*);
 #endif

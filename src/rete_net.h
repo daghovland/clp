@@ -18,23 +18,14 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-#ifndef __INCLUDED_RETE_NET
-#define __INCLUDED_RETE_NET
+#ifndef __INCLUDED_RETE_NET_H
+#define __INCLUDED_RETE_NET_H
 
-#include "predicate.h"
-#include "term.h"
-#include "atom.h"
-#include "conjunction.h"
-#include "disjunction.h"
-#include "axiom.h"
+#include "common.h"
 #include "theory.h"
-#include "rule_queue.h"
-#include "rule_instance_stack.h"
-#include "fresh_constants.h"
-#include "fact_set.h"
-#include "strategy.h"
 #include "rete_node.h"
-#include "sub_alpha_queue.h"
+#include "strategy.h"
+
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif

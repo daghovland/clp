@@ -1,4 +1,4 @@
-/* rete_state.h
+/* rete_state_single_struct.h
 
    Copyright 2011 
 
@@ -18,24 +18,37 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-#ifndef __INCLUDED_RETE_STATE_H
-#define __INCLUDED_RETE_STATE_H
+#ifndef __INCLUDED_RETE_STATE_SINGLE_STRUCT_H
+#define __INCLUDED_RETE_STATE_SINGLE_STRUCT_H
 
 #include "common.h"
-#include "rete_state_struct.h"
 #include "rete_net.h"
 #include "constants.h"
-#include "substitution.h"
-#include "substitution_memory.h"
-#include "rule_queue_state.h"
+#include "substitution_state_store.h"
+#include "rule_queue_single.h"
 
-// In rete_state.c
+/**
+   This version of a rete state is intended for a prover without or-parallellism, but
+   with parallellism in the insertion into the rule queues
+**/
+typedef struct rete_state_single_t {
+  substitution_store * subs;
+  rule_queue_single * rule_queue;
+  const rete_net* net;
+  fresh_const_counter fresh;  
+  constants constants;
+  bool verbose;
+  fact_set ** factset;
+  bool finished;
+} rete_state_single;
 
-void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child);
-bool conjunction_true_in_fact_set(rete_net_state* state, const conjunction* con, substitution* sub);
-bool disjunction_true_in_fact_set(rete_net_state* state, const disjunction* dis, substitution* sub);
-bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub);
 
-rule_instance* choose_next_instance_state(rete_net_state*);
+/**
+   Stores information needed for restoring the rete state at a disjunction/splitting point
+**/
+typedef struct rete_state_backup_t {
+  rule_queue_single_backup * rq_backups;
+  substitution_store_backup * sub_backups;
+} rete_state_backup;
 
 #endif

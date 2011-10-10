@@ -44,10 +44,16 @@ typedef struct substitution_store_t {
   unsigned int n_subst;
 } substitution_store;
 
-
+typedef struct substitution_store_backup_t {
+  unsigned int n_subst;
+} substitution_store_backup;
 
 substitution_store init_state_subst_store(substitution_size_info);
 void destroy_state_subst_store(substitution_store*);
 unsigned int alloc_substitution(substitution_store*, substitution_size_info);
 substitution* get_substitution(unsigned int, substitution_store*, substitution_size_info);
+
+substitution_store_backup backup_substitution_store(substitution_store*);
+void restore_substitution_store(substitution_store*, substitution_store_backup);
+void destroy_substitution_backup(substitution_store_backup);
 #endif

@@ -21,9 +21,8 @@
 #ifndef __INCLUDED_FRESH_CONSTANTS
 #define __INCLUDED_FRESH_CONSTANTS
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include "common.h"
+
 
 /**
   This structure is accessed and shared from all threads

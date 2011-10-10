@@ -1,4 +1,4 @@
-/* constants.h
+/* rule_instance_single.h
 
    Copyright 2011 
 
@@ -18,32 +18,19 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+#ifndef __INCLUDED_RULE_INSTANCE_SINGLE_H
+#define __INCLUDED_RULE_INSTANCE_SINGLE_H
 
-/**
-   Used by parser and the rete states to keep track of constants
-**/
+#include "substitution_struct.h"
+#include "axiom.h"
 
-#ifndef __INCLUDE_CONSTANTS_H
-#define __INCLUDE_CONSTANTS_H
+typedef struct rule_instance_single_t {
+  unsigned int timestamp;
+  const axiom * rule;
+  bool used_in_proof;
+  substitution substitution;
+  unsigned int sub_ts[];
+} rule_instance_single;
 
-#include "common.h"
-#include "theory.h"
-#include "fresh_constants.h"
 
-/**
-   Used by the rete state to keep track of the constants
-**/
-typedef struct constants_t {
-  fresh_const_counter fresh;
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-} constants;
-
-const char* parser_new_constant(theory*, const char*);
-void print_coq_constants(const theory*,FILE* stream);
-constants init_constants(size_t);
-void destroy_constants(constants*);
-constants copy_constants(constants*);
-void insert_constant_name(constants* , const char*);
 #endif

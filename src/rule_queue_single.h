@@ -21,26 +21,16 @@
 #ifndef __INCLUDED_RULE_QUEUE_SINGLE_H
 #define __INCLUDED_RULE_QUEUE_SINGLE_H
 
-#include "substitution_struct.h"
-#include "rule_queue.h"
-
-typedef struct rule_instance_single_t {
-  unsigned int timestamp;
-  const axiom * rule;
-  bool used_in_proof;
-  substitution substitution;
-  unsigned int sub_ts[];
-} rule_instance_single;
+#include "rule_instance_single.h"
+#include "substitution_size_info.h"
 
 /**
    The queue of rule instances to be treated
    Called "conflict set" by Forgy
 
-   Is a fifo, implemented by an array that loops around the end
+   Is a fifo, implemented by an array
 
    first is the index of the oldest element, while end is the next free index
-
-   Note that you can have first > end !
 
    previous_appl is used by the strategy, and indicates the
    timestamp of the previous time instances were removed from the queue. 
@@ -65,7 +55,7 @@ typedef struct rule_queue_single_backup_t {
 } rule_queue_single_backup;
 
 rule_queue_single* initialize_queue_single(substitution_size_info);
-insert_rule_instance(rule_queue_single*, axiom*, substitution*);
+void insert_rule_instance_single(rule_queue_single*, axiom*, substitution*);
 rule_instance_single* pop_rule_queue_single(rule_queue_single*);
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
 void restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);

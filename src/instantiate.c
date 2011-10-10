@@ -26,6 +26,8 @@
 #include "common.h"
 #include "rete.h"
 #include "substitution.h"
+#include "instantiate.h"
+#include "constants.h"
 
 
 
@@ -150,15 +152,34 @@ void delete_instantiated_atom(const atom* orig, atom* copy){
     free(copy);
   }
 }
+
+
+/**
+   The fresh constants
+**/
+const term* get_fresh_constant(variable* var, constants* constants){
+  char* name;
+  const term* t;
+  assert(var->var_no < state->net->th->vars->n_vars);
+  assert(state->fresh != NULL);
+  unsigned int const_no = next_fresh_const_no(constants->fresh, var->var_no);
+  name = calloc_tester(sizeof(char), strlen(var->name) + 20);
+  sprintf(name, "%s_%i", var->name, const_no);
+  t = prover_create_constant_term(name);
+  insert_constant_name(constants, name);
+  return t;
+}
+
+
 /**
    Extends the substitution with fresh constants for the
    existentially bound variables
 **/
-void fresh_exist_constants(rete_net_state* state, const conjunction* con, substitution* sub){
+void fresh_exist_constants(const conjunction* con, substitution* sub, constants* constants){
   freevars_iter exist_iter = get_freevars_iter(con->bound_vars);
   while(has_next_freevars_iter(&exist_iter)){
     variable* var = next_freevars_iter(&exist_iter);
-    const term* t =  get_fresh_constant(state, var);
+    const term* t =  get_fresh_constant(var, constants);
     insert_substitution_value(sub, var, t);
   }
 }

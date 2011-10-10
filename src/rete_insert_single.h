@@ -1,4 +1,4 @@
-/* constants.h
+/* rete_insert_single.h
 
    Copyright 2011 
 
@@ -18,32 +18,12 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-
 /**
-   Used by parser and the rete states to keep track of constants
+   Code for updating state of rete network
 **/
-
-#ifndef __INCLUDE_CONSTANTS_H
-#define __INCLUDE_CONSTANTS_H
-
 #include "common.h"
-#include "theory.h"
-#include "fresh_constants.h"
+#include "rete_state_single.h"
+#include "atom.h"
 
-/**
-   Used by the rete state to keep track of the constants
-**/
-typedef struct constants_t {
-  fresh_const_counter fresh;
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-} constants;
+void insert_rete_net_fact_mt(rete_state_single* state, const atom* fact);
 
-const char* parser_new_constant(theory*, const char*);
-void print_coq_constants(const theory*,FILE* stream);
-constants init_constants(size_t);
-void destroy_constants(constants*);
-constants copy_constants(constants*);
-void insert_constant_name(constants* , const char*);
-#endif

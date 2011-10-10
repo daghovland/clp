@@ -113,7 +113,7 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
       return true;
     }
     //delete_rule_instance(pop_axiom_rule_queue(state, axiom_no));
-    pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
+    pop_axiom_rule_queue(state, axiom_no);
   }
   return false;
 }
@@ -130,7 +130,8 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
   contained substitution should be deleted.
 */
 
-bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
+bool axiom_has_new_instance(rule_queue_state rqs, size_t axiom_no){
+  rete_net_state * state = rqs.state;
   if(state->net->factset_lhs)
     return !is_empty_axiom_rule_queue(state, axiom_no);
   else {
@@ -166,8 +167,9 @@ bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state){
 /**
    Necessary for the efficiency of the lazy version of rete
 **/
-bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state){
-   if(state->net->factset_lhs)
+bool axiom_may_have_new_instance(rule_queue_state rqs, size_t axiom_no){
+  rete_net_state* state = rqs.state;
+  if(state->net->factset_lhs)
      return !is_empty_axiom_rule_queue(state, axiom_no);
    return( (!is_empty_axiom_rule_queue(state, axiom_no)) || (state->sub_alpha_queues[axiom_no] != state->sub_alpha_queue_roots[axiom_no]));
 }
@@ -178,7 +180,8 @@ bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state){
 
    This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
 **/
-unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state){
+unsigned int rule_queue_possible_age(rule_queue_state rqs, size_t axiom_no){
+  rete_net_state* state = rqs.state;
   if(!is_empty_axiom_rule_queue(state, axiom_no)){
     rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
     return ri->substitution->timestamps[0];

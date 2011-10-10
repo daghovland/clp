@@ -24,11 +24,13 @@
 #include "strategy.h"
 #include "fresh_constants.h"
 #include "rule_queue.h"
-#include "rete.h"
 #include "proof_writer.h"
 #include "substitution.h"
 #include "substitution_memory.h"
 #include "rule_instance_state_stack.h"
+#include "instantiate.h"
+#include "rete.h"
+#include "rete_state.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -155,7 +157,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
   // At the moment the substitution is copied, when the instance is popped, 
   // so we know it is unique. This could be change if memory becomes an issue.
   if(!state->net->existdom)
-    fresh_exist_constants(state, con, sub);
+    fresh_exist_constants(con, sub, & state->constants);
   
   assert(test_is_conj_instantiation(con, sub));
   
@@ -172,7 +174,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
 #endif
     
     if(state->net->has_factset){
-      insert_state_fact_set(state, ground);
+      insert_state_fact_set(state->factset, ground, get_current_state_step_no(state));
     }
     if(!state->net->factset_lhs && state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
@@ -188,7 +190,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
 bool return_found_model(rete_net_state* state){
   fprintf(stdout, "Found a model of the theory \n");
   if(state->net->has_factset)
-    print_state_fact_set(state, stdout);
+    print_state_fact_set(state->factset, stdout, state->net->th->n_predicates);
   else
     fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
   foundproof = false;
@@ -256,7 +258,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
     while(true){
       unsigned int i, ts;
       
-      rule_instance* next = choose_next_instance(state, state->net->strat);
+      rule_instance* next = choose_next_instance_state(state);
       if(next == NULL)
 	return return_found_model(state);
       
@@ -658,7 +660,7 @@ unsigned int prover(const rete_net* rete, bool multithread){
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
-    insert_state_fact_set(state, true_atom);
+    insert_state_fact_set(state->factset, true_atom, get_current_state_step_no(state));
 
   if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact(state, true_atom);

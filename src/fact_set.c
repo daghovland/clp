@@ -51,6 +51,16 @@ void split_fact_set(fact_set* f){
     f->split_point = true;
 }
 
+/**
+   Inserts a fact into the fact set
+**/
+
+void insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step){
+  unsigned int pred_no = a->pred->pred_no;
+  f[pred_no] = insert_in_fact_set(f[pred_no], a, step);
+}
+
+
 fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts){
   fact_set* new;
   if(is_in_fact_set(f, a))
@@ -62,6 +72,23 @@ fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts){
   new->timestamp = ts;
   return new;
 }
+
+
+
+/**
+   Prints all facts currently in the "factset"
+**/
+void print_state_fact_set(fact_set ** fs, FILE* stream, unsigned int n_predicates){
+  unsigned int i;
+  fprintf(stream, "{");
+
+  for(i = 0; i < n_predicates; i++){
+    if(fs[i] != NULL)
+      print_fact_set(fs[i], stream);
+  }
+  fprintf(stream, "}\n");
+}
+
 
 fact_set* print_fact_set(fact_set* fs, FILE* f){
   while(fs != NULL){

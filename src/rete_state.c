@@ -24,6 +24,28 @@
 #include <string.h>
 
 /**
+   Wrappers for choose_next_instance in strategy.c
+**/
+rule_instance* choose_next_instance_state(rete_net_state* state){
+  rule_queue_state rqs;
+  rqs.state = state;
+  return choose_next_instance(rqs
+			      , state->net
+			      , state->net->strat
+			      , get_current_state_step_no(state)
+			      , state->factset
+			      , is_empty_axiom_rule_queue_state
+			      , peek_axiom_rule_queue_state
+			      , axiom_has_new_instance
+			      , rule_queue_possible_age
+			      , axiom_may_have_new_instance
+			      , pop_axiom_rule_queue_state
+			      , add_rule_to_queue_state
+			      , axiom_queue_previous_application
+			      );
+}
+
+/**
    Called after the rete net is created.
    Initializes the substition lists and queues in the state
 **/
@@ -49,8 +71,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   }
 
   state->net = net;
-  state->fresh = init_fresh_const(net->th->vars->n_vars);
-  assert(state->fresh != NULL);
+  
 
   for(i = 0; i < net->th->n_axioms; i++){
     state->axiom_inst_queue[i] = initialize_queue();
@@ -61,15 +82,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->global_step_counter = malloc_tester(sizeof(unsigned int));
   * state->global_step_counter = 0;
   state->proof_branch_id = "";
-
-  state->size_domain = 2;
-  state->domain = calloc_tester(state->size_domain, sizeof(term*));
-  state->n_domain = 0;
-
-  state->size_constants = 2;
-  state->constants = calloc_tester(state->size_constants, sizeof(char*));
-  state->n_constants = 0;
-  
+ 
   if(state->net->has_factset){
     state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
     state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
@@ -78,7 +91,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
       state->prev_factset[i] = NULL;
     }
   }
-
+  state->constants = init_constants(net->th->vars->n_vars);
   state->elim_stack = initialize_ri_stack();
   state->finished = false;
   state->parent = NULL;
@@ -106,8 +119,6 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   free(state->sub_alpha_queue_roots);
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
-  free(state->domain);
-  free(state->constants);
   delete_ri_stack(state->elim_stack);
 
   if(state->net->has_factset){
@@ -117,7 +128,7 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   }
 
   //  destroy_substitution_memory(& state->local_subst_mem);
-
+  destroy_constants(& state->constants);
   free(state);
 }
 
@@ -138,8 +149,6 @@ void delete_full_rete_state(rete_net_state* state){
   free(state->sub_alpha_queue_roots);
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
-  free(state->domain);
-  free(state->constants);
   free(state->global_step_counter);
   delete_ri_stack(state->elim_stack);
 
@@ -150,6 +159,7 @@ void delete_full_rete_state(rete_net_state* state){
   }
   // destroy_substitution_memory(& state->local_subst_mem);
   //destroy_substitution_memory(state->global_subst_mem);
+  destroy_constants(& state->constants);
   free(state);
 }
 
@@ -192,14 +202,7 @@ rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
     }
   }
 
-  assert(copy->n_domain == orig->n_domain);
-  copy->domain = calloc_tester(orig->size_domain, sizeof(term*));
-  memcpy(copy->domain, orig->domain, orig->size_domain * sizeof(term*));
-
-
-  assert(copy->n_constants == orig->n_constants);
-  copy->constants = calloc_tester(orig->size_constants, sizeof(char*));
-  memcpy(copy->constants, orig->constants, orig->size_constants * sizeof(char*));
+  copy->constants = copy_constants(& orig->constants);
 
   for(i = 0; i < orig->net->th->n_axioms; i++)
     copy->axiom_inst_queue[i] = copy_rule_queue(orig->axiom_inst_queue[i]);
@@ -245,32 +248,6 @@ void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child){
   parent->step_no = child->step_no;
   parent->cursteps = child->cursteps;
   
-}
-/**
-   Inserts a fact into the fact set
-**/
-
-void insert_state_fact_set(rete_net_state* s, const atom* a){
-  unsigned int pred_no = a->pred->pred_no;
-  assert(s->net->has_factset);
-  assert(s->factset[pred_no] == NULL || s->factset[pred_no]->fact->pred->pred_no == pred_no);
-  s->factset[pred_no] = insert_in_fact_set(s->factset[pred_no], a, get_current_state_step_no(s));
-}
-
-
-/**
-   Prints all facts currently in the "factset"
-**/
-void print_state_fact_set(rete_net_state* state, FILE* stream){
-  unsigned int i;
-  assert(state->net->has_factset);
-  fprintf(stream, "{");
-
-  for(i = 0; i < state->net->th->n_predicates; i++){
-    if(state->factset[i] != NULL)
-      print_fact_set(state->factset[i], stream);
-  }
-  fprintf(stream, "}\n");
 }
 
 /**
@@ -381,75 +358,7 @@ void free_state_sub_list_iter(rete_net_state* state, size_t sub_no, sub_list_ite
 #endif
   free_sub_list_iter(i);
 }
-
-/**
-   We keep track of all constants, so equality on constants can be decided by pointer equality
-**/
-void insert_constant_name(rete_net_state * state, const char* name){
-  unsigned int i;
-  assert(name != NULL && strlen(name) > 0);
-  for(i = 0; i < state->n_constants; i++){
-    assert(state->constants[i] != NULL);
-    if(strcmp(state->constants[i], name) == 0)
-      return;
-  }
-  state->n_constants++;
-  if(state->size_constants <= state->n_constants){
-    state->size_constants *= 2;
-    state->constants = realloc_tester(state->constants, state->size_constants * sizeof(char*));
-  }
-  state->constants[state->n_constants - 1] = malloc_tester(strlen(name)+2);
-  strcpy((char*) state->constants[state->n_constants - 1], name);
-  return;
-}
-
-constants_iter get_constants_iter(rete_net_state* state){
-  return 0;
-}
-
-bool constants_iter_has_next(rete_net_state* state, constants_iter* iter){
-  return *iter < state->n_constants;
-}
-
-const char* constants_iter_get_next(rete_net_state* state, constants_iter *iter){
-  assert(constants_iter_has_next(state, iter));
-  return state->constants[*iter++];
-}
-  
-
-/**
-   The domain is governed by the special predicate dom
-**/
-void insert_domain_elem(rete_net_state * state, const term* trm){
-  unsigned int i;
-  assert(test_term(trm));
-  for(i = 0; i < state->n_domain; i++){
-    assert(state->domain[i] != NULL);
-    if(equal_terms(state->domain[i], trm))
-      return;
-  }
-  state->n_domain++;
-  if(state->size_domain <= state->n_domain){
-    state->size_domain *= 2;
-    state->domain = realloc_tester(state->domain, state->size_domain * sizeof(char*));
-  }
-  state->domain[state->n_domain - 1] = trm;
-  return;
-}
-
-domain_iter get_domain_iter(rete_net_state* state){
-  return 0;
-}
-
-bool domain_iter_has_next(rete_net_state* state, domain_iter* iter){
-  return *iter < state->n_domain;
-}
-
-const term* domain_iter_get_next(rete_net_state* state, domain_iter *iter){
-  assert(domain_iter_has_next(state, iter));
-  return state->domain[*iter++];
-}
-  
+ 
 
 /**
    Registers increase in proof step counter
@@ -482,23 +391,6 @@ unsigned int get_current_state_step_no(const rete_net_state* s){
 
 unsigned int get_latest_global_step_no(const rete_net_state* s){
   return * (s->global_step_counter);
-}
-
-/**
-   The fresh constants
-**/
-const term* get_fresh_constant(rete_net_state* state, variable* var){
-  char* name;
-  const term* t;
-  assert(var->var_no < state->net->th->vars->n_vars);
-  assert(state->fresh != NULL);
-  unsigned int const_no = next_fresh_const_no(state->fresh, var->var_no);
-  name = calloc_tester(sizeof(char), strlen(var->name) + 20);
-  sprintf(name, "%s_%i", var->name, const_no);
-  t = prover_create_constant_term(name);
-  insert_constant_name(state, name);
-  insert_domain_elem(state, t);
-  return t;
 }
 
 /**

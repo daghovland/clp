@@ -35,7 +35,9 @@
 #include "strategy.h"
 #include "rete_node.h"
 #include "sub_alpha_queue.h"
-#include "rete_state.h"
+#include "rete_state_struct.h"
+#include "rule_queue_state.h"
+#include "strategy.h"
 
 typedef unsigned int domain_iter;
 typedef unsigned int constants_iter;
@@ -50,6 +52,8 @@ const char* constants_iter_get_next(rete_net_state*, constants_iter*);
 
 // Called from prover.c
 void insert_rete_net_fact(rete_net_state*, const atom*);
+
+
 
 //Called from lazy_rule_queue.c
 void insert_rete_alpha_fact_children(rete_net_state*, const rete_node*, const atom*, substitution*, bool);
@@ -85,9 +89,9 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig);
 void delete_full_rete_state(rete_net_state* state);
 
 // In sub_alpha_queue.c, called from strategy.c
-bool axiom_has_new_instance(size_t axiom_no, rete_net_state * state);
-bool axiom_may_have_new_instance(size_t axiom_no, rete_net_state* state);
-unsigned int rule_queue_possible_age(size_t axiom_no, rete_net_state* state);
+bool axiom_has_new_instance(rule_queue_state, size_t);
+bool axiom_may_have_new_instance(rule_queue_state, size_t);
+unsigned int rule_queue_possible_age(rule_queue_state, size_t);
 
 sub_list_iter* get_state_sub_list_iter(rete_net_state*, size_t);
 void free_state_sub_list_iter(rete_net_state*, size_t, sub_list_iter*);
@@ -103,7 +107,20 @@ rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*,
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, size_t axiom_no);
 
 // Defined in strategy.c
-rule_instance* choose_next_instance(rete_net_state*, strategy);
+rule_instance* choose_next_instance(rule_queue_state
+				    , const rete_net*
+				    , strategy
+				    , unsigned int
+				    , fact_set **
+				    , bool (*) (rule_queue_state, size_t)
+				    , rule_instance* (*)(rule_queue_state, size_t)
+				    , bool (*has_new_instance)(rule_queue_state, size_t)
+				    , unsigned int (*possible_age)(rule_queue_state, size_t)
+				    , bool (*may_have)(rule_queue_state, size_t)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , void (*) (const axiom*, substitution*, rule_queue_state)
+				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    );
 
 void add_rete_child(rete_node* parent, const rete_node* new_child);
 
@@ -123,36 +140,29 @@ void print_dot_rete_net(const rete_net*, FILE* );
 void print_state_new_facts(rete_net_state*, FILE*);
 void print_rete_node_type(const rete_node*, FILE*);
 
+// In rule_queue.c and sub_alpha_queue_c
 
-rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t, substitution_memory* store, substitution_size_info ssi);
-rule_instance* pop_youngest_axiom_rule_queue(rete_net_state*, size_t, substitution_memory* store, substitution_size_info ssi);
-rule_instance* peek_axiom_rule_queue(const rete_net_state*, size_t);
+unsigned int axiom_queue_previous_application(rule_queue_state, size_t);
+rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t);
+rule_instance* pop_axiom_rule_queue_state(rule_queue_state, size_t);
+rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state, size_t);
+rule_instance* peek_axiom_rule_queue_state(rule_queue_state, size_t);
+rule_instance* peek_axiom_rule_queue(rete_net_state*, size_t);
 void remove_rule_instance(rete_net_state*, const substitution*, size_t);
+void add_rule_to_queue_state(const axiom*, substitution*, rule_queue_state);
 void add_rule_to_queue(const axiom*, substitution*, rete_net_state*);
 bool is_empty_axiom_rule_queue(rete_net_state*, size_t);
+bool is_empty_axiom_rule_queue_state(rule_queue_state, size_t);
 
 const term* find_substitution(const substitution*, const variable*);
-
-// In instantiate.c
-atom* instantiate_atom(const atom*, const substitution*);
-void delete_instantiated_atom(const atom*, atom*);
-const term_list* instantiate_term_list(const term_list*, const substitution*);
-void delete_instantiated_term_list(const term_list*, term_list*);
-const term* instantiate_term(const term*, const substitution*);
-void delete_instantiated_term(const term*, term*);
-
-const term* get_fresh_constant(rete_net_state*, variable*);
 
 void print_rete_state(const rete_net_state*, FILE*);
 void print_dot_rete_state_net(const rete_net*, const rete_net_state*, FILE*);
 
 bool insert_substitution(rete_net_state*, size_t, substitution*, const freevars*);
 
-void insert_state_fact_set(rete_net_state*, const atom*);
-
 // in rete_state.c
 unsigned int get_current_state_step_no(const rete_net_state*);
 unsigned int get_latest_global_step_no(const rete_net_state*);
 bool proof_steps_limit(rete_net_state* s);
-void fresh_exist_constants(rete_net_state*, const conjunction*, substitution*);
 #endif

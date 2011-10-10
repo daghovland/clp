@@ -32,7 +32,7 @@
 // Used by normal_next_instance()
 #define RAND_RULE_WEIGHT 100
 #define  RAND_DIV (RAND_MAX / RAND_RULE_WEIGHT)
-
+		 
 
 /**
    This is where the strategy is chosen
@@ -45,9 +45,22 @@
    If no such rule is in the queue, there is a rotation based on
    state->next
 **/
-rule_instance* normal_next_instance(rete_net_state* state){
+rule_instance* normal_next_instance(rule_queue_state state
+				    , const rete_net* net
+				    , unsigned int step_no
+				    , fact_set ** factset
+				    , bool (*is_empty) (rule_queue_state, size_t)
+				    , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
+				    , bool (*has_new_instance)(rule_queue_state, size_t)
+				    , unsigned int (*possible_age)(rule_queue_state, size_t)
+				    , bool (*may_have)(rule_queue_state, size_t)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , void (*add_to_queue) (const axiom*, substitution*, rule_queue_state)
+				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    )
+{
   unsigned int i;
-  const theory* th = state->net->th;
+  const theory* th = net->th;
   bool has_definite = false;
   bool has_definite_non_splitting = false;
   bool has_non_splitting = false;
@@ -55,9 +68,9 @@ rule_instance* normal_next_instance(rete_net_state* state){
   bool may_have_next_rule = false;
   size_t definite_non_splitting_rule, definite_rule, non_splitting_rule;
   size_t lightest_rule = th->n_axioms;
-  unsigned int min_weight = 2 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
+  unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
-  unsigned int max_weight = 40 * get_current_state_step_no(state) * (1 + RAND_RULE_WEIGHT);
+  unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
   rule_instance* retval;
 
     
@@ -67,38 +80,38 @@ rule_instance* normal_next_instance(rete_net_state* state){
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);
     
-    if(state->net->factset_lhs){
+    if(net->factset_lhs){
       substitution* sub;
       bool found_new_instance = false;
-      if(rule->type == fact && !is_empty_axiom_rule_queue(state, axiom_no))
+      if(rule->type == fact && !is_empty(state, axiom_no))
 	continue;
-      while(!found_new_instance && !is_empty_axiom_rule_queue(state, axiom_no)){
-	rule_instance* ri = peek_axiom_rule_queue(state, axiom_no);
-	if(disjunction_true_in_fact_set(state, state->net->th->axioms[axiom_no]->rhs, ri->substitution))
-	  ri = pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
+      while(!found_new_instance && !is_empty(state, axiom_no)){
+	rule_instance* ri = peek_axiom(state, axiom_no);
+	if(disjunction_true_in_fact_set(factset, net->th->axioms[axiom_no]->rhs, ri->substitution))
+	  ri = pop_axiom(state, axiom_no);
 	else
 	  found_new_instance = true;
       }
       if(!found_new_instance){
-	if(axiom_false_in_fact_set(state, axiom_no, & sub))
-	  add_rule_to_queue(rule, sub, state);
+	if(false_in_fact_set(factset, axiom_no, & sub))
+	  add_to_queue(rule, sub, state);
 	else
 	  continue;
       }
     }
-    if(axiom_may_have_new_instance(axiom_no, state)){
-      unsigned int rule_previously_applied = state->axiom_inst_queue[i]->previous_appl;
+    if(may_have(state, axiom_no)){
+      unsigned int rule_previously_applied = previous_application(state, i);
       axiom_weights[axiom_no] = 
-	(rule_queue_possible_age(axiom_no, state) + rule_previously_applied) 
+	(possible_age(state, axiom_no) + rule_previously_applied) 
 	* rule->lhs->n_args 
 	* (1 + rand() / RAND_DIV);
       
       may_have_next_rule = true;
       
-      if( (rule->type == goal || rule->type == fact) && axiom_has_new_instance(axiom_no, state))
-	return pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
+      if( (rule->type == goal || rule->type == fact) && has_new_instance(state, axiom_no))
+	return pop_axiom(state, axiom_no);
       
-      if(!rule->is_existential && axiom_has_new_instance(axiom_no, state)){
+      if(!rule->is_existential && has_new_instance(state, axiom_no)){
 	has_definite = true;
 	definite_rule = axiom_no;
 	if(rule->rhs->n_args == 1){
@@ -127,15 +140,15 @@ rule_instance* normal_next_instance(rete_net_state* state){
   } // end for all axioms
 
   if(has_definite_non_splitting)
-    return pop_axiom_rule_queue(state, definite_non_splitting_rule, & state->local_subst_mem, state->net->th->sub_size_info);
+    return pop_axiom(state, definite_non_splitting_rule);
 
   if(has_definite)
-    return pop_axiom_rule_queue(state, definite_rule, & state->local_subst_mem, state->net->th->sub_size_info);
+    return pop_axiom(state, definite_rule);
 
   while(may_have_next_rule){
     assert(min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
-    if(may_have_next_rule && axiom_has_new_instance(lightest_rule, state))
-      return pop_axiom_rule_queue(state, lightest_rule, & state->local_subst_mem, state->net->th->sub_size_info);
+    if(may_have_next_rule && has_new_instance(state, lightest_rule))
+      return pop_axiom(state, lightest_rule);
     axiom_weights[lightest_rule] = max_weight;
     min_weight = max_weight;
     may_have_next_rule = false;
@@ -155,15 +168,20 @@ rule_instance* normal_next_instance(rete_net_state* state){
 /**
    This strategy chooser tries to emulate CL.pl
 **/
-rule_instance* clpl_next_instance(rete_net_state* state){
+rule_instance* clpl_next_instance(rule_queue_state state
+				  , const rete_net* net
+				  , bool (*has_new_instance)(rule_queue_state, size_t)
+				  , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				  )
+{
   unsigned int i;
-  const theory* th = state->net->th;
+  const theory* th = net->th;
   for(i = 0; i < th->n_axioms; i++){
     size_t axiom_no = th->axioms[i]->axiom_no;
     assert(i == axiom_no);
-    if(axiom_has_new_instance(axiom_no, state)){
+    if(has_new_instance(state, axiom_no)){
       rule_instance* retval;
-      retval = pop_axiom_rule_queue(state, axiom_no, & state->local_subst_mem, state->net->th->sub_size_info);
+      retval = pop_axiom(state, axiom_no);
       return retval;
     }
   } // end for i -- n_axioms
@@ -175,14 +193,29 @@ rule_instance* clpl_next_instance(rete_net_state* state){
 /**
    Returns next rule instance, or NULL if there is no more instances
 **/
-rule_instance* choose_next_instance(rete_net_state* state, strategy strat){
+rule_instance* choose_next_instance(rule_queue_state state
+				    , const rete_net* net
+				    , strategy strat
+				    , unsigned int step_no
+				    , fact_set ** factset
+				    , bool (*is_empty) (rule_queue_state, size_t)
+				    , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
+				    , bool (*has_new_instance)(rule_queue_state, size_t)
+				    , unsigned int (*possible_age)(rule_queue_state, size_t)
+				    , bool (*may_have)(rule_queue_state, size_t)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , void (*add_to_queue) (const axiom*, substitution*, rule_queue_state)
+				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    )
+{
   switch(strat){
   case clpl_strategy:
-    return clpl_next_instance(state);
+    return clpl_next_instance(state, net, has_new_instance, pop_axiom);
   case normal_strategy:
-    return normal_next_instance(state);
+    return normal_next_instance(state, net, step_no, factset, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
   default:
     fprintf(stderr, "Unknown strategy %i\n", strat);
     exit(EXIT_FAILURE);
   }
 }
+

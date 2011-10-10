@@ -49,7 +49,7 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi){
   return rq;
 }
 
-insert_rule_instance(rule_queue_single*, axiom*, substitution*){
+insert_rule_instance_single(rule_queue_single*, axiom*, substitution*){
 rule_instance_single* pop_rule_queue_single(rule_queue_single*);
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
 void restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);

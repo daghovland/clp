@@ -21,30 +21,15 @@
 #ifndef __INCLUDED_RETE_STATE_SINGLE
 #define __INCLUDED_RETE_STATE_SINGLE
 
-#include "rete_net.h"
-#include "substitution.h"
-#include "substitution_state_store.h"
+#include "strategy.h"
+#include "rete_state_single_struct.h"
+#include "rule_instance_single.h"
 
 
-/**
-   This version of a rete state is intended for a prover without or-parallellism, but
-   with parallellism in the insertion into the rule queues
-**/
-typedef struct rete_net_state_single_t {
-  substitution_state_store * subs;
-  rule_instance_store * rule_queue;
-  const rete_net* net;
-  fresh_const_counter fresh;  
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-  bool verbose;
-  rule_instance_stack* elim_stack;
-  fact_set ** factset;
-  bool finished;
-} rete_net_state;
-
-
+rule_instance_single* choose_next_instance_single(rete_state_single*);
+rete_state_backup * backup_rete_state(rete_state_single*);
+void destroy_rete_backup(rete_state_backup*);
+void restore_rete_state(rete_state_single*, rete_state_backup*);
 
 
 #endif
