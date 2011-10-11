@@ -77,10 +77,10 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 #endif
     
     if(state->net->has_factset){
-      insert_state_fact_set(state->factset, ground, get_state_step_no_single(state));
+      insert_state_fact_set(state->factset, ground, get_state_step_single(state));
     }
     if(!state->net->factset_lhs && state->net->use_beta_not)
-      insert_rete_net_fact_mt(state, ground, get_state_step_no_single(state));
+      insert_rete_net_fact_mt(state, ground, get_state_step_single(state));
     delete_instantiated_atom(con->args[i], ground);
   } // end for
 }
@@ -88,7 +88,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 /**
    Called from run_prover_rete_coq when not finding new instance
 **/
-bool return_found_model(rete_state_single* state){
+bool return_found_model_mt(rete_state_single* state){
   fprintf(stdout, "Found a model of the theory \n");
   if(state->net->has_factset)
     print_state_fact_set(state->factset, stdout, state->net->th->n_predicates);
@@ -102,8 +102,8 @@ bool return_found_model(rete_state_single* state){
    Called from run_prover_rete_coq when reaching max steps, as given with the 
    commandline option -m|--max=LIMIT
 **/
-bool return_reached_max_steps(rete_state_single* state, rule_instance_single* ri){
-  printf("Reached %i proof steps, higher than given maximum\n", get_state_step_no_single(state));
+bool return_reached_max_steps_mt(rete_state_single* state, rule_instance_single* ri){
+  printf("Reached %i proof steps, higher than given maximum\n", get_state_step_single(state));
   free(ri);
   foundproof = false;
   return false;
@@ -125,16 +125,16 @@ bool run_prover_single(rete_state_single* state){
       
       rule_instance_single* next = choose_next_instance_single(state);
       if(next == NULL)
-	return return_found_model(state);
+	return return_found_model_mt(state);
       
       
       bool incval = inc_proof_step_counter_single(state);
       if(!incval)
-	return return_reached_max_steps(state, next);
+	return return_reached_max_steps_mt(state, next);
       
       insert_rule_instance_history(state, next);
 
-      ts = get_state_step_no_single(state);
+      ts = get_state_step_single(state);
 
 
 
@@ -149,7 +149,7 @@ bool run_prover_single(rete_state_single* state){
 	  bool rv = start_rete_disjunction_coq_single(state, next, ts);
 	  return rv;
 	} else { // rhs is single conjunction
-	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
+	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->sub);
 	  //write_proof_node(state, next);
 	  //write_proof_edge(state, state);  
 	}
@@ -166,20 +166,20 @@ bool run_prover_single(rete_state_single* state){
 **/
 bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance_single* next, unsigned int step){
   unsigned int i;
-  rete_state_backup * backup = backup_rete_state(state);
+  rete_state_backup backup = backup_rete_state(state);
   for(i = 0; i < next->rule->rhs->n_args; i++){
     if(i > 0)
-      restore_rete_state(state, backup);
+      state = restore_rete_state(&backup);
     bool rv;
     conjunction *con = next->rule->rhs->args[i];
-    insert_rete_net_conjunction_single(state, con, sub);
+    insert_rete_net_conjunction_single(state, con, & next->sub);
     rv = run_prover_single(state);
     if(!rv)
       return false;
     if(!next->used_in_proof)
       break;
   }
-  destroy_rete_backup(backup);
+  destroy_rete_backup(&backup);
 
   return true;
 }
@@ -189,16 +189,14 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance_s
    The main prover function 
 **/
 unsigned int prover_single(const rete_net* rete, bool multithread){
-  rete_state_single* state = create_rete_state_single(rete, verbose);
+  rete_state_single * state = create_rete_state_single(rete, verbose);
   const theory* th = rete->th;
-
-  size_history = 5;
-  history = calloc_tester(size_history, sizeof(rule_instance_state*));
-
+  bool has_fact = false;
+  unsigned int i, retval;
+  atom * true_atom;
 
   srand(1000);
   
-  has_fact = false;
   for(i = 0; i < rete->th->n_axioms; i++){
     if(rete->th->axioms[i]->type == fact){
       has_fact = true;
@@ -212,7 +210,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
-    insert_state_fact_set(state, true_atom);
+    insert_state_fact_set(state->factset, true_atom, 0);
 
   if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact_mt(state, true_atom);
@@ -223,7 +221,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     write_single_coq_proof(state);
     end_proof_coq_writer(rete->th);
   }
-  retval = get_latest_global_step_no(state);
+  retval = get_state_step_single(state);
   delete_rete_state_single(state);
   
   if(foundproof)

@@ -1,4 +1,4 @@
-/* rete_state.c
+/* rete_state_single.c
 
    Copyright 2011 
 
@@ -20,6 +20,10 @@
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
 #include "common.h"
+#include "substitution_state_store.h"
+#include "rule_queue_single.h"
+#include "rete_state_single.h"
+#include "theory.h"
 #include "rete.h"
 #include <string.h>
 
@@ -27,557 +31,124 @@
    Called after the rete net is created.
    Initializes the substition lists and queues in the state
 **/
-rete_net_state* create_rete_state(const rete_net* net, bool verbose){
+rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   unsigned int i;
-  rete_net_state* state = malloc_tester(sizeof(rete_net_state) 
-					+ (net->th->n_axioms * sizeof(rule_queue*)));
-  state->subs = calloc_tester(sizeof(substitution_list*), net->n_subs);
+  rete_state_single* state = malloc_tester(sizeof(rete_state_single));
 
-  state->local_subst_mem = init_substitution_memory(net->th->sub_size_info);
-  state->global_subst_mem = malloc(sizeof(substitution_memory));
-  * state->global_subst_mem = init_substitution_memory(net->th->sub_size_info);
-					  
+  state->subs = calloc_tester(net->n_subs, sizeof(substitution_store));
+  for(i = 0; i < net->n_subs; i++)
+    state->subs[i] = init_state_subst_store(net->th->sub_size_info);
+
   state->verbose = verbose;
-  for(i = 0; i < net->n_subs; i++){
-    state->subs[i] = NULL;
-  }
-  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
-  state->sub_alpha_queue_roots = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
-  for(i = 0; i < net->th->n_axioms; i++){
-    state->sub_alpha_queues[i] = NULL;
-    state->sub_alpha_queue_roots[i] = NULL;
-  }
-
   state->net = net;
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
+  state->constants = init_constants(net->th->vars->n_vars);
+  state->step = 0;
 
-  for(i = 0; i < net->th->n_axioms; i++){
-    state->axiom_inst_queue[i] = initialize_queue();
-  }
-  state->step_no = 0;
-  state->cursteps = 0;
-  state->start_step_no = 0;
-  state->global_step_counter = malloc_tester(sizeof(unsigned int));
-  * state->global_step_counter = 0;
-  state->proof_branch_id = "";
-
-  state->size_domain = 2;
-  state->domain = calloc_tester(state->size_domain, sizeof(term*));
-  state->n_domain = 0;
-
-  state->size_constants = 2;
-  state->constants = calloc_tester(state->size_constants, sizeof(char*));
-  state->n_constants = 0;
+  state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
+  for(i = 0; i < net->th->n_axioms; i++)
+    state->rule_queues[i] = initialize_queue_single(net->th->sub_size_info);
   
   if(state->net->has_factset){
     state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
-    state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
-    for(i = 0; i < net->th->n_predicates; i++){
+      for(i = 0; i < net->th->n_predicates; i++){
       state->factset[i] = NULL;
-      state->prev_factset[i] = NULL;
-    }
+      }
   }
-
-  state->elim_stack = initialize_ri_stack();
+  
   state->finished = false;
-  state->parent = NULL;
+  state->step = 0;
   return state;
 }
 
-/**
-   Deletes "state" and much of the linked infromation.
-   Uses "orig", which _must_ be above state in the tree, 
-   to find out how much to delete.
 
-   Called during proof
-**/
-void delete_rete_state(rete_net_state* state, rete_net_state* orig){
-  unsigned int i;
-  for(i = 0; i < state->net->n_subs; i++){
-      delete_substitution_list_below(state->subs[i], orig->subs[i]);
-  }
-  free(state->subs);
-  for(i = 0; i < state->net->th->n_axioms; i++){
-    free(state->axiom_inst_queue[i]);
-    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], orig->sub_alpha_queues[i]);
-  }
-  free(state->sub_alpha_queues);
-  free(state->sub_alpha_queue_roots);
-  if(strlen(state->proof_branch_id) > 0)
-    free((char *) state->proof_branch_id);
-  free(state->domain);
-  free(state->constants);
-  delete_ri_stack(state->elim_stack);
-
-  if(state->net->has_factset){
-    for(i = 0; i < state->net->th->n_predicates; i++){
-      delete_fact_set_below(state->factset[i], orig->factset[i]);
-    }
-  }
-
-  //  destroy_substitution_memory(& state->local_subst_mem);
-
-  free(state);
+rule_instance_single* choose_next_instance_single(rete_state_single* state)
+{
+  rule_queue_state rqs;
+  rqs.single = state;
+  return (choose_next_instance(rqs
+			       , state->net
+			       , state->net->strat
+			       , get_state_step_single(state)
+			       , state->factset
+			       , is_empty_axiom_rule_queue_single
+			       , peek_axiom_rule_queue_single
+			       , axiom_has_new_instance_single
+			       , rule_queue_possible_age_single
+			       , axiom_may_have_new_instance_single
+			       , pop_axiom_rule_queue_single
+			       , add_rule_to_queue_single
+			       , axiom_queue_previous_application_single
+			       , get_rule_instance_single_subsitution
+			       )).single;
 }
+
+rete_state_backup backup_rete_state(rete_state_single* state){
+  rete_state_backup backup;
+  unsigned int i;
+  backup.sub_backups = calloc_tester(state->net->n_subs, sizeof(substitution_store_backup));
+  for(i = 0; i < state->net->n_subs; i++)
+    backup.sub_backups[i] = backup_substitution_store(& state->subs[i]);
+  backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    backup.rq_backups[i] = backup_rule_queue_single(state->rule_queues[i]);
+  backup.state = state;
+  return backup;
+}
+
+/**
+   All substructures of the backup are freed, but not
+   the backup itself, since this is assumed to be static in prover_single.c
+**/
+void destroy_rete_backup(rete_state_backup* backup){
+  unsigned int i;
+  for(i = 0; i < backup->state->net->n_subs; i++)
+    destroy_substitution_backup(backup->sub_backups[i]);
+  free(backup->sub_backups);
+  free(backup->rq_backups);
+}
+
+rete_state_single* restore_rete_state(rete_state_backup* backup){
+  unsigned int i;
+  for(i = 0; i < backup->state->net->n_subs; i++)
+    restore_substitution_store(& backup->state->subs[i], backup->sub_backups[i]);
+  for(i = 0; i < backup->state->net->th->n_axioms; i++)
+    backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
+  return backup->state;
+}
+
 
 /**
    Completely deletes rete state. Called at the end of prover() in prover.c
 **/
-void delete_full_rete_state(rete_net_state* state){
+void delete_rete_state_single(rete_state_single* state){
   unsigned int i;
   for(i = 0; i < state->net->n_subs; i++){
-      delete_substitution_list(state->subs[i]);
+    destroy_substitution_store(state->subs[i]);
   }
   free(state->subs);
   for(i = 0; i < state->net->th->n_axioms; i++){
-    delete_full_rule_queue(state->axiom_inst_queue[i]);
-    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], NULL);
+    delete_rule_queue_single(state->rule_queues[i]);
   }
-  free(state->sub_alpha_queues);
-  free(state->sub_alpha_queue_roots);
-  if(strlen(state->proof_branch_id) > 0)
-    free((char *) state->proof_branch_id);
-  free(state->domain);
-  free(state->constants);
-  free(state->global_step_counter);
-  delete_ri_stack(state->elim_stack);
+  free(state->rule_queues);
+  destroy_constants(& state->constants);
 
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++){
       delete_fact_set(state->factset[i]);
     }
   }
-  // destroy_substitution_memory(& state->local_subst_mem);
-  //destroy_substitution_memory(state->global_subst_mem);
+
   free(state);
 }
-
-/**
-   Copy "constructor"
-
-   Used when treating a disjunctive rule
-
-   size_t is the number of the branch, numbered from left to right, starting at 0
-**/
-rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
-  unsigned int i;
-  size_t orig_size = sizeof(rete_net_state) + orig->net->th->n_axioms * sizeof(rule_queue*);
-  size_t n_subs = orig->net->n_subs;
-  size_t n_axioms = orig->net->th->n_axioms;
-  size_t branch_id_len;
-
-  rete_net_state* copy = malloc_tester(orig_size);
-
-  memcpy(copy, orig, orig_size);
-  copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
-  memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
-  copy->local_subst_mem = init_substitution_memory(orig->net->th->sub_size_info);
-  if(orig->net->has_factset){
-    copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
-    copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
-    memcpy(copy->factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
-    memcpy(copy->prev_factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
-  }
-
   
-  copy->sub_alpha_queues = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
-  copy->sub_alpha_queue_roots = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
-  memcpy(copy->sub_alpha_queues, orig->sub_alpha_queues, sizeof(sub_alpha_queue*) * n_axioms);
-  memcpy(copy->sub_alpha_queue_roots, orig->sub_alpha_queue_roots, sizeof(sub_alpha_queue*) * n_axioms);
-  for(i = 0; i < n_axioms; i++){
-    if(copy->sub_alpha_queues[i] != NULL){
-      copy->sub_alpha_queues[i]->is_splitting_point = true;
-      assert(orig->sub_alpha_queues[i]->is_splitting_point);
-    }
-  }
-
-  assert(copy->n_domain == orig->n_domain);
-  copy->domain = calloc_tester(orig->size_domain, sizeof(term*));
-  memcpy(copy->domain, orig->domain, orig->size_domain * sizeof(term*));
-
-
-  assert(copy->n_constants == orig->n_constants);
-  copy->constants = calloc_tester(orig->size_constants, sizeof(char*));
-  memcpy(copy->constants, orig->constants, orig->size_constants * sizeof(char*));
-
-  for(i = 0; i < orig->net->th->n_axioms; i++)
-    copy->axiom_inst_queue[i] = copy_rule_queue(orig->axiom_inst_queue[i]);
-  
-  copy->step_no = 0;
-
-  branch_id_len = strlen(orig->proof_branch_id) + 20;
-  copy->proof_branch_id = malloc_tester(branch_id_len);
-  
-  if( snprintf((char *) copy->proof_branch_id, branch_id_len, "%s_%zi", orig->proof_branch_id, branch_no) < 0)
-    {
-      perror("Could not create new proof branch id\n");
-      exit(EXIT_FAILURE);
-    }
-  assert(strlen(copy->proof_branch_id) < branch_id_len);
-  assert(orig->global_step_counter == copy->global_step_counter);
-
-  copy->start_step_no = orig->cursteps;
-
-  copy->elim_stack = initialize_ri_stack();
-  copy->finished = false;
-  copy->parent = orig;
-  return copy;
-}
-
-/**
-   Called from prover.c when treating a disjunction which turns out not to be used. 
-   The information about the end point, and eliminations in the state "below" in the proof tree is
-   transferred to the state above
-
-   The endpoint of the parent is overwritten with that in the child
-
-   The step numbering is also transferred, since this is necessary for correct coq output.
-
-   The parent state cannot be used for anything else than printing output after this, as
-   the queues etc. are not correct anymore.
-**/
-void transfer_state_endpoint(rete_net_state* parent, rete_net_state* child){ 
-  parent->end_of_branch = child->end_of_branch;
-  add_ri_stack(parent->elim_stack, child->elim_stack);
-  parent->branches = child->branches;
-
-  parent->step_no = child->step_no;
-  parent->cursteps = child->cursteps;
-  
-}
-/**
-   Inserts a fact into the fact set
-**/
-
-void insert_state_fact_set(rete_net_state* s, const atom* a){
-  unsigned int pred_no = a->pred->pred_no;
-  assert(s->net->has_factset);
-  assert(s->factset[pred_no] == NULL || s->factset[pred_no]->fact->pred->pred_no == pred_no);
-  s->factset[pred_no] = insert_in_fact_set(s->factset[pred_no], a, get_current_state_step_no(s));
+unsigned int get_state_step_single(const rete_state_single* state){
+  return state->step;
 }
 
 
-/**
-   Prints all facts currently in the "factset"
-**/
-void print_state_fact_set(rete_net_state* state, FILE* stream){
-  unsigned int i;
-  assert(state->net->has_factset);
-  fprintf(stream, "{");
-
-  for(i = 0; i < state->net->th->n_predicates; i++){
-    if(state->factset[i] != NULL)
-      print_fact_set(state->factset[i], stream);
-  }
-  fprintf(stream, "}\n");
+bool inc_proof_step_counter_single(rete_state_single* state){
+  state->step ++;
+  return(state->net->maxsteps == 0 || state->step < state->net->maxsteps);
 }
-
-/**
-   For testing whether a conjunction with some substitutions already done, is true in the fact set
-
-   Note that sub is changed if it returns true.
-**/
-bool remaining_conjunction_true_in_fact_set(rete_net_state* state, const conjunction* con, unsigned int conjunct, substitution* sub){
-  const fact_set * fs;
-  if(conjunct >= con->n_args)
-    return true;
-  fs = state->factset[con->args[conjunct]->pred->pred_no];
-  while(fs != NULL){
-    substitution* sub2 = copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info);
-    if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2)){
-      if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
-	return true;
-      }
-    }
-    fs = fs->next;
-  }
-  return false;
-}
-
-/**
-   Returns true if the conjunction is true in the factset.
-   In that case, the given substitution is extended to such an instance.
-   sub must have been instantiated and later freed by the calling function.
-**/
-bool conjunction_true_in_fact_set(rete_net_state* state, const conjunction* con, substitution* sub){
-  return remaining_conjunction_true_in_fact_set(state, con, 0, sub);
-}
-
-bool disjunction_true_in_fact_set(rete_net_state* state, const disjunction* dis, substitution* sub){
-  int i;
-  for(i = 0; i < dis->n_args; i++){
-    if(conjunction_true_in_fact_set(state, dis->args[i], sub))
-      return true;
-  }
-  return false;
-}
-
-/**
-   returns true if the axiom has an instance such that the lhs is true 
-   in the factset, while the rhs is false. If this is indeed the case, 
-   then sub is instantiated with the corresponding substitution
-
-   The calling function must in that case free sub.
-**/
-bool remaining_axiom_false_in_fact_set(rete_net_state* state, 
-				       const axiom* axm, 
-				       size_t arg_no, 
-				       substitution** sub){
-  fact_set * fs;
-  size_t pred_no;
-  int rq;
-  if(arg_no >= axm->lhs->n_args)
-    return !disjunction_true_in_fact_set(state, axm->rhs, *sub);
-  pred_no = axm->lhs->args[arg_no]->pred->pred_no;
-  fs = state->factset[pred_no];
-  if(fs == NULL)
-    return false;
-
-  fs->prev = NULL;
-  while(fs->next != NULL){
-    fs->next->prev = fs;
-    fs = fs->next;
-  }
-  do{
-    substitution* sub2 = copy_substitution(*sub, & state->local_subst_mem, state->net->th->sub_size_info);
-    if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2)){
-      add_timestamp(sub2, get_fact_set_timestamp(fs), state->net->th->sub_size_info);
-      if(remaining_axiom_false_in_fact_set(state, axm, arg_no+1, &sub2)){
-	*sub = sub2;
-	return true;
-      }
-    }
-    fs = fs->prev;
-  } while (fs != NULL);
-  return false;
-}
-
-bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub){
-  substitution* sub2 = create_empty_substitution(state->net->th, & state->local_subst_mem);
-  
-  if(remaining_axiom_false_in_fact_set(state, state->net->th->axioms[axiom_no], 0, &sub2)){
-    *sub = sub2;
-    return true;
-  }
-  return false;
-}
-
-/**
-   All sub_list_iter _must_be freed with the according function below.
-   Otherwise the threaded version will deadlock
-**/
-   
-sub_list_iter* get_state_sub_list_iter(rete_net_state* state, size_t sub_no){
-#ifdef HAVE_PTHREAD
-  pthread_mutex_lock(& state->net->sub_mutexes[sub_no]);
-#endif
-  return get_sub_list_iter(state->subs[sub_no]);
-}
-
-void free_state_sub_list_iter(rete_net_state* state, size_t sub_no, sub_list_iter* i){
-#ifdef HAVE_PTHREAD
-  pthread_mutex_unlock(& state->net->sub_mutexes[sub_no]);
-#endif
-  free_sub_list_iter(i);
-}
-
-/**
-   We keep track of all constants, so equality on constants can be decided by pointer equality
-**/
-void insert_constant_name(rete_net_state * state, const char* name){
-  unsigned int i;
-  assert(name != NULL && strlen(name) > 0);
-  for(i = 0; i < state->n_constants; i++){
-    assert(state->constants[i] != NULL);
-    if(strcmp(state->constants[i], name) == 0)
-      return;
-  }
-  state->n_constants++;
-  if(state->size_constants <= state->n_constants){
-    state->size_constants *= 2;
-    state->constants = realloc_tester(state->constants, state->size_constants * sizeof(char*));
-  }
-  state->constants[state->n_constants - 1] = malloc_tester(strlen(name)+2);
-  strcpy((char*) state->constants[state->n_constants - 1], name);
-  return;
-}
-
-constants_iter get_constants_iter(rete_net_state* state){
-  return 0;
-}
-
-bool constants_iter_has_next(rete_net_state* state, constants_iter* iter){
-  return *iter < state->n_constants;
-}
-
-const char* constants_iter_get_next(rete_net_state* state, constants_iter *iter){
-  assert(constants_iter_has_next(state, iter));
-  return state->constants[*iter++];
-}
-  
-
-/**
-   The domain is governed by the special predicate dom
-**/
-void insert_domain_elem(rete_net_state * state, const term* trm){
-  unsigned int i;
-  assert(test_term(trm));
-  for(i = 0; i < state->n_domain; i++){
-    assert(state->domain[i] != NULL);
-    if(equal_terms(state->domain[i], trm))
-      return;
-  }
-  state->n_domain++;
-  if(state->size_domain <= state->n_domain){
-    state->size_domain *= 2;
-    state->domain = realloc_tester(state->domain, state->size_domain * sizeof(char*));
-  }
-  state->domain[state->n_domain - 1] = trm;
-  return;
-}
-
-domain_iter get_domain_iter(rete_net_state* state){
-  return 0;
-}
-
-bool domain_iter_has_next(rete_net_state* state, domain_iter* iter){
-  return *iter < state->n_domain;
-}
-
-const term* domain_iter_get_next(rete_net_state* state, domain_iter *iter){
-  assert(domain_iter_has_next(state, iter));
-  return state->domain[*iter++];
-}
-  
-
-/**
-   Registers increase in proof step counter
-
-   Returns false if maximum number of steps 
-
-   Also sets s->cursteps to the current step.
-   The latter value is used by proof_writer.c:write_proof_edge for coq proofs
-
-   s->cursteps is also used by get_global_step_no
-**/
-bool inc_proof_step_counter(rete_net_state* s){
-#ifdef __GNUC__
-  s->cursteps = __sync_add_and_fetch(s->global_step_counter, 1);
-#else
-  s->cursteps = * s->global_step_counter;
-  (* s->global_step_counter) ++;
-#endif
-  s->step_no ++;
-  return (s->net->maxsteps == 0 || s->cursteps < s->net->maxsteps);
-}
-
-bool proof_steps_limit(rete_net_state* s){
-  return (s->net->maxsteps == 0 || (* s->global_step_counter) < s->net->maxsteps);
-}
-
-unsigned int get_current_state_step_no(const rete_net_state* s){
-  return s->cursteps;
-}
-
-unsigned int get_latest_global_step_no(const rete_net_state* s){
-  return * (s->global_step_counter);
-}
-
-/**
-   The fresh constants
-**/
-const term* get_fresh_constant(rete_net_state* state, variable* var){
-  char* name;
-  const term* t;
-  assert(var->var_no < state->net->th->vars->n_vars);
-  assert(state->fresh != NULL);
-  unsigned int const_no = next_fresh_const_no(state->fresh, var->var_no);
-  name = calloc_tester(sizeof(char), strlen(var->name) + 20);
-  sprintf(name, "%s_%i", var->name, const_no);
-  t = prover_create_constant_term(name);
-  insert_constant_name(state, name);
-  insert_domain_elem(state, t);
-  return t;
-}
-
-/**
-   Printing the state
-**/
-void print_rete_state(const rete_net_state* state, FILE*  f){
-  unsigned int i;
-  fprintf(f, "State of RETE net\n");
-  for(i = 0; i < state->net->th->n_axioms; i++){
-    printf("Axiom %s ", state->net->th->axioms[i]->name);
-    print_rule_queue(state->axiom_inst_queue[i], f);
-  }
-  //  print_rule_queue(state->rule_queue, f);
-  fprintf(f, "\nBranch: %s, Step: %i", state->proof_branch_id,state->step_no);
-  fprintf(f, "\nSubstitution Lists:");
-  for(i = 0; i < state->net->n_subs; i++){
-    fprintf(f, "\n\t%i: ", i);
-    if(state->subs[i] != NULL)
-      print_substitution_list(state->subs[i], f);
-  }
-  fprintf(f, "\n-----------------------------\n");
-}
-
-
-void print_dot_rete_state_node(const rete_node* node, const rete_net_state* state, FILE* stream){
-  unsigned int i;
-  fprintf(stream, "n%li [label=\"", (unsigned long) node);
-  if(node->type == rule)
-    print_dot_axiom(node->val.rule.axm, stream);
-  else
-    print_rete_node_type(node, stream);
-  if(node->type == beta_and || node->type == beta_not){
-    fprintf(stream, "\\nStore a: {");
-    print_substitution_list(state->subs[node->val.beta.a_store_no], stream);
-    fprintf(stream, "}");
-    fprintf(stream, "\\nStore b: {");
-    print_substitution_list(state->subs[node->val.beta.b_store_no], stream);
-    fprintf(stream, "}");
-  }
-  fprintf(stream, "\"]\n");
-  for(i = 0; i < node->n_children; i++){
-    assert(node->children[i]->type != selector);
-    fprintf(stream, "n%li -> n%li [label=%s]\n", 
-	    (unsigned long) node, 
-	    (unsigned long) node->children[i], 
-	    (node->children[i]->left_parent == node) ? "left" : "right");
-    print_dot_rete_state_node(node->children[i], state, stream);
-  }
-}
-
-
-void print_dot_rete_state_net(const rete_net* net, const rete_net_state* state, FILE* stream){
-  unsigned int i;
-  fprintf(stream, "strict digraph RETESTATE {\n");
-  for(i = 0; i < net->n_selectors; i++)
-    print_dot_rete_state_node(& net->selectors[i], state, stream);
-  fprintf(stream, "}\n");
-}
-
-
-
-/**
-   Printing the facts that were inserted in this proof step
-**/
-void print_state_new_facts(rete_net_state* state, FILE* f){
-  int i;
-  assert(state->net->has_factset);
-  for(i = 0; i < state->net->th->n_predicates; i++){
-    fact_set* fs = state->factset[i];
-    fact_set* old = state->prev_factset[i];
-    bool first_iter = true;
-    while(fs != NULL && fs != old){
-      if(!first_iter)
-	fprintf(f, ", ");
-      first_iter = false;
-      print_fol_atom(fs->fact, f);
-      fs = fs->next;
-    }
-    state->prev_factset[i] = state->factset[i];
-  }
-}
-  

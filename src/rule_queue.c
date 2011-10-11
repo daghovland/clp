@@ -350,8 +350,10 @@ rule_instance* _peek_rule_queue(const rule_queue* rq){
   return rq->queue[rq->first];
 }
 
-rule_instance* peek_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
-  return peek_axiom_rule_queue(rqs.state, axiom_no);
+rule_instance_union peek_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
+  rule_instance_union riu;
+  riu.state = peek_axiom_rule_queue(rqs.state, axiom_no);
+  return riu;
 }
 
 rule_instance* peek_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
@@ -382,8 +384,14 @@ rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state rqs, size_t axiom_
   return retval;
 }
   
-rule_instance* pop_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
-  return pop_axiom_rule_queue(rqs.state, axiom_no);
+rule_instance_union pop_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
+  rule_instance_union riu;
+  riu.state = pop_axiom_rule_queue(rqs.state, axiom_no);
+  return riu;
+}
+
+substitution* get_rule_instance_subsitution(rule_instance_union ri){
+  return ri.state->substitution;
 }
 
 rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){

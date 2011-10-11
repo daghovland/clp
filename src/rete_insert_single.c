@@ -39,7 +39,7 @@ bool insert_rete_alpha_fact_single(rete_state_single*, const rete_node*,  const 
    The substitution list sub is either put into a store and a rule queue or deleted
    The calling function must not touch sub after calling this function
  **/
-void detract_rete_beta_sub_single(retestate_single* state, 
+void detract_rete_beta_sub_single(rete_state_single* state, 
 				  const rete_node* node,
 				  substitution* sub)
 {

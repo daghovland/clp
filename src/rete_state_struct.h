@@ -25,6 +25,7 @@
 #include "rete_net.h"
 #include "constants.h"
 #include "substitution_memory.h"
+#include "sub_alpha_queue.h"
 #include "rule_instance_stack.h"
 
 

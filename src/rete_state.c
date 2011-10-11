@@ -42,7 +42,8 @@ rule_instance* choose_next_instance_state(rete_net_state* state){
 			      , pop_axiom_rule_queue_state
 			      , add_rule_to_queue_state
 			      , axiom_queue_previous_application
-			      );
+			      , get_rule_instance_subsitution
+			      ).state;
 }
 
 /**

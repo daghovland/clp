@@ -18,6 +18,9 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+#ifndef __INCLUDED_RETE_INSERT_SINGLE_H
+#define __INCLUDED_RETE_INSERT_SINGLE_H
+
 /**
    Code for updating state of rete network
 **/
@@ -27,3 +30,4 @@
 
 void insert_rete_net_fact_mt(rete_state_single* state, const atom* fact);
 
+#endif

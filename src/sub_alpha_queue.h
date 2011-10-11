@@ -1,4 +1,4 @@
-/* substitution.h
+/* sub_alpha_queue.h
 
    Copyright 2011 
 
@@ -19,8 +19,8 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUB_ALPHA_QUEUE_H
-#define __INCLUDE_SUB_ALPHA_QUEUE_H
+#ifndef __INCLUDED_SUB_ALPHA_QUEUE_H
+#define __INCLUDED_SUB_ALPHA_QUEUE_H
 
 #include "substitution.h"
 #include "rete_node.h"

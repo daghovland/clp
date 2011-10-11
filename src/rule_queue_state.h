@@ -33,5 +33,10 @@ typedef union rule_queue_state_t {
   rete_state_single* single;
 } rule_queue_state;
 	
+typedef union rule_instance_union_t {
+  rule_instance* state;
+  rule_instance_single* single;
+} rule_instance_union;
+
 
 #endif

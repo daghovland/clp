@@ -28,9 +28,11 @@ typedef struct rule_instance_single_t {
   unsigned int timestamp;
   const axiom * rule;
   bool used_in_proof;
-  substitution substitution;
+  substitution sub;
   unsigned int sub_ts[];
 } rule_instance_single;
+
+
 
 
 #endif

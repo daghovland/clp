@@ -33,13 +33,14 @@
 **/
 typedef struct rete_state_single_t {
   substitution_store * subs;
-  rule_queue_single * rule_queue;
+  rule_queue_single ** rule_queues;
   const rete_net* net;
   fresh_const_counter fresh;  
   constants constants;
   bool verbose;
   fact_set ** factset;
   bool finished;
+  unsigned int step;
 } rete_state_single;
 
 
@@ -49,6 +50,7 @@ typedef struct rete_state_single_t {
 typedef struct rete_state_backup_t {
   rule_queue_single_backup * rq_backups;
   substitution_store_backup * sub_backups;
+  rete_state_single* state;
 } rete_state_backup;
 
 #endif

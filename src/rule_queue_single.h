@@ -37,12 +37,12 @@
    n_appl indicates how many times instances have been removed from the queue.
 **/
 typedef struct rule_queue_single_t {
-  size_t n_queue;
   size_t size_queue;
   size_t first;
   size_t end;
   unsigned int previous_appl;
   unsigned int n_appl;
+  substitution_size_info ssi;
   rule_instance_single queue[];
 } rule_queue_single;
 
@@ -55,9 +55,9 @@ typedef struct rule_queue_single_backup_t {
 } rule_queue_single_backup;
 
 rule_queue_single* initialize_queue_single(substitution_size_info);
-void insert_rule_instance_single(rule_queue_single*, axiom*, substitution*);
-rule_instance_single* pop_rule_queue_single(rule_queue_single*);
+rule_queue_single* insert_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int);
+const rule_instance_single* pop_rule_queue_single(rule_queue_single**);
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
-void restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
+rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
 
 #endif
