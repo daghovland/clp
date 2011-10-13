@@ -24,7 +24,7 @@
 #include "common.h"
 #include "rete_net.h"
 #include "constants.h"
-#include "substitution_memory.h"
+#include "substitution_store_mt.h"
 #include "sub_alpha_queue.h"
 #include "rule_instance_stack.h"
 
@@ -65,8 +65,8 @@
 typedef struct rete_net_state_t {
   const char* proof_branch_id;
   unsigned int step_no;
-  substitution_memory local_subst_mem;
-  substitution_memory* global_subst_mem;
+  substitution_store_mt local_subst_mem;
+  substitution_store_mt* global_subst_mem;
   substitution_list ** subs;
   sub_alpha_queue ** sub_alpha_queues;
   sub_alpha_queue ** sub_alpha_queue_roots;

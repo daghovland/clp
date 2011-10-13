@@ -23,9 +23,10 @@
 #include "rete.h"
 #include "rule_queue_single.h"
 #include "rule_queue_state.h"
+#include "rule_instance.h"
 
 size_t get_rq_size_t(size_t size_queue, substitution_size_info ssi){
-  return sizeof(rule_queue_single) + size_queue * (sizeof(rule_instance_single) + sizeof(unsigned int) * get_size_timestamps(ssi));
+  return sizeof(rule_queue_single) + size_queue * get_size_rule_instance(ssi);
 }
 
 void resize_rq_size(rule_queue_single** rq){
@@ -52,6 +53,8 @@ void check_rq_too_small(rule_queue_single** rq){
 /**
    Creates the initial queue containing
    all facts from the theory
+
+   Also allocates memory for the qeue
  **/
 rule_queue_single* initialize_queue_single(substitution_size_info ssi){
   unsigned int i;
@@ -68,36 +71,83 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi){
 }
 
 /**
-   Inserts a copy of the substitution into a new entry in the rule queue.
-   The original substitution is not changed
+   Frees memory allocated for the rule queue
 **/
-rule_queue_single* insert_rule_instance_single(rule_queue_single* rq, const axiom* rule, const substitution* sub, unsigned int step){
-  check_rq_too_small(&rq);
-  rq->queue[rq->end].rule = rule;
-  rq->queue[rq->end].sub = * sub;
-  rq->queue[rq->end].timestamp = step;
-  memcpy(rq->queue[rq->end].sub_ts, sub->timestamps, get_size_timestamps(rq->ssi) * sizeof(unsigned int));
-  rq->queue[rq->end].sub.timestamps = rq->queue[rq->end].sub_ts;
-  rq->end ++;
+void destroy_rule_queue_single(rule_queue_single* rq){
+  free(rq);
+}
+
+/**
+   Assigns position pos in the rule queue the according values.
+**/
+rule_queue_single* assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step){
+  assert(pos < rq->end);
+  rq->queue[pos].rule = rule;
+  copy_substitution_struct(& rq->queue[pos].sub, sub, rq->ssi);
+  rq->queue[pos].timestamp = step;
   return rq;
 }
 
-bool rule_queue_single_empty(rule_queue_single* rq){
+void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi){
+  dest->rule = orig->rule;
+  copy_substitution_struct(& dest->sub, & orig->sub, ssi);
+  dest->timestamp = orig->timestamp;
+}
+
+/**
+   Inserts a copy of the substitution into a new entry in the rule queue.
+   The original substitution is not changed
+**/
+rule_queue_single* push_rule_instance_single(rule_queue_single* rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted){
+  unsigned int pos;
+  check_rq_too_small(&rq);
+  
+  if(clpl_sorted){
+    for(pos = rq->end; pos > rq->first && compare_sub_timestamps(& rq->queue[pos-1].sub, sub) > 0; pos--)
+      copy_rule_instance_struct(& rq->queue[pos], & rq->queue[pos-1], rq->ssi);
+  } else
+    pos = rq->end;
+  rq->end ++;
+  rq = assign_rule_queue_instance(rq, pos, rule, sub, step);
+  return rq;
+}
+
+bool rule_queue_single_is_empty(rule_queue_single* rq){
   return rq->first == rq->end;
 }
 
 /**
-   Returns a pointer to the position of a rule_instance_single
+   Returns a pointer to the position of a rule_instance
 
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-const rule_instance_single* pop_rule_queue_single(rule_queue_single** rqp){
+rule_instance* peek_rule_queue_single(rule_queue_single* rq){
+  assert(rq->first < rq->end);
+  return & (rq->queue[rq->first]);
+}
+
+/**
+   Returns timestamp of oldest rule instance
+**/
+unsigned int rule_queue_single_age(rule_queue_single* rq){
+  return (peek_rule_queue_single(rq))->timestamp;
+}
+
+/**
+   Returns a pointer to the position of a rule_instance
+
+   Note that this pointer may be invalidated on the next call to insert_.. or pop_...
+   and the data maybe destroyed on the first backtracking
+**/
+rule_instance* pop_rule_queue_single(rule_queue_single** rqp, unsigned int step){
   rule_queue_single* rq = *rqp;
+  rule_instance* ri = peek_rule_queue_single(rq);
   assert(rq->end > rq->first);
-  rq->end--;
-  check_rq_too_large(rqp);
-  return & ((*rqp)->queue[(*rqp)->end]);
+  rq->first++;
+  rq->n_appl++;
+  rq->previous_appl = step;
+  return ri;
 }
 
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single* rq){
@@ -119,9 +169,7 @@ rule_queue_single* restore_rule_queue_single(rule_queue_single* rq, rule_queue_s
 }
 
 
-/**
-   Called from strategy.c
-**/
-substitution* get_rule_instance_single_subsitution(rule_instance_union ri){
-  return & (ri.single->sub);
+
+unsigned int rule_queue_single_previous_application(rule_queue_single* rqs){
+  return rqs->previous_appl;
 }

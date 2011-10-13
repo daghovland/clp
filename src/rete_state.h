@@ -26,7 +26,6 @@
 #include "rete_net.h"
 #include "constants.h"
 #include "substitution.h"
-#include "substitution_memory.h"
 #include "rule_queue_state.h"
 
 // In rete_state.c

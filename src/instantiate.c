@@ -160,8 +160,7 @@ void delete_instantiated_atom(const atom* orig, atom* copy){
 const term* get_fresh_constant(variable* var, constants* constants){
   char* name;
   const term* t;
-  assert(var->var_no < state->net->th->vars->n_vars);
-  assert(state->fresh != NULL);
+  assert(constants->fresh != NULL);
   unsigned int const_no = next_fresh_const_no(constants->fresh, var->var_no);
   name = calloc_tester(sizeof(char), strlen(var->name) + 20);
   sprintf(name, "%s_%i", var->name, const_no);

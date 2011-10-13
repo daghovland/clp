@@ -82,8 +82,8 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
     return;
     }
   */
-  while(list != NULL && list != limit && ( limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]) ){
-    assert(limit == NULL || list->sub->timestamps[0] > limit->sub->timestamps[0]);
+  while(list != NULL && list != limit && ( limit == NULL || compare_sub_timestamps(list->sub, limit->sub) > 0 )){
+    assert(limit == NULL || compare_sub_timestamps(list->sub, limit->sub) > 0 );
     assert(list != NULL);
     sub_alpha_queue* next = list->next;
     free(list);
@@ -108,7 +108,7 @@ bool axiom_queue_has_interesting_instance(size_t axiom_no, rete_net_state* state
     if(state->net->use_beta_not)
       return true;
     next = peek_axiom_rule_queue(state, axiom_no);
-    sub = copy_substitution(next->substitution, & state->local_subst_mem, state->net->th->sub_size_info);
+    sub = copy_substitution(& next->sub, & state->local_subst_mem, state->net->th->sub_size_info);
     if(!disjunction_true_in_fact_set(state, next->rule->rhs, sub)){
       return true;
     }
@@ -184,7 +184,7 @@ unsigned int rule_queue_possible_age(rule_queue_state rqs, size_t axiom_no){
   rete_net_state* state = rqs.state;
   if(!is_empty_axiom_rule_queue(state, axiom_no)){
     rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
-    return ri->substitution->timestamps[0];
+    return ri->timestamp;
   } else {
     sub_alpha_queue *new_root, * root;
     root = state->sub_alpha_queue_roots[axiom_no];
@@ -192,6 +192,6 @@ unsigned int rule_queue_possible_age(rule_queue_state rqs, size_t axiom_no){
     // TODO: This might be a performance hit if the queues become very long. 
     for( new_root = state->sub_alpha_queues[axiom_no]; new_root->next != root; new_root = new_root->next)
       ;
-    return new_root->sub->timestamps[0];
+    return new_root->sub->sub_ts.timestamps[0];
   }
 }

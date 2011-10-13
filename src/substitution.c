@@ -27,46 +27,83 @@
 #include "rete.h"
 #include "theory.h"
 #include "substitution.h"
-#include "substitution_memory.h"
+#include "substitution_store_mt.h"
 
 // Defined in main.c
 extern bool use_substitution_store;
+
+/**
+   Allocates memory on the heap for a substitution including all substructures
+   Mostly used for temporary substitutions
+**/
+substitution* alloc_heap_substitution(substitution_size_info ssi){
+  substitution* tmp_sub = malloc(get_size_substitution(ssi));
+  return tmp_sub;
+}
+
+/**
+   Allocates memory for a substitution according to the gloabl variable use_substitution_store
+**/
+substitution* get_substitution_memory(substitution_size_info ssi, substitution_store_mt* store){
+  substitution* ret_val;
+  if(use_substitution_store)
+    ret_val = get_substitution_store_mt(store, ssi);
+  else {
+    ret_val = alloc_heap_substitution(ssi);
+  }
+  return ret_val;
+}
+
+/**
+   Frees a substitution and all substructures.
+   Assumes that it is allocated on the heap.
+   Note that most substitutions are not allocated directly on the heap,
+   but in a substitution_store
+**/
+void free_substitution(substitution* sub){
+  free(sub);
+}
+
+
+
+/**
+   Initializes already allocated substitution
+   Only used directly by the factset_lhs implementation 
+   in axiom_false_in_fact_set in rete_state.c
+**/
+void init_empty_substitution(substitution* sub, const theory* t){
+  unsigned int i;    
+  sub->allvars = t->vars;
+  sub->n_subs = 0;
+  init_empty_timestamps(& sub->sub_ts, t->sub_size_info);
+  for(i = 0; i < t->vars->n_vars; i++)
+    sub->values[i] = NULL;
+}
+
 
 /**
    Substitution constructor and destructor.
    Only used directly by the factset_lhs implementation 
    in axiom_false_in_fact_set in rete_state.c
 **/
-substitution* create_empty_substitution(const theory* t, substitution_memory* store){
+substitution* create_empty_substitution(const theory* t, substitution_store_mt* store){
   unsigned int i;
-  substitution* ret_val;
-  if(use_substitution_store)
-    ret_val = get_substitution_memory(store, t->sub_size_info);
-  else {
-    ret_val = malloc_tester(get_size_substitution(t->sub_size_info));
-    ret_val->timestamps = calloc_tester(get_size_timestamps(t->sub_size_info), sizeof(int));
-  }
-    
-  ret_val->allvars = t->vars;
-  ret_val->n_subs = 0;
-
-  ret_val->n_timestamps = 0;
-
-  for(i = 0; i < get_size_timestamps(t->sub_size_info); i++)
-    ret_val->timestamps[i] = 0;
-
-  for(i = 0; i < t->vars->n_vars; i++)
-    ret_val->values[i] = NULL;
+  substitution* ret_val = get_substitution_memory(t->sub_size_info, store);
+  init_empty_substitution(ret_val, t);
   return ret_val;
 }
 
+void init_substitution(substitution* sub, const theory* t, signed int timestamp){
+  init_empty_substitution(sub, t);
+  add_sub_timestamp(sub, timestamp, t->sub_size_info);
+}
 
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t, signed int timestamp, substitution_memory* store){
-  substitution* ret_val = create_empty_substitution(t, store);
-  add_timestamp(ret_val, timestamp, t->sub_size_info);
+substitution* create_substitution(const theory* t, signed int timestamp, substitution_store_mt* store){
+  substitution* ret_val = get_substitution_memory(t->sub_size_info, store);
+  init_substitution(ret_val, t, timestamp);
   assert(test_substitution(ret_val));
   return ret_val;
 }
@@ -77,29 +114,36 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
 **/
-substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_memory* store){
+substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store){
   substitution* sub = create_substitution(t, 1, store);
-  sub->timestamps[0] = - a->axiom_no;
   assert(test_substitution(sub));
   return sub;
 }
 
-substitution* copy_substitution(const substitution* orig, substitution_memory* store, substitution_size_info ssi){
+/**
+   Copies a substitution, including terms and timestamps from orig to dest. 
+   Assumes dest and dest->timestamp memory is already allocated. 
+   Overwrites dest.
+**/
+void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi){
+  memcpy(dest, orig, get_size_substitution(ssi));
+}
 
+
+/**
+   Creates a new substitution, either on the heap, or on
+   the store
+**/
+substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi){
   substitution* copy;
-  if(use_substitution_store){
-    int* new_timestamps;
-    copy = get_substitution_memory(store, ssi);
-    new_timestamps = copy->timestamps;
-    memcpy(copy, orig, get_size_substitution(ssi));
-    copy->timestamps = new_timestamps;
-  } else {
-    copy = malloc(get_size_substitution(ssi));
-    memcpy(copy, orig, get_size_substitution(ssi));
-    copy->timestamps = calloc_tester(get_size_timestamps(ssi), sizeof(int));
-  }
-
-  memcpy(copy->timestamps, orig->timestamps, get_size_timestamps(ssi) * sizeof(int));
+  int* new_timestamps;
+  
+  if(use_substitution_store)
+    copy = get_substitution_store_mt(store, ssi);
+  else 
+    copy = alloc_heap_substitution(ssi);
+  
+  copy_substitution_struct(copy, orig, ssi);
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -272,6 +316,44 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
 }
 
 /**
+   If orig and dest equal in the overlap, adds all of origs terms to dest and returns true
+   Otherwise returns false. Does not allocate or deallocate any memory.
+
+   Called from the different union_substitution... functions below
+**/
+bool union_substitutions_struct_terms(substitution* dest, const substitution* orig){
+  unsigned int i;
+  for(i = 0; i < dest->allvars->n_vars; i++){
+    const term* val1 = dest->values[i];
+    const term* val2 = orig->values[i];
+    if(val1 == NULL){
+      if(val2 != NULL){
+	dest->n_subs++;
+	dest->values[i] = val2;
+      }
+    } else if(val2 != NULL && !equal_terms(val1, val2)){
+      assert(! subs_equal_intersection(dest, orig));
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+   If sub1 and sub2 have overlapping intersection, makes dest the union and returns true
+   Otherwise returns false.
+
+   Only timestamps from sub1 is kept.
+   This is used by the rhs-part of the rete network.
+
+   Assumes dest is already allocated
+**/
+bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi){
+  copy_substitution_struct(dest, sub1, ssi);
+  return union_substitutions_struct_terms(dest, sub2);
+}
+
+/**
    Creates a new substitution on the heap which is the union of two substitutions
 
    If this is not possible, because they map variables in the intersection of the domain to
@@ -280,28 +362,24 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
    The timestamps are only those of sub1. sub2 timestamps are not part of the 
    new substitution
 **/
-substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_memory* store, substitution_size_info ssi){
+substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
   unsigned int i, new_size;
   substitution *retval;
 
   assert(test_substitution(sub1));
   assert(test_substitution(sub2));
   assert(sub1->allvars == sub2->allvars);
-
-  retval = copy_substitution(sub1, store, ssi);
-
-  for(i = 0; i < retval->allvars->n_vars; i++){
-    const term* val1 = retval->values[i];
-    const term* val2 = sub2->values[i];
-    if(val1 == NULL){
-      if(val2 != NULL){
-	retval->n_subs++;
-	retval->values[i] = val2;
-      }
-    } else if(val2 != NULL && !equal_terms(val1, val2)){
-      assert(! subs_equal_intersection(sub1, sub2));
-      return NULL;
-    }
+  
+  if(use_substitution_store)
+    retval = get_substitution_store_mt(store, ssi);
+  else {
+    retval = alloc_heap_substitution(ssi);
+  }
+  
+  if(!union_substitutions_struct_one_ts(retval, sub1, sub2, ssi)){
+    if(!use_substitution_store)
+      free_substitution(retval);
+    return NULL;
   }
   
   assert(subs_equal_intersection(sub1, sub2));
@@ -311,37 +389,44 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
 }
 
 /**
+   If sub1 and sub2 have overlapping intersection, makes dest the union and returns true
+   Otherwise returns false.
+   Also copies the timestamps of sub2
+
+   Assumes dest is already allocated
+**/
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi){
+  unsigned int i, new_size;
+  if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi))
+    return false;
+  add_timestamps(& dest->sub_ts, & sub2->sub_ts);
+  assert(get_max_n_timestamps(ssi) > get_sub_n_timestamps(dest));
+  return true;
+}
+
+/**
    Creates a new substitution on the heap which is the union of two substitutions
 
    If this is not possible, because they map variables in the intersection of the domain to
    different values, then NULL is returned
 **/
-substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_memory* store, substitution_size_info ssi){
+substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
   
   unsigned int i, new_size;
-  substitution *retval = union_substitutions_one_ts(sub1, sub2, store, ssi);
-  if(retval == NULL)
-    return NULL;
+  substitution *retval;
 
-  assert(test_substitution(retval));
-
-  new_size = retval->n_timestamps + sub2->n_timestamps;
-  if(get_size_timestamps(ssi) < new_size){
-    fprintf(stderr, "size_timestamps: %i, new_size: %i.\n", get_size_timestamps(ssi), new_size);
-    exit(EXIT_FAILURE);
+  if(use_substitution_store)
+    retval = get_substitution_store_mt(store, ssi);
+  else {
+    retval = alloc_heap_substitution(ssi);
   }
-    
-  /*  if(get_size_timestamps <= new_size){
-    while(retval->size_timestamps <= new_size)
-      retval->size_timestamps *= 2;
-    retval->timestamps = realloc_tester(retval->timestamps, retval->size_timestamps * sizeof(unsigned int));
-    }*/
-  for(i = 0; i < sub2->n_timestamps; i++)
-    retval->timestamps[retval->n_timestamps++] = sub2->timestamps[i];
 
-  assert(retval->n_timestamps <= get_size_timestamps(ssi));
-
-  return retval;
+  if(!union_substitutions_struct_with_ts(retval, sub1, sub2, ssi)){
+    if(!use_substitution_store)
+      free_substitution(retval);
+    return NULL;
+  }
+  return retval;  
 }
 
 /**
@@ -471,10 +556,21 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi){  
-  sub->n_timestamps ++;  
-  assert(get_size_timestamps(ssi) >= sub->n_timestamps);
-  sub->timestamps[sub->n_timestamps-1] = timestamp;
+void add_sub_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi){  
+  add_timestamp(& sub->sub_ts, timestamp);
+  assert(get_max_n_timestamps(ssi) >= get_sub_n_timestamps(sub));
+}
+
+
+unsigned int get_sub_n_timestamps(const substitution* sub){
+  return get_n_timestamps(& sub->sub_ts);
+}
+timestamps_iter get_sub_timestamps_iter(const substitution* sub){
+  return get_timestamps_iter(& sub->sub_ts);
+}
+
+int compare_sub_timestamps(const substitution* s1, const substitution* s2){
+  return compare_timestamps(& s1->sub_ts, & s2->sub_ts);
 }
 
 /**
@@ -482,6 +578,7 @@ void add_timestamp(substitution* sub, unsigned int timestamp, substitution_size_
 **/
 void print_substitution(const substitution* sub, FILE* f){
   size_t i;
+  timestamps_iter iter;
   size_t j = 0;
   fprintf(f,"[");
   if(sub != NULL){
@@ -497,8 +594,9 @@ void print_substitution(const substitution* sub, FILE* f){
     }
   }
   fprintf(f, "] from steps ");
-  for(i = 0; i < sub->n_timestamps; i++)
-    fprintf(f, "%u, ", sub->timestamps[i]);
+  iter = get_sub_timestamps_iter(sub);
+  while(has_next_timestamps_iter(&iter))
+    fprintf(f, "%u, ", get_next_timestamps_iter(&iter));
 }
 
 void print_coq_substitution(const substitution* sub, const freevars* vars, FILE* f){

@@ -24,7 +24,9 @@
 #include "rete_state_struct.h"
 #include "rete_state_single_struct.h"
 /**
-   An interface for the argument to choose_next_instance in strategy.c
+   An interface for the implementation of a RETE_STATE.
+   Used by choose_next_instance in strategy.c
+   and by rete_insert.c
 **/
 
 
@@ -33,10 +35,5 @@ typedef union rule_queue_state_t {
   rete_state_single* single;
 } rule_queue_state;
 	
-typedef union rule_instance_union_t {
-  rule_instance* state;
-  rule_instance_single* single;
-} rule_instance_union;
-
 
 #endif

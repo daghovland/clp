@@ -31,11 +31,12 @@
 #include "rete.h"
 #include "proof_writer.h"
 #include "substitution.h"
-#include "substitution_memory.h"
+#include "substitution_store.h"
 #include "rule_instance_state_stack.h"
 #include "rule_queue_single.h"
 #include "rete_state_single.h"
 #include "instantiate.h"
+#include "rule_instance.h"
 #include <errno.h>
 
 extern bool debug, verbose;
@@ -48,7 +49,7 @@ bool foundproof;
 
 
 
-bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance_single* next, unsigned int step);
+bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step);
 
 
 
@@ -102,7 +103,7 @@ bool return_found_model_mt(rete_state_single* state){
    Called from run_prover_rete_coq when reaching max steps, as given with the 
    commandline option -m|--max=LIMIT
 **/
-bool return_reached_max_steps_mt(rete_state_single* state, rule_instance_single* ri){
+bool return_reached_max_steps_mt(rete_state_single* state, rule_instance* ri){
   printf("Reached %i proof steps, higher than given maximum\n", get_state_step_single(state));
   free(ri);
   foundproof = false;
@@ -123,7 +124,7 @@ bool run_prover_single(rete_state_single* state){
     while(true){
       unsigned int i, ts;
       
-      rule_instance_single* next = choose_next_instance_single(state);
+      rule_instance* next = choose_next_instance_single(state);
       if(next == NULL)
 	return return_found_model_mt(state);
       
@@ -139,8 +140,8 @@ bool run_prover_single(rete_state_single* state){
 
 
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	check_used_rule_instances_coq_single(next, state, ts, ts);
-	check_state_finished(state);
+	//check_used_rule_instances_coq_single(next, state, ts, ts);
+	//check_state_finished_single(state);
 	//	write_proof_node(state, next);
 	return true;
       } else {	// not goal rule
@@ -164,7 +165,7 @@ bool run_prover_single(rete_state_single* state){
 
    If net->treat_all_disjuncts is false, the first branch has already been run by start_rete_disjunction_coq_single below.
 **/
-bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance_single* next, unsigned int step){
+bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step){
   unsigned int i;
   rete_state_backup backup = backup_rete_state(state);
   for(i = 0; i < next->rule->rhs->n_args; i++){
@@ -218,8 +219,8 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   run_prover_single(state);
 
   if(foundproof && rete->coq){
-    write_single_coq_proof(state);
-    end_proof_coq_writer(rete->th);
+    //write_single_coq_proof(state);
+    //end_proof_coq_writer(rete->th);
   }
   retval = get_state_step_single(state);
   delete_rete_state_single(state);

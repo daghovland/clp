@@ -29,7 +29,6 @@
 constants init_constants(size_t n_vars){
   constants new_c;
   new_c.fresh = init_fresh_const(n_vars);
-  assert(state->fresh != NULL);
 
   new_c.size_constants = 2;
   new_c.constants = calloc_tester(new_c.size_constants, sizeof(char*));

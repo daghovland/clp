@@ -45,19 +45,18 @@
    If no such rule is in the queue, there is a rotation based on
    state->next
 **/
-rule_instance_union normal_next_instance(rule_queue_state state
+rule_instance* normal_next_instance(rule_queue_state state
 					 , const rete_net* net
 					 , unsigned int step_no
 					 , fact_set ** factset
 					 , bool (*is_empty) (rule_queue_state, size_t)
-					 , rule_instance_union (*peek_axiom)(rule_queue_state, size_t)
+					 , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
 					 , bool (*has_new_instance)(rule_queue_state, size_t)
 					 , unsigned int (*possible_age)(rule_queue_state, size_t)
 					 , bool (*may_have)(rule_queue_state, size_t)
-					 , rule_instance_union (*pop_axiom)(rule_queue_state, size_t)
-					 , void (*add_to_queue) (const axiom*, substitution*, rule_queue_state)
+					 , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+					 , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
 					 , unsigned int (*previous_application)(rule_queue_state, size_t)
-					 , substitution* (*get_ri_substitution) (rule_instance_union)
 					 )
 {
   unsigned int i;
@@ -73,7 +72,7 @@ rule_instance_union normal_next_instance(rule_queue_state state
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
 
-  rule_instance_union retval;
+  rule_instance* retval;
 
     
  
@@ -88,8 +87,8 @@ rule_instance_union normal_next_instance(rule_queue_state state
       if(rule->type == fact && !is_empty(state, axiom_no))
 	continue;
       while(!found_new_instance && !is_empty(state, axiom_no)){
-	rule_instance_union ri = peek_axiom(state, axiom_no);
-	if(disjunction_true_in_fact_set(factset, net->th->axioms[axiom_no]->rhs, get_ri_substitution(ri)))
+	rule_instance* ri = peek_axiom(state, axiom_no);
+	if(disjunction_true_in_fact_set(factset, net->th->axioms[axiom_no]->rhs, &ri->sub))
 	  ri = pop_axiom(state, axiom_no);
 	else
 	  found_new_instance = true;
@@ -165,22 +164,20 @@ rule_instance_union normal_next_instance(rule_queue_state state
 	max_weight = axiom_weights[i];
     }
   }
-  retval.single = NULL;
-  retval.state = NULL;
-  return retval;
+  return NULL;
 }
   
 /**
    This strategy chooser tries to emulate CL.pl
 **/
-rule_instance_union clpl_next_instance(rule_queue_state state
+rule_instance* clpl_next_instance(rule_queue_state state
 				       , const rete_net* net
 				       , bool (*has_new_instance)(rule_queue_state, size_t)
-				       , rule_instance_union (*pop_axiom)(rule_queue_state, size_t)
+				       , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
 				       )
 {
   unsigned int i;
-  rule_instance_union retval;
+  rule_instance* retval;
   const theory* th = net->th;
   for(i = 0; i < th->n_axioms; i++){
     size_t axiom_no = th->axioms[i]->axiom_no;
@@ -190,8 +187,7 @@ rule_instance_union clpl_next_instance(rule_queue_state state
       return retval;
     }
   } // end for i -- n_axioms
-  retval.state = NULL;
-  return retval;
+  return NULL;
 }
 
 
@@ -199,27 +195,26 @@ rule_instance_union clpl_next_instance(rule_queue_state state
 /**
    Returns next rule instance, or NULL if there is no more instances
 **/
-rule_instance_union choose_next_instance(rule_queue_state state
-					 , const rete_net* net
-					 , strategy strat
-					 , unsigned int step_no
-					 , fact_set ** factset
-					 , bool (*is_empty) (rule_queue_state, size_t)
-					 , rule_instance_union (*peek_axiom)(rule_queue_state, size_t)
-					 , bool (*has_new_instance)(rule_queue_state, size_t)
-					 , unsigned int (*possible_age)(rule_queue_state, size_t)
-					 , bool (*may_have)(rule_queue_state, size_t)
-					 , rule_instance_union (*pop_axiom)(rule_queue_state, size_t)
-					 , void (*add_to_queue) (const axiom*, substitution*, rule_queue_state)
-					 , unsigned int (*previous_application)(rule_queue_state, size_t)
-					 , substitution* (*get_ri_substitution) (rule_instance_union)
-					 )
+rule_instance* choose_next_instance(rule_queue_state state
+				    , const rete_net* net
+				    , strategy strat
+				    , unsigned int step_no
+				    , fact_set ** factset
+				    , bool (*is_empty) (rule_queue_state, size_t)
+				    , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
+				    , bool (*has_new_instance)(rule_queue_state, size_t)
+				    , unsigned int (*possible_age)(rule_queue_state, size_t)
+				    , bool (*may_have)(rule_queue_state, size_t)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
+				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    )
 {
   switch(strat){
   case clpl_strategy:
     return clpl_next_instance(state, net, has_new_instance, pop_axiom);
   case normal_strategy:
-    return normal_next_instance(state, net, step_no, factset, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application, get_ri_substitution);
+    return normal_next_instance(state, net, step_no, factset, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
   default:
     fprintf(stderr, "Unknown strategy %i\n", strat);
     exit(EXIT_FAILURE);

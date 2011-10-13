@@ -24,7 +24,7 @@
 #include "common.h"
 #include "rete_net.h"
 #include "constants.h"
-#include "substitution_state_store.h"
+#include "substitution_store.h"
 #include "rule_queue_single.h"
 
 /**
@@ -33,6 +33,7 @@
 **/
 typedef struct rete_state_single_t {
   substitution_store * subs;
+  substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
   const rete_net* net;
   fresh_const_counter fresh;  

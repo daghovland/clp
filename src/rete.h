@@ -38,6 +38,7 @@
 #include "rete_state_struct.h"
 #include "rule_queue_state.h"
 #include "strategy.h"
+#include "rule_instance.h"
 
 typedef unsigned int domain_iter;
 typedef unsigned int constants_iter;
@@ -107,21 +108,20 @@ rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*,
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, size_t axiom_no);
 
 // Defined in strategy.c
-rule_instance_union choose_next_instance(rule_queue_state
-					 , const rete_net*
-					 , strategy
-					 , unsigned int
-					 , fact_set **
-					 , bool (*) (rule_queue_state, size_t)
-					 , rule_instance_union (*)(rule_queue_state, size_t)
-					 , bool (*has_new_instance)(rule_queue_state, size_t)
-					 , unsigned int (*possible_age)(rule_queue_state, size_t)
-					 , bool (*may_have)(rule_queue_state, size_t)
-					 , rule_instance_union (*pop_axiom)(rule_queue_state, size_t)
-					 , void (*) (const axiom*, substitution*, rule_queue_state)
-					 , unsigned int (*previous_application)(rule_queue_state, size_t)
-					 , substitution* (*get_ri_substitution) (rule_instance_union)
-					 );
+rule_instance* choose_next_instance(rule_queue_state
+				    , const rete_net*
+				    , strategy
+				    , unsigned int
+				    , fact_set **
+				    , bool (*) (rule_queue_state, size_t)
+				    , rule_instance* (*)(rule_queue_state, size_t)
+				    , bool (*has_new_instance)(rule_queue_state, size_t)
+				    , unsigned int (*possible_age)(rule_queue_state, size_t)
+				    , bool (*may_have)(rule_queue_state, size_t)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , void (*) (const axiom*, const substitution*, rule_queue_state)
+				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    );
 
 
 
@@ -145,17 +145,17 @@ void print_rete_node_type(const rete_node*, FILE*);
 
 // In rule_queue.c and sub_alpha_queue_c
 
-substitution* get_rule_instance_single_subsitution(rule_instance_union);
-substitution* get_rule_instance_subsitution(rule_instance_union);
+substitution* get_rule_instance_single_subsitution(rule_instance*);
+substitution* get_rule_instance_subsitution(rule_instance*);
 unsigned int axiom_queue_previous_application(rule_queue_state, size_t);
 rule_instance* pop_axiom_rule_queue(rete_net_state*, size_t);
-rule_instance_union pop_axiom_rule_queue_state(rule_queue_state, size_t);
+rule_instance* pop_axiom_rule_queue_state(rule_queue_state, size_t);
 rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state, size_t);
-rule_instance_union peek_axiom_rule_queue_state(rule_queue_state, size_t);
+rule_instance* peek_axiom_rule_queue_state(rule_queue_state, size_t);
 rule_instance* peek_axiom_rule_queue(rete_net_state*, size_t);
 void remove_rule_instance(rete_net_state*, const substitution*, size_t);
-void add_rule_to_queue_state(const axiom*, substitution*, rule_queue_state);
-void add_rule_to_queue(const axiom*, substitution*, rete_net_state*);
+void add_rule_to_queue_state(const axiom*, const substitution*, rule_queue_state);
+void add_rule_to_queue(const axiom*, const substitution*, rete_net_state*);
 bool is_empty_axiom_rule_queue(rete_net_state*, size_t);
 bool is_empty_axiom_rule_queue_state(rule_queue_state, size_t);
 

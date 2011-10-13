@@ -21,7 +21,7 @@
 #ifndef __INCLUDED_RULE_QUEUE_SINGLE_H
 #define __INCLUDED_RULE_QUEUE_SINGLE_H
 
-#include "rule_instance_single.h"
+#include "rule_instance.h"
 #include "substitution_size_info.h"
 
 /**
@@ -43,7 +43,7 @@ typedef struct rule_queue_single_t {
   unsigned int previous_appl;
   unsigned int n_appl;
   substitution_size_info ssi;
-  rule_instance_single queue[];
+  rule_instance queue[];
 } rule_queue_single;
 
 
@@ -55,9 +55,14 @@ typedef struct rule_queue_single_backup_t {
 } rule_queue_single_backup;
 
 rule_queue_single* initialize_queue_single(substitution_size_info);
-rule_queue_single* insert_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int);
-const rule_instance_single* pop_rule_queue_single(rule_queue_single**);
+void destroy_rule_queue_single(rule_queue_single*);
+rule_queue_single* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool);
+rule_instance* pop_rule_queue_single(rule_queue_single**, unsigned int);
+rule_instance* peek_rule_queue_single(rule_queue_single*);
+unsigned int rule_queue_single_age(rule_queue_single*);
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
 rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
+unsigned int rule_queue_single_previous_application(rule_queue_single*);
+bool rule_queue_single_is_empty(rule_queue_single*);
 
 #endif

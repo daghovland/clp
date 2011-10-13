@@ -21,32 +21,29 @@
 
 #include "substitution_size_info.h"
 #include "substitution_struct.h"
+#include "rule_instance.h"
 #include "term.h"
 
 unsigned int get_size_substitution(substitution_size_info ssi){
   return ssi.size_substitution;
 }
 
-unsigned int get_size_full_substitution(substitution_size_info ssi){
-  return ssi.size_full_substitution;
+unsigned int get_size_rule_instance(substitution_size_info ssi){
+  return ssi.size_rule_instance;
 }
 
-unsigned int get_size_timestamps(substitution_size_info ssi){
-  return ssi.size_timestamps;
-}
-unsigned int get_substitution_timestamp_offset(substitution_size_info ssi){
-  return ssi.substitution_timestamp_offset;
+unsigned int get_max_n_timestamps(substitution_size_info ssi){
+  return ssi.max_n_timestamps;
 }
 
 substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts){
   substitution_size_info ssi;
-  ssi.size_substitution = sizeof(substitution) + n_vars * sizeof(term*) ;
-  ssi.size_timestamps = max_lhs_conjuncts;
-  ssi.substitution_timestamp_offset = ssi.size_substitution % sizeof(signed int);
-  if(ssi.substitution_timestamp_offset != 0)
-    ssi.substitution_timestamp_offset = sizeof(signed int) - ssi.substitution_timestamp_offset;
-  assert(ssi.substitution_timestamp_offset >= 0 && ssi.substitution_timestamp_offset < sizeof(signed int));
-  ssi.size_full_substitution = ssi.size_substitution + ssi.size_timestamps * sizeof(signed int) + ssi.substitution_timestamp_offset;
+  unsigned int size_vars, size_timestamps;
+  ssi.max_n_timestamps = max_lhs_conjuncts;
+  size_vars = n_vars * sizeof(term*);
+  size_timestamps = ssi.max_n_timestamps * sizeof(signed int);
+  ssi.size_substitution = sizeof(substitution) + size_vars + size_timestamps;
+  ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
   return ssi;
 }
 

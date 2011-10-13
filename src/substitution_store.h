@@ -1,4 +1,4 @@
-/* substitution_state_store.h
+/* substitution_store.h
 
    Copyright 2011 
 
@@ -19,8 +19,8 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUBSTITUTION_STATE_STORE_H
-#define __INCLUDE_SUBSTITUTION_STATE_STORE_H
+#ifndef __INCLUDED_SUBSTITUTION_STORE_H
+#define __INCLUDED_SUBSTITUTION_STORE_H
 
 #define INIT_SUBST_STORE_SIZE 1000
 
@@ -37,23 +37,41 @@
    size needed for substitutions
 **/
 
+/**
+   Implements a cache of substitutions in a alpha or beta node
+**/
+
+
 typedef struct substitution_store_t {
   char* store;
-  size_t size_store;
   unsigned int max_n_subst;
   unsigned int n_subst;
+  substitution_size_info ssi;
 } substitution_store;
 
 typedef struct substitution_store_backup_t {
+  substitution_store* store;
   unsigned int n_subst;
 } substitution_store_backup;
 
-substitution_store init_state_subst_store(substitution_size_info);
-void destroy_state_subst_store(substitution_store*);
-unsigned int alloc_substitution(substitution_store*, substitution_size_info);
-substitution* get_substitution(unsigned int, substitution_store*, substitution_size_info);
+typedef struct sub_store_iter_t {
+  substitution_store* store;
+  unsigned int n;
+} sub_store_iter;
+
+substitution_store init_substitution_store(substitution_size_info);
+void destroy_substitution_store(substitution_store*);
+unsigned int alloc_store_substitution(substitution_store*);
+void push_substitution_sub_store(substitution_store*, const substitution*);
+substitution* get_substitution(unsigned int, substitution_store*);
+
+sub_store_iter get_sub_store_iter(substitution_store*);
+bool has_next_sub_store(sub_store_iter*);
+substitution* get_next_sub_store(sub_store_iter*);
+void destroy_sub_store_iter(sub_store_iter*);
+
 
 substitution_store_backup backup_substitution_store(substitution_store*);
 void restore_substitution_store(substitution_store*, substitution_store_backup);
-void destroy_substitution_backup(substitution_store_backup);
+void destroy_substitution_backup(substitution_store_backup*);
 #endif

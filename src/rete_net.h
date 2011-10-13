@@ -52,8 +52,8 @@
    has too high overhead (3x run-time)
 **/
 typedef struct rete_net_t {
-  size_t n_subs;
-  size_t n_selectors;
+  unsigned int n_subs;
+  unsigned int n_selectors;
   const theory* th;
   bool existdom;
   bool lazy;

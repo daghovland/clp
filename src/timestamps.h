@@ -1,4 +1,4 @@
-/* substitution_memory.h
+/* timestamps.h
 
    Copyright 2011 
 
@@ -19,32 +19,33 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUBSTITUTION_MEMORY_H
-#define __INCLUDE_SUBSTITUTION_MEMORY_H
+#ifndef __INCLUDED_TIMESTAMPS_H
+#define __INCLUDED_TIMESTAMPS_H
 
-#include "substitution_struct.h"
+#include "common.h"
 #include "substitution_size_info.h"
 
-#define INIT_SUBST_MEM_SIZE 10
-/**
-   A store of substitutions
+typedef struct timestamps_t {
+  unsigned int n_timestamps;
+  signed int timestamps[];
+} timestamps;  
 
-**/
-typedef struct substitution_memory_t {
-  char** substitution_stores;
-  size_t size_substitution_store;
-  size_t * n_cur_substitution_store;
-  size_t n_substitution_stores;
-  size_t size_substitution_stores;
-#ifdef HAVE_PTHREAD
-  pthread_mutex_t sub_store_mutex;
-  pthread_cond_t sub_store_cond;
-#endif
-} substitution_memory;
+typedef struct timestamps_iter_t {
+  unsigned int n;
+  const timestamps* ts;
+} timestamps_iter;
 
+void init_empty_timestamps(timestamps*, substitution_size_info);
+unsigned int get_n_timestamps(const timestamps*);
 
-substitution_memory init_substitution_memory(substitution_size_info);
-void destroy_substitution_memory(substitution_memory*);
-substitution* get_substitution_memory(substitution_memory*, substitution_size_info);
-void destroy_substitution_memory(substitution_memory*);
+void add_timestamp(timestamps*, unsigned int);
+void add_timestamps(timestamps* dest, const timestamps* orig);
+
+int compare_timestamps(const timestamps*, const timestamps*);
+
+timestamps_iter get_timestamps_iter(const timestamps*);
+bool has_next_timestamps_iter(const timestamps_iter*);
+signed int get_next_timestamps_iter(timestamps_iter*);
+void destroy_timestamps_iter(timestamps_iter*);
+
 #endif

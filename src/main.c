@@ -180,7 +180,7 @@ int file_prover(FILE* f, const char* prefix){
     init_proof_coq_writer(net);
   
 
-  steps = prover(net, multithreaded);
+  steps = prover_single(net, multithreaded);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
     retval = EXIT_SUCCESS;

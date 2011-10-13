@@ -19,8 +19,8 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUBSTITUTION_SIZE_INFO_H
-#define __INCLUDE_SUBSTITUTION_SIZE_INFO_H
+#ifndef __INCLUDED_SUBSTITUTION_SIZE_INFO_H
+#define __INCLUDED_SUBSTITUTION_SIZE_INFO_H
 
 #include "common.h"
 
@@ -33,16 +33,13 @@
 
 typedef struct substitution_size_info_t {
   unsigned int size_substitution;
-  unsigned int size_timestamps;
-  unsigned int size_full_substitution;
-  int substitution_timestamp_offset;
+  unsigned int size_rule_instance;
+  unsigned int max_n_timestamps;
 } substitution_size_info;
 
 substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts);
 unsigned int get_size_substitution(substitution_size_info);
-unsigned int get_size_full_substitution(substitution_size_info);
-unsigned int get_size_timestamps(substitution_size_info);
-unsigned int get_substitution_timestamp_offset(substitution_size_info);
-
+unsigned int get_size_rule_instance(substitution_size_info);
+unsigned int get_max_n_timestamps(substitution_size_info);
 
 #endif

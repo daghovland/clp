@@ -1,4 +1,4 @@
-/* substitution_memory.c
+/* substitution_store_mt.c
 
    Copyright 2011 
 
@@ -28,7 +28,7 @@
 **/
 #include "common.h"
 #include "term.h"
-#include "substitution_memory.h"
+#include "substitution_store_mt.h"
 #include "rete_net.h"
 
 #ifdef HAVE_PTHREAD
@@ -47,33 +47,33 @@ void check_non_zero_error_code(int rv, char* msg){
 /**
    Error-checking functions for locking and unlocking the mutex
 **/
-void lock_sub_store_mutex(char* err_str, substitution_memory* sm){
+void lock_sub_store_mutex(char* err_str, substitution_store_mt* sm){
 #ifdef HAVE_PTHREAD
   int rv = pthread_mutex_lock(& sm->sub_store_mutex);
   if(rv != 0){
-    fprintf(stderr, "%s substitution_memory.c: line %i: Cannot lock mutex: %s.\n", err_str, __LINE__, strerror(rv));
+    fprintf(stderr, "%s substitution_store_mt.c: line %i: Cannot lock mutex: %s.\n", err_str, __LINE__, strerror(rv));
     assert(false);
     exit(EXIT_FAILURE);
   }
 #endif
 }
 
-void unlock_sub_store_mutex(char* err_str, substitution_memory* sm){
+void unlock_sub_store_mutex(char* err_str, substitution_store_mt* sm){
 #ifdef HAVE_PTHREAD
   int rv = pthread_mutex_unlock(& sm->sub_store_mutex);
   if(rv != 0){
-    fprintf(stderr, "%s substitution_memory.c: line %i : Cannot unlock mutex: %s.\n", err_str, __LINE__, strerror(rv));
+    fprintf(stderr, "%s substitution_store_mt.c: line %i : Cannot unlock mutex: %s.\n", err_str, __LINE__, strerror(rv));
     assert(false);
     exit(EXIT_FAILURE);
   }
 #endif
 }
 
-void wait_sub_store(char* err_str,substitution_memory* sm){
+void wait_sub_store(char* err_str,substitution_store_mt* sm){
 #ifdef HAVE_PTHREAD
   int rv = pthread_cond_wait(&sm->sub_store_cond, & sm->sub_store_mutex);
   if(rv != 0){
-    fprintf(stderr, "%s substitution_memory.c: line %i: wait_sub_store(): Cannot wait on pthread_cond %s.\n", err_str, __LINE__, strerror(rv));
+    fprintf(stderr, "%s substitution_store_mt.c: line %i: wait_sub_store(): Cannot wait on pthread_cond %s.\n", err_str, __LINE__, strerror(rv));
     assert(false);
     exit(EXIT_FAILURE);
   }
@@ -81,11 +81,11 @@ void wait_sub_store(char* err_str,substitution_memory* sm){
 }
 
 
-void broadcast_sub_store(char* err_str, substitution_memory* sm){
+void broadcast_sub_store(char* err_str, substitution_store_mt* sm){
 #ifdef HAVE_PTHREAD
   int rv = pthread_cond_broadcast(&sm->sub_store_cond);
   if(rv != 0){
-    fprintf(stderr, "%s substitution_memory.c: line %i: wait_sub_store(): Cannot wait on pthread_cond %s.\n", err_str, __LINE__, strerror(rv));
+    fprintf(stderr, "%s substitution_store_mt.c: line %i: wait_sub_store(): Cannot wait on pthread_cond %s.\n", err_str, __LINE__, strerror(rv));
     assert(false);
     exit(EXIT_FAILURE);
   }
@@ -96,7 +96,7 @@ void broadcast_sub_store(char* err_str, substitution_memory* sm){
 /**
    Thread-safe function for getting a unique next index into the substitution_store
 **/
-size_t get_sub_store_index(size_t store_index, substitution_memory* sm){
+size_t get_sub_store_index(size_t store_index, substitution_store_mt* sm){
   size_t subst_index;
 #ifdef __GNUC__
   return __sync_fetch_and_add(&(sm->n_cur_substitution_store[store_index]), 1);
@@ -112,15 +112,15 @@ size_t get_sub_store_index(size_t store_index, substitution_memory* sm){
 /**
    Creates a new store for substitutions.
    This function is threadsafe, but this should not be an issue, 
-   as get_substitution_memory should only call it once for every 
+   as get_substitution_store_mt should only call it once for every 
    "size_substitution_store" number of calls
 **/
-void new_substitution_store(size_t store_index, substitution_memory* sm, substitution_size_info ssi){
+void new_substitution_store(size_t store_index, substitution_store_mt* sm, substitution_size_info ssi){
   size_t new_store_index;
   assert(sm->n_substitution_stores == 0 || sm->n_cur_substitution_store[store_index] >= sm->size_substitution_store);
   lock_sub_store_mutex("new_substitution_store()", sm);
   if(sm->n_substitution_stores > 0 && store_index < sm->n_substitution_stores - 1){
-    fprintf(stderr, "substitution_memory.c: Overlapping calls to new_substitution_store. Consider increasing the value of size_substitution_store.\n");
+    fprintf(stderr, "substitution_store_mt.c: Overlapping calls to new_substitution_store. Consider increasing the value of size_substitution_store.\n");
     unlock_sub_store_mutex("new_substitution_store()", sm);
     return;
   }
@@ -133,7 +133,7 @@ void new_substitution_store(size_t store_index, substitution_memory* sm, substit
   }
   assert(new_store_index < sm->size_substitution_stores);
 
-  sm->substitution_stores[new_store_index] = malloc_tester(sm->size_substitution_store * get_size_full_substitution(ssi));
+  sm->substitution_stores[new_store_index] = malloc_tester(sm->size_substitution_store * get_size_substitution(ssi));
   sm->n_cur_substitution_store[new_store_index] = 0;  
   sm->n_substitution_stores++;
 #ifdef HAVE_PTHREAD
@@ -142,8 +142,8 @@ void new_substitution_store(size_t store_index, substitution_memory* sm, substit
 #endif
 }
 
-substitution_memory init_substitution_memory(substitution_size_info ssi){
-  substitution_memory new_sm;
+substitution_store_mt init_substitution_store_mt(substitution_size_info ssi){
+  substitution_store_mt new_sm;
   int rv;
 #ifdef HAVE_PTHREAD  
   pthread_mutexattr_t mutexattr;
@@ -177,9 +177,9 @@ substitution_memory init_substitution_memory(substitution_size_info ssi){
 /**
    Thread-safe function for getting memory for a substitution
 
-   Assumes that init_substitution_memory has been called first.
+   Assumes that init_substitution_store_mt has been called first.
 **/
-substitution* get_substitution_memory(substitution_memory* sm, substitution_size_info ssi){
+substitution* get_substitution_store_mt(substitution_store_mt* sm, substitution_size_info ssi){
   size_t subst_index, store_index;
   substitution* new_subst;
   char* memory_start;
@@ -191,26 +191,25 @@ substitution* get_substitution_memory(substitution_memory* sm, substitution_size
       new_substitution_store(store_index, sm, ssi);
     } else { // subst_index > size_substitution_store
 #ifdef HAVE_PTHREAD
-      lock_sub_store_mutex("get_substitution_memory()", sm);
+      lock_sub_store_mutex("get_substitution_store_mt()", sm);
       while(sm->n_cur_substitution_store[sm->n_substitution_stores - 1] > sm->size_substitution_store)
-	wait_sub_store("get_substitution_memory()", sm);
-      unlock_sub_store_mutex("get_substitution_memory()", sm);
+	wait_sub_store("get_substitution_store_mt()", sm);
+      unlock_sub_store_mutex("get_substitution_store_mt()", sm);
 #else
       assert(false);
 #endif
     }
-    return get_substitution_memory(sm, ssi);
+    return get_substitution_store_mt(sm, ssi);
   }
-  memory_start =  sm->substitution_stores[store_index] + subst_index * get_size_full_substitution(ssi);
+  memory_start =  sm->substitution_stores[store_index] + subst_index * get_size_substitution(ssi);
   new_subst = (substitution*) memory_start;
-  new_subst->timestamps = (signed int*) (memory_start + get_size_substitution(ssi) + get_substitution_timestamp_offset(ssi));
   return new_subst;
 }
 
 /**
-   Deletes all substitutions gotten previously through get_substitution_memory
+   Deletes all substitutions gotten previously through get_substitution_store_mt
 **/
-void destroy_substitution_memory(substitution_memory* sm){
+void destroy_substitution_store_mt(substitution_store_mt* sm){
   unsigned int i;
   int rv;
   for(i = 0; i < sm->n_substitution_stores; i++)

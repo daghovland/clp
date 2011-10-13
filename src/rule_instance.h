@@ -1,4 +1,4 @@
-/* rule_instance_single.h
+/* rule_instance.h
 
    Copyright 2011 
 
@@ -18,21 +18,18 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-#ifndef __INCLUDED_RULE_INSTANCE_SINGLE_H
-#define __INCLUDED_RULE_INSTANCE_SINGLE_H
+#ifndef __INCLUDED_RULE_INSTANCE_H
+#define __INCLUDED_RULE_INSTANCE_H
 
 #include "substitution_struct.h"
 #include "axiom.h"
 
-typedef struct rule_instance_single_t {
+typedef struct rule_instance_t {
   unsigned int timestamp;
   const axiom * rule;
   bool used_in_proof;
   substitution sub;
-  unsigned int sub_ts[];
-} rule_instance_single;
-
-
+} rule_instance;
 
 
 #endif

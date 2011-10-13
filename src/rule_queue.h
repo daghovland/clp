@@ -21,20 +21,11 @@
 #ifndef __INCLUDED_RULE_QUEUE_H
 #define __INCLUDED_RULE_QUEUE_H
 
+#include "common.h"
 #include "substitution.h"
-/**
-   An instance of a rule is an axiom together
-   with a term for each free variable
+#include "rule_instance.h"
+#include "substitution_size_info.h"
 
-   The timestamp is the value of global_step_no at the time of creation
-   This is used by next_instance in prover.c to choose what rule instance to apply
-**/
-typedef struct rule_instance_t {
-  unsigned int timestamp;
-  const axiom * rule;
-  substitution * substitution;
-  bool used_in_proof;
-} rule_instance;
 
 /**
    The queue of rule instances to be treated
@@ -67,12 +58,12 @@ rule_queue* initialize_queue(void);
 rule_queue* copy_rule_queue(const rule_queue*);
 
 void delete_rule_instance(rule_instance*);
-rule_instance* copy_rule_instance(rule_instance*);
+rule_instance* copy_rule_instance(rule_instance*, substitution_size_info);
 void delete_rule_queue_before(rule_queue*, rule_queue*);
 void delete_full_rule_queue(rule_queue*);
-rule_instance* create_rule_instance(const axiom*, substitution*);
+rule_instance* create_rule_instance(const axiom*, const substitution*, substitution_size_info);
 
-rule_instance* create_dummy_rule_instance(void);
+rule_instance* create_dummy_rule_instance(substitution_size_info);
 void delete_dummy_rule_instance(rule_instance*);
 
 void print_rule_queue(const rule_queue*, FILE*);

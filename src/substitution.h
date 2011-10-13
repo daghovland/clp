@@ -19,13 +19,13 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_SUBSTITUTION_H
-#define __INCLUDE_SUBSTITUTION_H
+#ifndef __INCLUDED_SUBSTITUTION_H
+#define __INCLUDED_SUBSTITUTION_H
 
 #include "substitution_struct.h"
-#include "substitution_memory.h"
+#include "substitution_store_mt.h"
 #include "theory.h"
-
+#include "substitution_size_info.h"
 
 /**
    A linked list of substitutions to be used in 
@@ -49,11 +49,17 @@ typedef struct substitution_list_t {
 **/
 typedef substitution_list* sub_list_iter;
 
-substitution* create_empty_substitution(const theory*, substitution_memory*);
-substitution* create_substitution(const theory*, signed int, substitution_memory*);
-substitution* copy_substitution(const substitution*, substitution_memory*, substitution_size_info);
-substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_memory*);
+substitution* create_empty_substitution(const theory*, substitution_store_mt*);
+void init_empty_substitution(substitution*, const theory*);
+void init_substitution(substitution*, const theory*, signed int);
+substitution* create_substitution(const theory*, signed int, substitution_store_mt*);
+substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info);
+void copy_substitution_struct(substitution*, const substitution*, substitution_size_info);
+substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*);
 
+unsigned int get_sub_n_timestamps(const substitution*);
+timestamps_iter get_sub_timestamps_iter(const substitution*);
+int compare_sub_timestamps(const substitution*, const substitution*);
 
 
 
@@ -61,6 +67,9 @@ sub_list_iter* get_sub_list_iter(substitution_list*);
 bool has_next_sub_list(const sub_list_iter*);
 substitution* get_next_sub_list(sub_list_iter*);
 
+void free_substitution(substitution*);
+void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);
+void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info);
 const term* find_substitution(const substitution*, const variable*);
 bool add_substitution(substitution*, variable*, const term*);
 void insert_substitution_value(substitution*, variable*, const term*);
@@ -68,9 +77,11 @@ bool unify_substitution_terms(const term*, const term*, substitution*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*);
 bool subs_equal_intersection(const substitution*, const substitution*);
-substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_memory* store, substitution_size_info ssi);
-substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_memory* store, substitution_size_info ssi);
-void add_timestamp(substitution*, unsigned int, substitution_size_info);
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info);
+bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info);
+substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi);
+substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi);
+void add_sub_timestamp(substitution*, unsigned int, substitution_size_info);
 
 void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);

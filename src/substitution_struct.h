@@ -25,6 +25,7 @@
 #include "common.h"
 #include "term.h"
 #include "variable.h"
+#include "timestamps.h"
 /**
    An substitution of variables
    to term values
@@ -44,12 +45,10 @@
 **/
 typedef struct substitution_t {
   unsigned int n_subs;
-  signed int * timestamps;
-  unsigned int n_timestamps;
+  timestamps sub_ts;
   const freevars* allvars;
   const term* values[];
 } substitution;
-
 
 
 

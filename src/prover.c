@@ -26,7 +26,7 @@
 #include "rule_queue.h"
 #include "proof_writer.h"
 #include "substitution.h"
-#include "substitution_memory.h"
+#include "substitution_store_mt.h"
 #include "rule_instance_state_stack.h"
 #include "instantiate.h"
 #include "rete.h"
@@ -94,21 +94,23 @@ void pthread_error_test(int retno, const char* msg){
 **/
 void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
+  substitution_size_info ssi = historic_state->net->th->sub_size_info;
   assert(ri == history[historic_ts]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
-    unsigned int n_premises = ri->substitution->n_timestamps;
+    timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
     if(ri->rule->rhs->n_args <= 1){
-      ri = copy_rule_instance(ri);
+      ri = copy_rule_instance(ri, ssi);
       history[historic_ts]->ri = ri;
     }
     ri->used_in_proof = true;
-    for(i = 0; i < n_premises; i++){
-      int premiss_no = ri->substitution->timestamps[i];
+    while(has_next_timestamps_iter(&iter)){
+      int premiss_no = get_next_timestamps_iter(&iter);
       if(premiss_no > 0){
 	assert(premiss_no == history[premiss_no]->step_no);
 	check_used_rule_instances_coq_mt((history[premiss_no])->ri, (history[premiss_no])->s, (history[premiss_no])->step_no, current_ts);
       }
     }
+    destroy_timestamps_iter(&iter);
     if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
       push_ri_stack(historic_state->elim_stack, ri, historic_ts, current_ts);
   }
@@ -280,7 +282,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	write_proof_node(state, next);
 
 	//delete_rete_state(state, state->parent);
-	//destroy_substitution_memory(& state->local_subst_mem);
+	//destroy_substitution_store_mt(& state->local_subst_mem);
 
 	return true;
       } else {	// not goal rule
@@ -294,7 +296,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	    return rv;
 	  }
 	} else { // rhs is single conjunction
-	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->substitution);
+	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], & next->sub);
 	  write_proof_node(state, next);
 	  write_proof_edge(state, state);  
 
@@ -343,7 +345,7 @@ void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, 
     i = 1;
   
   for(; i < next->rule->rhs->n_args; i++){
-    state->branches[i] = run_rete_proof_disj_branch(state, next->rule->rhs->args[i], next->substitution, i);
+    state->branches[i] = run_rete_proof_disj_branch(state, next->rule->rhs->args[i], & next->sub, i);
 #ifdef HAVE_PTHREAD
     pthread_mutex_lock(disj_ri_stack_mutex);
 #endif
@@ -541,7 +543,7 @@ bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   state->branches = calloc_tester(rule->rhs->n_args, sizeof(rete_net_state*));
   step = get_current_state_step_no(state);
 
-  state->branches[0] = run_rete_proof_disj_branch(state, rule->rhs->args[0], next->substitution, 0);
+  state->branches[0] = run_rete_proof_disj_branch(state, rule->rhs->args[0], & next->sub, 0);
   
 #ifdef HAVE_PTHREAD
   pthread_mutex_lock(disj_ri_stack_mutex);
