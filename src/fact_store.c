@@ -1,0 +1,129 @@
+/* substitution_store.c
+
+   Copyright 2011 
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc.,
+   51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
+
+/*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+/**
+   Memory helper for facts, to avoid millions of calls to malloc
+
+   These are not thread-safe, and used for the rete nodes 
+**/
+#include "common.h"
+#include "fact_store.h"
+
+fact_store init_fact_store(substitution_size_info ssi){
+  fact_store new_store;
+  new_store.max_n_facts = INIT_FACT_STORE_SIZE;
+  new_store.n_facts = 0;
+  new_store.store = calloc_tester(new_store.max_n_facts, sizeof(atom));
+  return new_store;
+}
+
+void destroy_fact_store(fact_store* store){
+  free(store->store);
+}
+
+unsigned int alloc_store_fact(fact_store* store){
+  char* new_ptr;
+  unsigned int new_i = store->n_facts;
+  store->n_subst ++;
+  if(store->n_subst >= store->max_n_facts){
+    store->max_n_facts *= 2;
+    store->store = realloc_tester(store->store, store->max_n_facts * sizeof(atom));
+  }
+  return store->n_facts - 1;
+}
+
+/**
+  Adds a copy of the fact and all its substructures to the store
+**/
+void push_fact_sub_store(fact_store* store, const atom* new_fact){
+  unsigned int fact_no = alloc_store_fact(store);
+  store->store[fact_no] = new_fact;
+}
+
+atom* get_fact(unsigned int i, fact_store* store){
+  assert(i < store->max_n_subst);
+  return store->store[i];
+}
+
+
+fact_store_iter get_fact_store_iter(fact_store* store){
+  fact_store_iter iter;
+  iter.n = 0;
+  iter.store = store;
+  return iter;
+}
+
+bool has_next_fact_store(fact_store_iter* iter){
+  return iter->n < iter->store->n_facts;
+}
+
+atom* get_next_sub_store(sub_store_iter* iter){
+  atom* a = get_fact(iter->n, iter->store);
+  assert(iter->n < iter->store->n_facts);
+  iter->n ++;
+  return a;
+}
+
+
+void destroy_fact_store_iter(fact_store_iter* iter){
+  ;
+}
+
+
+/**
+   Creates a "backup" of a fact store. Note that
+   the store itself is not copied, just enough information to 
+   backtrack. The store must not be deallocated before restoring.
+**/
+fact_store_backup backup_fact_store(fact_store* store){
+  fact_store_backup backup;
+  backup.store = store;
+  backup.n_facts = store->n_facts;
+  return backup;
+}
+
+void restore_fact_store(fact_store* store, fact_store_backup backup){
+  assert(store == backup.store);
+  store->n_facts = backup.n_facts;
+}
+
+void destroy_fact_backup(fact_store_backup * backup){
+  ;
+}
+
+/**
+   Auxiliaries for manipulating array of fact store backups
+**/
+
+fact_store_backup * backup_fact_store_array(fact_store* stores, unsigned int n_stores){
+  unsigned int i;
+  fact_store_backups* backups = calloc_tester(n_stores, sizeof(fact_store_backup));
+  for(i = 0; i < n_stores; i++)
+    backups[i] = backup_fact_store(& stores[i]);
+  return backups;
+}
+
+
+void destroy_fact_store_backup_array(fact_store_backup* backups, unsigned int n_backups){
+  unsigned int i;
+  for(i = 0; i < n_backups; i++)
+    destroy_fact_backup(& backups[i]);
+  free(backups);
+}

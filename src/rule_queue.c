@@ -90,7 +90,7 @@ bool test_rule_queue(const rule_queue* rq, const rete_net_state* state){
       return false;
     }
     timestamp = ri->timestamp;
-    if(!test_rule_instance(rq->queue[i], state)){
+    if(!test_rule_instance(rq->queue[i])){
       fprintf(stderr, "Invalid rule instance at queue position %i\n", i);
       return false;
     }
@@ -221,72 +221,6 @@ void _remove_rule_instance(rule_instance* ri, rule_queue* rq){
 }
 
 
-bool test_rule_instance(const rule_instance* ri, const rete_net_state* state){
-  assert(ri != NULL);
-  assert(ri->rule != NULL);
-  assert(test_substitution(& ri->sub));
-  assert(test_axiom(ri->rule, ri->rule->axiom_no));
-  assert(!ri->used_in_proof);
-  if(ri->timestamp > get_latest_global_step_no(state)){
-    fprintf(stderr, "Wrong timestamp %i on rule instance\n", ri->timestamp);
-    return false;
-  }  
-  if(!test_is_instantiation(ri->rule->rhs->free_vars, & ri->sub)){
-    fprintf(stderr, "An incorrect rule instance added to the queue\n");
-    print_rule_instance(ri, stderr);
-    return false;
-  }
-  return true;
-}
-
-/**
-   External function for creating a rule instance
-   
-   Only used when commandline option fact-set is on, 
-   that is, when RETE is not used
-**/
-rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi){
-  rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));
-
-  assert(test_substitution(sub));
-  
-  // The timestamp on rule instances is only used by RETE. Otherwise, rule instances are immediately added to the factset
-  ins->timestamp = 0;
-  ins->rule = rule;
-
-  copy_substitution_struct(&(ins->sub), sub, ssi);
-  ins->used_in_proof = false;
-  return ins;
-}
-
-
-/*
-  When the prover changes "used_in_proof" to true, it must copy the rule instance, 
-  as the other copies must not be changed
-*/
-rule_instance* copy_rule_instance(rule_instance* orig, substitution_size_info ssi){
-  rule_instance* copy = malloc_tester(get_size_rule_instance(ssi));
-  assert(!orig->used_in_proof);
-  memcpy(copy, orig, get_size_rule_instance(ssi));
-  return copy;
-}
-
-/**
-   Used by prover as a stack marker in disj_ri_stack
-**/
-rule_instance* create_dummy_rule_instance(substitution_size_info ssi){
-  rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));
-  ins->timestamp = 0;
-  ins->rule = NULL;
-  ins->used_in_proof = false;
-  return ins;
-}
-  
-void delete_dummy_rule_instance(rule_instance* ri){
-  free(ri);
-}
-
-
 unsigned int axiom_queue_previous_application(rule_queue_state rqs, size_t axiom_no){
   return (rqs.state)->axiom_inst_queue[axiom_no]->previous_appl;
 }
@@ -315,7 +249,7 @@ void add_rule_to_queue(const axiom* rule, const substitution* sub, rete_net_stat
   ins->used_in_proof = false;
 
   assert(rule->axiom_no < state->net->th->n_axioms);
-  assert(test_rule_instance(ins, state));
+  assert(test_rule_instance(ins));
 
   assert(rule->axiom_no < state->net->th->n_axioms);
   assert(state->axiom_inst_queue[rule->axiom_no] != NULL);
@@ -354,7 +288,7 @@ rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state rqs, size_t axiom_
 
   rule_instance* retval = _pop_youngest_rule_queue(rq, store, ssi);
 
-  assert(test_rule_instance(retval, state));
+  assert(test_rule_instance(retval));
 
   return retval;
 }
@@ -376,7 +310,7 @@ rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
 
   rule_instance* retval = _pop_rule_queue(rq, store, ssi);
 
-  assert(test_rule_instance(retval, state));
+  assert(test_rule_instance(retval));
 
   return retval;
 }
@@ -493,29 +427,4 @@ void print_dot_rule_queue(const rule_queue* rq, FILE* f){
     fprintf(f, ", ");
   }
   fprintf(f, "}");
-}
-   
-void print_coq_rule_instance(const rule_instance *ri, FILE* f){
-  fprintf(f, "%s", ri->rule->name); 
-  print_coq_substitution(& ri->sub, ri->rule->lhs->free_vars, f);
-}
-
-
-void print_dot_rule_instance(const rule_instance *ri, FILE* f){
-  fprintf(f, " %s (", ri->rule->name); 
-  print_dot_axiom(ri->rule, f);
-  fprintf(f, ") ");
-  print_substitution(& ri->sub, f);
-}
-
-void print_rule_instance(const rule_instance *ri, FILE* f){
-  fprintf(f, " %s (", ri->rule->name); 
-  print_fol_axiom(ri->rule, f);
-  fprintf(f, ") ");
-  print_substitution(& ri->sub, f);
-  if(ri->rule->is_existential){
-    fprintf(f, " - existential: ");
-    
-  } else
-    fprintf(f, " - definite");
 }

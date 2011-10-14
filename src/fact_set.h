@@ -19,8 +19,8 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDE_FACT_SET_H
-#define __INCLUDE_FACT_SET_H
+#ifndef __INCLUDED_FACT_SET_H
+#define __INCLUDED_FACT_SET_H
 
 #include "substitution.h"
 /**

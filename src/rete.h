@@ -134,7 +134,6 @@ unsigned int prover(const rete_net*, bool);
 
 
 bool test_rete_net(const rete_net*);
-bool test_rule_instance(const rule_instance*, const rete_net_state*);
 bool test_rule_queue(const rule_queue*, const rete_net_state*);
 
 

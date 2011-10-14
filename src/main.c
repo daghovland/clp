@@ -31,6 +31,7 @@
 #include <getopt.h> 
 #include <errno.h>
 #include <string.h>
+// For timer functions
 #include <signal.h>
 #include <time.h>
 
@@ -224,8 +225,8 @@ void print_help(char* exec){
   printf("\t-T, --cpu_timer=LIMIT\t\tSets a limit to total number of seconds of CPU time spent.\n");
   printf("\t-w, --wallclocktimer=LIMIT\t\tSets a limit to total number of seconds that may elapse before prover exits.\n");
   printf("\t-a, --all-disjuncts\t\tAlways treats all disjuncts of all treated disjuncts. .\n");
-  printf("\t-n, --not\t\tDo not constructs rete nodes for the rhs of rules, but in stead use a factset to determine whether the right hand side of a new instance is already satisified. (Beta-not-nodes).\n");
-  printf("\t-s, --substitution_malloc\t\tUse a single malloc for each substitution. (Disables substitution_memory.c) \n");
+  printf("\t-r, --rhs-beta\t\tConstructs rete nodes for the rhs of rules, in stead of using a factset to determine whether the right hand side of a new instance is already satisified. (Beta-not-nodes).\n");
+  printf("\t-s, --substitution_store\t\tTries to avoid all single mallocs for each substitution. (Enables substitution_memory.c) \n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
 
@@ -245,8 +246,8 @@ int main(int argc, char *argv[]){
   FILE* fp;
   int curopt;
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"not", no_argument, NULL, 'n'}, {"cputimer", required_argument, NULL, 'T'}, {"wallclocktimer", required_argument, NULL, 'w'}, {"print_model", no_argument, NULL, 'o'}, {"substitution_memory", no_argument, NULL, 's'}, {"all-disjuncts", no_argument, NULL, 'a'}, {0,0,0,0}};
-  char shortargs[] = "w:vfVphgdoacCsaT:GeqMnm:";
+  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"rhs-beta", no_argument, NULL, 'r'}, {"cputimer", required_argument, NULL, 'T'}, {"wallclocktimer", required_argument, NULL, 'w'}, {"print_model", no_argument, NULL, 'o'}, {"substitution_store", no_argument, NULL, 's'}, {"all-disjuncts", no_argument, NULL, 'a'}, {0,0,0,0}};
+  char shortargs[] = "w:vfVphgdoacCsaT:GeqMrm:";
   int longindex;
   char argval;
   char * tailptr;
@@ -257,11 +258,11 @@ int main(int argc, char *argv[]){
   print_model = false;
   lazy = true;
   coq = false;
-  use_beta_not = true;
+  use_beta_not = false;
   multithreaded = false;
   factset_lhs = false;
   all_disjuncts = false;
-  use_substitution_store = true;
+  use_substitution_store = false;
   input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
@@ -276,7 +277,7 @@ int main(int argc, char *argv[]){
       proof = true;
       break;
     case 's':
-      use_substitution_store = false;
+      use_substitution_store = true;
       break;
     case 'd':
       strat = clpl_strategy;
@@ -298,8 +299,8 @@ int main(int argc, char *argv[]){
     case 'f':
       factset_lhs = true;
       break;
-    case 'n':
-      use_beta_not = false;
+    case 'r':
+      use_beta_not = true;
       break;
     case 'g':
       debug = true;

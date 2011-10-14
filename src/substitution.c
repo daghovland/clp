@@ -51,6 +51,7 @@ substitution* get_substitution_memory(substitution_size_info ssi, substitution_s
   else {
     ret_val = alloc_heap_substitution(ssi);
   }
+  ret_val->sub_values_ptr = ret_val->sub_values + get_sub_values_offset(ssi);
   return ret_val;
 }
 
@@ -61,7 +62,22 @@ substitution* get_substitution_memory(substitution_size_info ssi, substitution_s
    but in a substitution_store
 **/
 void free_substitution(substitution* sub){
-  free(sub);
+  if(!use_substitution_store)
+    free(sub);
+}
+
+
+/**
+   Gets the term at index no of the values
+   Must only be accessed through these getters and setters, 
+   since there is an offset from the timestamps which has a flexible array member
+**/
+const term* get_sub_value(const substitution* sub, unsigned int no){
+  return sub->sub_values_ptr[no];
+}
+
+void set_sub_value(substitution* sub, unsigned int no, const term* t){
+  sub->sub_values_ptr[no] = t;
 }
 
 
@@ -77,7 +93,7 @@ void init_empty_substitution(substitution* sub, const theory* t){
   sub->n_subs = 0;
   init_empty_timestamps(& sub->sub_ts, t->sub_size_info);
   for(i = 0; i < t->vars->n_vars; i++)
-    sub->values[i] = NULL;
+    set_sub_value(sub, i, NULL);
 }
 
 
@@ -109,7 +125,6 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
 }
 
 
-
 /**
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
@@ -126,7 +141,10 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a, su
    Overwrites dest.
 **/
 void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi){
+  assert(test_substitution(orig));
   memcpy(dest, orig, get_size_substitution(ssi));
+  dest->sub_values_ptr = dest->sub_values + get_sub_values_offset(ssi);
+  assert(test_substitution(dest));
 }
 
 
@@ -159,7 +177,7 @@ const term* find_substitution(const substitution* sub, const variable* key){
   assert(test_substitution(sub));
   if(sub == NULL)
     return NULL;
-  return  sub->values[key->var_no];
+  return get_sub_value(sub, key->var_no);
 }
 
 /**
@@ -169,13 +187,13 @@ const term* find_substitution(const substitution* sub, const variable* key){
    Fails if the key occurs with a different value
 **/
 bool _add_substitution_no(substitution* sub, size_t var_no, const term* value){
-  const term* orig_val = sub->values[var_no];
+  const term* orig_val = get_sub_value(sub, var_no);
 
   assert(test_term(value));
 
   if(orig_val == NULL){
     sub->n_subs++;
-    sub->values[var_no] = value;
+    set_sub_value(sub, var_no, value);
     
     assert(test_substitution(sub));
 
@@ -200,9 +218,9 @@ bool add_substitution(substitution* sub, variable* var, const term* value){
 void insert_substitution_value(substitution* sub, variable* var, const term* value){
   size_t var_no = var->var_no;
   assert(test_term(value));
-  if(sub->values[var_no] == NULL)
+  if(get_sub_value(sub, var_no) == NULL)
     sub->n_subs++;
-  sub->values[var_no] = value;
+  set_sub_value(sub, var_no, value);
   
   assert(test_substitution(sub));
 }
@@ -275,8 +293,8 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2)
 
 
   for(i = 0; i < sub1->allvars->n_vars; i++){
-    const term* val1 = sub1->values[i];
-    const term* val2 = sub2->values[i];
+    const term* val1 = get_sub_value(sub1, i);
+    const term* val2 = get_sub_value(sub2, i);
     if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2))
 	return false;
   }
@@ -290,12 +308,12 @@ bool test_substitution(const substitution* sub){
   unsigned int i, c;
   assert(sub != NULL);
   assert(sub->n_subs <= sub->allvars->n_vars);
-
+  
   c = 0;
   for(i = 0; i < sub->allvars->n_vars; i++){
-    if(sub->values[i] != NULL){
+    if(get_sub_value(sub, i) != NULL){
       c++;
-      assert(test_term(sub->values[i]));
+      assert(test_term(get_sub_value(sub, i)));
     }
   }
 
@@ -324,12 +342,12 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
 bool union_substitutions_struct_terms(substitution* dest, const substitution* orig){
   unsigned int i;
   for(i = 0; i < dest->allvars->n_vars; i++){
-    const term* val1 = dest->values[i];
-    const term* val2 = orig->values[i];
+    const term* val1 = get_sub_value(dest, i);
+    const term* val2 = get_sub_value(orig, i);
     if(val1 == NULL){
       if(val2 != NULL){
 	dest->n_subs++;
-	dest->values[i] = val2;
+	set_sub_value(dest, i, val2);
       }
     } else if(val2 != NULL && !equal_terms(val1, val2)){
       assert(! subs_equal_intersection(dest, orig));
@@ -583,10 +601,10 @@ void print_substitution(const substitution* sub, FILE* f){
   fprintf(f,"[");
   if(sub != NULL){
     for(i = 0; i < sub->allvars->n_vars; i++){
-      if(sub->values[i] != NULL){
+      if(get_sub_value(sub, i) != NULL){
 	print_variable(sub->allvars->vars[i],f);
 	fprintf(f, "->");
-	print_fol_term(sub->values[i],f);
+	print_fol_term(get_sub_value(sub, i),f);
 	if(j < sub->n_subs-1)
 	  fprintf(f, ",");
 	j++;
@@ -604,7 +622,7 @@ void print_coq_substitution(const substitution* sub, const freevars* vars, FILE*
   size_t j = 0;
   for(i = 0; i < vars->n_vars; i++){
     fprintf(f, " ");
-    print_coq_term(sub->values[vars->vars[i]->var_no],f);
+    print_coq_term(get_sub_value(sub, vars->vars[i]->var_no),f);
   }
 }
 

@@ -30,16 +30,18 @@
 /**
    This version of a rete state is intended for a prover without or-parallellism, but
    with parallellism in the insertion into the rule queues
+
+   subs is the substitutions stored in the node caches in the rete net
 **/
 typedef struct rete_state_single_t {
   substitution_store * subs;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
+  fact_store * factsets;
   const rete_net* net;
   fresh_const_counter fresh;  
   constants constants;
   bool verbose;
-  fact_set ** factset;
   bool finished;
   unsigned int step;
 } rete_state_single;
@@ -51,6 +53,7 @@ typedef struct rete_state_single_t {
 typedef struct rete_state_backup_t {
   rule_queue_single_backup * rq_backups;
   substitution_store_backup * sub_backups;
+  fact_store_backup * factset_backups;
   rete_state_single* state;
 } rete_state_backup;
 

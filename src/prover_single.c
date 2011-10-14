@@ -77,12 +77,12 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     
-    if(state->net->has_factset){
-      insert_state_fact_set(state->factset, ground, get_state_step_single(state));
-    }
-    if(!state->net->factset_lhs && state->net->use_beta_not)
+    if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact_mt(state, ground, get_state_step_single(state));
-    delete_instantiated_atom(con->args[i], ground);
+    if(state->net->has_factset)
+      insert_state_fact_set_single(state, ground);
+    else 
+      delete_instantiated_atom(con->args[i], ground);
   } // end for
 }
 
@@ -92,7 +92,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 bool return_found_model_mt(rete_state_single* state){
   fprintf(stdout, "Found a model of the theory \n");
   if(state->net->has_factset)
-    print_state_fact_set(state->factset, stdout, state->net->th->n_predicates);
+    print_state_fact_set_single(state, stdout, state->net->th->n_predicates);
   else
     fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
   foundproof = false;
@@ -133,7 +133,7 @@ bool run_prover_single(rete_state_single* state){
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
       
-      insert_rule_instance_history(state, next);
+      //     insert_rule_instance_history_single(state, next);
 
       ts = get_state_step_single(state);
 
@@ -150,7 +150,7 @@ bool run_prover_single(rete_state_single* state){
 	  bool rv = start_rete_disjunction_coq_single(state, next, ts);
 	  return rv;
 	} else { // rhs is single conjunction
-	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], next->sub);
+	  insert_rete_net_conjunction_single(state, next->rule->rhs->args[0], & next->sub);
 	  //write_proof_node(state, next);
 	  //write_proof_edge(state, state);  
 	}
@@ -211,7 +211,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
-    insert_state_fact_set(state->factset, true_atom, 0);
+    insert_state_fact_set_single(state, true_atom, 0);
 
   if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact_mt(state, true_atom);

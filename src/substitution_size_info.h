@@ -35,11 +35,12 @@ typedef struct substitution_size_info_t {
   unsigned int size_substitution;
   unsigned int size_rule_instance;
   unsigned int max_n_timestamps;
+  unsigned int sub_values_offset;
 } substitution_size_info;
 
 substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts);
 unsigned int get_size_substitution(substitution_size_info);
 unsigned int get_size_rule_instance(substitution_size_info);
 unsigned int get_max_n_timestamps(substitution_size_info);
-
+unsigned int get_sub_values_offest(substitution_size_info);
 #endif

@@ -51,14 +51,13 @@ void insert_rete_beta_sub_single(rete_state_single* state,
   
   if(node->type == rule){
     assert(node->n_children == 0);
+    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
+    assert(test_substitution(sub));	
     if(insert_substitution_single(state, 
 				  node->val.rule.store_no, 
 				  sub, node->free_vars
 				  ))
-      {
-	assert(test_substitution(sub));
-	add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
-      }
+      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
   } else {
 
     assert(node->type == beta_and || node->type==beta_not);
@@ -223,7 +222,7 @@ bool insert_rete_alpha_fact_single(rete_state_single* state,
 void insert_rete_net_fact_mt(rete_state_single* state, 
 			     const atom* fact){
   unsigned int i;
-  substitution * tmp_sub = alloc_heap_substitution(state->net->th->sub_size_info);
+  substitution * tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
   unsigned int step = get_state_step_no_single(state);
   assert(test_atom(fact));

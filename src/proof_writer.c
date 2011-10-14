@@ -247,7 +247,7 @@ void write_exist_vars_intro(freevars* ev, const substitution* sub){
   while(has_next_freevars_iter(&iter)){
     variable* var = next_freevars_iter(&iter);
     fp_err( fprintf(coq_fp, "intro "), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    print_coq_term(sub->values[var->var_no], coq_fp);
+    print_coq_term(get_sub_value(sub, var->var_no), coq_fp);
     fp_err( fprintf(coq_fp, ".\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
   }
 }

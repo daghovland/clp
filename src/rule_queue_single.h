@@ -43,7 +43,7 @@ typedef struct rule_queue_single_t {
   unsigned int previous_appl;
   unsigned int n_appl;
   substitution_size_info ssi;
-  rule_instance queue[];
+  char queue[];
 } rule_queue_single;
 
 

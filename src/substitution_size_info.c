@@ -24,26 +24,48 @@
 #include "rule_instance.h"
 #include "term.h"
 
+/**
+   Returns the size necessary for a substituton structure including
+   large enough sub_values and timestamps
+**/
 unsigned int get_size_substitution(substitution_size_info ssi){
   return ssi.size_substitution;
 }
+
 
 unsigned int get_size_rule_instance(substitution_size_info ssi){
   return ssi.size_rule_instance;
 }
 
+/**
+   Returns the maximum number of timestamps necessary.
+   This becomes the size of the array in timestamps
+**/
 unsigned int get_max_n_timestamps(substitution_size_info ssi){
   return ssi.max_n_timestamps;
 }
 
+/**
+   Returns the value that must be added to the address to access the sub_values
+   component of substitution
+**/
+unsigned int get_sub_values_offset(substitution_size_info ssi){
+  return ssi.sub_values_offset;
+}
+
+/**
+   Discovers how much space is needed for the timestmaps, substitutions and rule instances
+**/
 substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts){
   substitution_size_info ssi;
   unsigned int size_vars, size_timestamps;
   ssi.max_n_timestamps = max_lhs_conjuncts;
   size_vars = n_vars * sizeof(term*);
   size_timestamps = ssi.max_n_timestamps * sizeof(signed int);
+  assert(sizeof(timestamps) % sizeof(term*) == (size_timestamps + sizeof(timestamps)) % sizeof(term*));
   ssi.size_substitution = sizeof(substitution) + size_vars + size_timestamps;
   ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
+  ssi.sub_values_offset =  ssi.max_n_timestamps;
   return ssi;
 }
 

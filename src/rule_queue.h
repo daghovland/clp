@@ -58,18 +58,14 @@ rule_queue* initialize_queue(void);
 rule_queue* copy_rule_queue(const rule_queue*);
 
 void delete_rule_instance(rule_instance*);
-rule_instance* copy_rule_instance(rule_instance*, substitution_size_info);
 void delete_rule_queue_before(rule_queue*, rule_queue*);
 void delete_full_rule_queue(rule_queue*);
-rule_instance* create_rule_instance(const axiom*, const substitution*, substitution_size_info);
 
-rule_instance* create_dummy_rule_instance(substitution_size_info);
-void delete_dummy_rule_instance(rule_instance*);
 
 void print_rule_queue(const rule_queue*, FILE*);
 void print_dot_rule_queue(const rule_queue*, FILE*);
-void print_rule_instance(const rule_instance*, FILE*);
-void print_dot_rule_instance(const rule_instance*, FILE*);
-void print_coq_rule_instance(const rule_instance*, FILE*);
+
+
+
 
 #endif

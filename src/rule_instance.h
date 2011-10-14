@@ -22,6 +22,7 @@
 #define __INCLUDED_RULE_INSTANCE_H
 
 #include "substitution_struct.h"
+#include "substitution_size_info.h"
 #include "axiom.h"
 
 typedef struct rule_instance_t {
@@ -31,5 +32,16 @@ typedef struct rule_instance_t {
   substitution sub;
 } rule_instance;
 
+rule_instance* create_rule_instance(const axiom*, const substitution*, substitution_size_info);
+rule_instance* create_dummy_rule_instance(substitution_size_info);
+void delete_dummy_rule_instance(rule_instance*);
+void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi);
+rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi);
+
+bool test_rule_instance(const rule_instance*);
+
+void print_rule_instance(const rule_instance*, FILE*);
+void print_dot_rule_instance(const rule_instance*, FILE*);
+void print_coq_rule_instance(const rule_instance*, FILE*);
 
 #endif
