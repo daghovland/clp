@@ -159,7 +159,7 @@ int file_prover(FILE* f, const char* prefix){
   assert(test_theory(th));
   if(!has_theory_name(th))
     set_theory_name(th, prefix);
-  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq, use_beta_not, factset_lhs, print_model, all_disjuncts);
+  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq, use_beta_not, factset_lhs, print_model, all_disjuncts, verbose);
 
   if(!factset_lhs){  
     if(debug){

@@ -160,7 +160,7 @@ void init_proof_coq_writer(const rete_net* net){
   free(coqfilename);
 }
 
-void write_proof_node(rete_net_state* s, const rule_instance* ri){
+void write_proof_node(unsigned int step_no, unsigned int cur_step_no, const char* proof_branch_id, const rete_net* net, rule_queue_state rqs, void (* print_new_facts) (rule_queue_state, FILE*), const rule_instance* ri){
 #ifdef RETE_STATE_DEBUG_DOT
   FILE *fp2;
   char fname2[100];
@@ -173,31 +173,31 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
 #endif
     if(file_open){
       assert(dot_fp != NULL);
-      assert(strlen(s->proof_branch_id) >= 0);
+      assert(strlen(proof_branch_id) >= 0);
       fp_err( fprintf(dot_fp, "\n n%ss%i [label=\"%i",  
-		      s->proof_branch_id,
-		      s->step_no, 
-		      get_current_state_step_no(s)
+		      proof_branch_id,
+		      step_no, 
+		      cur_step_no
 		      ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT
-      fp_err( fprintf(dot_fp, "(Branch:%s:%i)", s->proof_branch_id, s->step_no), "Could not write proof node dot info\n");
+      fp_err( fprintf(dot_fp, "(Branch:%s:%i)", proof_branch_id, step_no), "Could not write proof node dot info\n");
 #endif
-      if(s->net->has_factset){
+      if(net->has_factset){
 	fp_err( fprintf(dot_fp, "\\n{" ), "Could not write proof node dot info\n");
-	print_state_new_facts(s, dot_fp);
+	print_new_facts(rqs, dot_fp);
 	fp_err( fprintf(dot_fp, "}\\n" ), "Could not write proof node dot info\n");
       }
     } // file open
   } // proof etc. 
   if( verbose || debug){
-    printf("In step: %i applied: ", get_current_state_step_no(s));
+    printf("In step: %i applied: ", cur_step_no);
     print_rule_instance(ri, stdout);    
     printf("\n");
   } // proof etc. 
 
 #ifdef RETE_STATE_DEBUG_TXT
-  printf("\nRule Queues in step: %i: \n", get_current_state_step_no(s));
-  for(i = 0; i < s->net->th->n_axioms; i++){
+  printf("\nRule Queues in step: %i: \n", cur_step_no);
+  for(i = 0; i < net->th->n_axioms; i++){
     if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first){
       printf("Axiom %s ", s->net->th->axioms[i]->name);
       print_rule_queue(s->axiom_inst_queue[i], stdout);
@@ -213,7 +213,7 @@ void write_proof_node(rete_net_state* s, const rule_instance* ri){
 #ifdef RETE_STATE_DEBUG_DOT
       sprintf(fname2, "rete_state_%i.dot", get_current_state_step_no(s));
       fp2 = file_err( fopen(fname2, "w"), "Could not create rete state dot file\n");
-      print_dot_rete_state_net(s->net, s, fp2);
+      print_dot_rete_state_net(net, s, fp2);
       fclose(fp2);
       sprintf(fname2, "dot -Tpdf rete_state_%i.dot > rete_state_%i.pdf && rm rete_state_%i.dot",  get_current_state_step_no(s), get_current_state_step_no(s), get_current_state_step_no(s));
       sys_err( system(fname2), "Could not execute dot on rete state file. Maybe dot is not installed?\n");

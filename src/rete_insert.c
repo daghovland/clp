@@ -116,7 +116,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
 	  free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
-	} else
+	}
       break;
     case beta_not:
       if(parent == node->left_parent){

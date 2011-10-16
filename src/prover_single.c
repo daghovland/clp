@@ -47,6 +47,21 @@ bool foundproof;
 
 
 
+/**
+   Wrappers for write_proof_node
+**/
+
+void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
+  print_state_new_fact_store(rqs.single, f);
+}
+
+void write_prover_node_single(rete_state_single* state, rule_instance* next){
+  rule_queue_state rqs;
+  rqs.single = state;
+  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, print_state_new_fact_store_rqs, next);
+}
+
+
 
 
 bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step);
@@ -80,7 +95,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact_mt(state, ground, get_state_step_single(state));
     if(state->net->has_factset)
-      insert_state_fact_set_single(state, ground);
+      insert_state_factset_single(state, ground);
     else 
       delete_instantiated_atom(con->args[i], ground);
   } // end for
@@ -92,7 +107,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 bool return_found_model_mt(rete_state_single* state){
   fprintf(stdout, "Found a model of the theory \n");
   if(state->net->has_factset)
-    print_state_fact_set_single(state, stdout, state->net->th->n_predicates);
+    print_state_fact_store(state, stdout);
   else
     fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
   foundproof = false;
@@ -142,16 +157,16 @@ bool run_prover_single(rete_state_single* state){
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	//check_used_rule_instances_coq_single(next, state, ts, ts);
 	//check_state_finished_single(state);
-	//	write_proof_node(state, next);
+	write_prover_node_single(state, next);
 	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
-	  //write_proof_node(state, next);
+	  write_prover_node_single(state, next);
 	  bool rv = start_rete_disjunction_coq_single(state, next, ts);
 	  return rv;
 	} else { // rhs is single conjunction
 	  insert_rete_net_conjunction_single(state, next->rule->rhs->args[0], & next->sub);
-	  //write_proof_node(state, next);
+	  write_prover_node_single(state, next);
 	  //write_proof_edge(state, state);  
 	}
       }
@@ -211,9 +226,9 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
-    insert_state_fact_set_single(state, true_atom, 0);
+    insert_state_factset_single(state, true_atom);
 
-  if(!state->net->factset_lhs && state->net->use_beta_not)
+  if(!state->net->factset_lhs || state->net->use_beta_not)
     insert_rete_net_fact_mt(state, true_atom);
   
   run_prover_single(state);

@@ -48,7 +48,6 @@
 rule_instance* normal_next_instance(rule_queue_state state
 					 , const rete_net* net
 					 , unsigned int step_no
-					 , fact_set ** factset
 					 , bool (*is_empty) (rule_queue_state, size_t)
 					 , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
 					 , bool (*has_new_instance)(rule_queue_state, size_t)
@@ -199,7 +198,6 @@ rule_instance* choose_next_instance(rule_queue_state state
 				    , const rete_net* net
 				    , strategy strat
 				    , unsigned int step_no
-				    , fact_set ** factset
 				    , bool (*is_empty) (rule_queue_state, size_t)
 				    , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
 				    , bool (*has_new_instance)(rule_queue_state, size_t)
@@ -214,7 +212,7 @@ rule_instance* choose_next_instance(rule_queue_state state
   case clpl_strategy:
     return clpl_next_instance(state, net, has_new_instance, pop_axiom);
   case normal_strategy:
-    return normal_next_instance(state, net, step_no, factset, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
+    return normal_next_instance(state, net, step_no, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
   default:
     fprintf(stderr, "Unknown strategy %i\n", strat);
     exit(EXIT_FAILURE);

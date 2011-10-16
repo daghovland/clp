@@ -156,8 +156,9 @@ bool rule_queue_single_is_empty(rule_queue_single* rq){
 **/
 rule_instance* peek_rule_queue_single(rule_queue_single* rq){
   assert(rq->first < rq->end);
-  assert(test_rule_instance(get_rule_instance_single(rq, rq->first)));
-  return & (rq->queue[rq->first]);
+  rule_instance* ri = get_rule_instance_single(rq, rq->first);
+  assert(test_rule_instance(ri));
+  return ri;
 }
 
 /**

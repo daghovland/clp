@@ -26,7 +26,8 @@
 #include "common.h"
 #include "fact_store.h"
 
-fact_store init_fact_store(substitution_size_info ssi){
+
+fact_store init_fact_store(){
   fact_store new_store;
   new_store.max_n_facts = INIT_FACT_STORE_SIZE;
   new_store.n_facts = 0;
@@ -41,8 +42,8 @@ void destroy_fact_store(fact_store* store){
 unsigned int alloc_store_fact(fact_store* store){
   char* new_ptr;
   unsigned int new_i = store->n_facts;
-  store->n_subst ++;
-  if(store->n_subst >= store->max_n_facts){
+  store->n_facts ++;
+  if(store->n_facts >= store->max_n_facts){
     store->max_n_facts *= 2;
     store->store = realloc_tester(store->store, store->max_n_facts * sizeof(atom));
   }
@@ -52,16 +53,19 @@ unsigned int alloc_store_fact(fact_store* store){
 /**
   Adds a copy of the fact and all its substructures to the store
 **/
-void push_fact_sub_store(fact_store* store, const atom* new_fact){
+void push_fact_store(fact_store* store, const atom* new_fact){
   unsigned int fact_no = alloc_store_fact(store);
-  store->store[fact_no] = new_fact;
+  store->store[fact_no] = * new_fact;
 }
 
-atom* get_fact(unsigned int i, fact_store* store){
-  assert(i < store->max_n_subst);
-  return store->store[i];
+const atom* get_fact(unsigned int i, fact_store* store){
+  assert(i < store->max_n_facts);
+  return & store->store[i];
 }
 
+bool is_empty_fact_store(fact_store* store){
+  return store->n_facts == 0;
+}
 
 fact_store_iter get_fact_store_iter(fact_store* store){
   fact_store_iter iter;
@@ -74,8 +78,8 @@ bool has_next_fact_store(fact_store_iter* iter){
   return iter->n < iter->store->n_facts;
 }
 
-atom* get_next_sub_store(sub_store_iter* iter){
-  atom* a = get_fact(iter->n, iter->store);
+const atom* get_next_fact_store(fact_store_iter* iter){
+  const atom* a = get_fact(iter->n, iter->store);
   assert(iter->n < iter->store->n_facts);
   iter->n ++;
   return a;
@@ -109,12 +113,21 @@ void destroy_fact_backup(fact_store_backup * backup){
 }
 
 /**
+   Copies a fact_store iter array in orig of length n_iters to 
+   dest. Assumes the necessary memory in dest is already allocated
+**/
+void copy_fact_iter_array(fact_store_iter* dest, const fact_store_iter * orig, unsigned int n_iters){
+  memcpy(dest, orig, n_iters * sizeof(fact_store_iter));
+}
+
+
+/**
    Auxiliaries for manipulating array of fact store backups
 **/
 
 fact_store_backup * backup_fact_store_array(fact_store* stores, unsigned int n_stores){
   unsigned int i;
-  fact_store_backups* backups = calloc_tester(n_stores, sizeof(fact_store_backup));
+  fact_store_backup* backups = calloc_tester(n_stores, sizeof(fact_store_backup));
   for(i = 0; i < n_stores; i++)
     backups[i] = backup_fact_store(& stores[i]);
   return backups;
@@ -126,4 +139,18 @@ void destroy_fact_store_backup_array(fact_store_backup* backups, unsigned int n_
   for(i = 0; i < n_backups; i++)
     destroy_fact_backup(& backups[i]);
   free(backups);
+}
+
+
+
+/**
+   Prints all facts currently in the "factset"
+**/
+void print_fact_store(fact_store * store, FILE* f){
+  fact_store_iter iter = get_fact_store_iter(store);
+  while(has_next_fact_store(&iter)){
+    print_fol_atom(get_next_fact_store(&iter), f);
+    if(has_next_fact_store(&iter))
+      fprintf(f, ", ");
+  }
 }

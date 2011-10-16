@@ -33,7 +33,6 @@ rule_instance* choose_next_instance_state(rete_net_state* state){
 			      , state->net
 			      , state->net->strat
 			      , get_current_state_step_no(state)
-			      , state->factset
 			      , is_empty_axiom_rule_queue_state
 			      , peek_axiom_rule_queue_state
 			      , axiom_has_new_instance

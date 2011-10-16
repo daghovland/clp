@@ -85,6 +85,20 @@ void pthread_error_test(int retno, const char* msg){
 
 
 /**
+   Wrappers for write_proof_node
+**/
+
+void print_state_new_facts_rqs(rule_queue_state rqs, FILE* f){
+  print_state_new_facts(rqs.state, f);
+}
+
+void write_prover_node_old(rete_net_state* state, rule_instance* next){
+  rule_queue_state rqs;
+  rqs.state = state;
+  write_proof_node(state->step_no, get_current_state_step_no(state), state->proof_branch_id, state->net, rqs, print_state_new_facts_rqs, next);
+}
+
+/**
    Called at the end of a disjunctive branch
    Checks what rule instances were used
    Called from run_prover_rete_coq_mt
@@ -178,7 +192,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
     if(state->net->has_factset){
       insert_state_fact_set(state->factset, ground, get_current_state_step_no(state));
     }
-    if(!state->net->factset_lhs && state->net->use_beta_not)
+    if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
 
     /*    if(!state->net->has_factset)
@@ -279,7 +293,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	check_used_rule_instances_coq_mt(next, state, ts, ts);
 	state->end_of_branch = next;
 	check_state_finished(state);
-	write_proof_node(state, next);
+	write_prover_node_old(state, next);
 
 	//delete_rete_state(state, state->parent);
 	//destroy_substitution_store_mt(& state->local_subst_mem);
@@ -287,7 +301,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
-	  write_proof_node(state, next);
+	  write_prover_node_old(state, next);
 	  if(state->net->treat_all_disjuncts){
 	    insert_rete_disjunction_coq_mt(state, next, get_current_state_step_no(state));
 	    return true;
@@ -297,7 +311,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	  }
 	} else { // rhs is single conjunction
 	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], & next->sub);
-	  write_proof_node(state, next);
+	  write_prover_node_old(state, next);
 	  write_proof_edge(state, state);  
 
 	}

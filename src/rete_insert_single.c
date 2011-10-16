@@ -60,7 +60,7 @@ void insert_rete_beta_sub_single(rete_state_single* state,
       add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
   } else {
 
-    assert(node->type == beta_and || node->type==beta_not);
+    assert(node->type == beta_and);
     assert(node->n_children == 1);	
     assert(node->left_parent != NULL && node->left_parent->type != alpha);
     
@@ -81,10 +81,11 @@ void insert_rete_beta_sub_single(rete_state_single* state,
 	      overlapping_subs = union_substitutions_struct_one_ts(tmp_sub, sub, get_next_sub_store(&iter), ssi);
 	    if(overlapping_subs) 
 	      insert_rete_beta_sub_single(state, node, node->children[0], tmp_sub);
-	  }
+	  } // end while has next ..
 	  destroy_sub_store_iter(& iter);
-	} else
+	} // end if insert ..
       break;
+#if false
     case beta_not:
       if(parent == node->left_parent){
 	if(insert_substitution_single(state, 
@@ -111,6 +112,7 @@ void insert_rete_beta_sub_single(rete_state_single* state,
 				      ))
 	  ;
       break;
+#endif
     default:
       fprintf(stderr, "Encountered untreated node type: %i\n", node->type);
       assert(false);

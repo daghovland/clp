@@ -35,18 +35,13 @@ rete_state_backup backup_rete_state(rete_state_single*);
 void destroy_rete_backup(rete_state_backup*);
 rete_state_single* restore_rete_state(rete_state_backup*);
 
-bool insert_substitution_single(rete_state_single*, size_t, const substitution*, const freevars*);
-bool is_empty_axiom_rule_queue_single(rule_queue_state, size_t);
-rule_instance* peek_axiom_rule_queue_single(rule_queue_state, size_t);
-bool axiom_has_new_instance_single(rule_queue_state, size_t);
-unsigned int rule_queue_possible_age_single(rule_queue_state, size_t);
-bool axiom_may_have_new_instance_single(rule_queue_state, size_t);
-rule_instance* pop_axiom_rule_queue_single(rule_queue_state, size_t);
-void add_rule_to_queue_single(const axiom*, const substitution*, rule_queue_state);
-unsigned int axiom_queue_previous_application_single(rule_queue_state, size_t);
+void insert_state_factset_single(rete_state_single*, const atom*);
 
 unsigned int get_state_step_single(const rete_state_single*);
 bool inc_proof_step_counter_single(rete_state_single*);
 
-sub_store_iter get_state_sub_store_iter(rete_state_single*, size_t);
+sub_store_iter get_state_sub_store_iter(rete_state_single*, unsigned int);
+fact_store_iter get_state_fact_store_iter(rete_state_single*, unsigned int);
+void print_state_fact_store(rete_state_single *, FILE*);
+void print_state_new_fact_store(rete_state_single*, FILE*);
 #endif

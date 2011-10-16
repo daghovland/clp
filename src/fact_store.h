@@ -56,13 +56,14 @@ typedef struct fact_store_backup_t {
 typedef struct fact_store_iter_t {
   unsigned int n;
   fact_store* store;
-} sub_store_iter;
+} fact_store_iter;
 
 fact_store init_fact_store(void);
 void destroy_fact_store(fact_store*);
 unsigned int alloc_store_fact(fact_store*);
 void push_fact_store(fact_store*, const atom*);
 const atom* get_fact(unsigned int, fact_store*);
+bool is_empty_fact_store(fact_store*);
 
 fact_store_iter get_fact_store_iter(fact_store*);
 bool has_next_fact_store(fact_store_iter*);
@@ -76,5 +77,7 @@ void destroy_fact_backup(fact_store_backup*);
 
 fact_store_backup * backup_fact_store_array(fact_store*, unsigned int);
 void destroy_fact_store_backup_array(fact_store_backup*, unsigned int);
+void copy_fact_iter_array(fact_store_iter*, const fact_store_iter *, unsigned int);
 
+void print_fact_store(fact_store *, FILE*);
 #endif

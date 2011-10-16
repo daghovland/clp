@@ -33,7 +33,7 @@ FILE* get_coq_fdes(void);
 bool next_ri_is_after(rule_instance_stack*, unsigned int);
 void init_proof_dot_writer(const char*, const rete_net*);
 void init_proof_coq_writer(const rete_net*);
-void write_proof_node(rete_net_state*, const rule_instance*);
+void write_proof_node(unsigned int step_no, unsigned int cur_step_no, const char* proof_branch_id, const rete_net*, rule_queue_state rqs, void (* print_new_facts) (rule_queue_state, FILE*), const rule_instance*);
 void end_proof_dot_writer(const char*, const rete_net*);
 void end_proof_coq_writer(const theory* th);
 void write_proof_state(const rete_net_state*, const rete_net_state*);

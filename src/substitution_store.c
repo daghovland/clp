@@ -118,7 +118,7 @@ void destroy_substitution_backup(substitution_store_backup * backup){
 
 substitution_store_backup * backup_substitution_store_array(substitution_store* stores, unsigned int n_stores){
   unsigned int i;
-  substitution_store_backups* backups = calloc_tester(n_stores, sizeof(substitution_store_backup));
+  substitution_store_backup* backups = calloc_tester(n_stores, sizeof(substitution_store_backup));
   for(i = 0; i < n_stores; i++)
     backups[i] = backup_substitution_store(& stores[i]);
   return backups;
