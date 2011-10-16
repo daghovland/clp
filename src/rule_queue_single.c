@@ -70,15 +70,25 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi){
   return rq;
 }
 
-unsigned int get_rule_queue_single_pos(rule_queue_single* rq, unsigned int no){
+unsigned int get_rule_queue_single_pos(const rule_queue_single* rq, unsigned int no){
   return no * get_size_rule_instance(rq->ssi);
 }
+
+
+unsigned int get_rule_queue_single_size(const rule_queue_single* rq){
+  return rq->end - rq->first;
+}
+
 
 /**
    Gets a rule instance at a position in the queue
 **/
 rule_instance* get_rule_instance_single(rule_queue_single* rq, unsigned int pos){
   return (rule_instance*) (rq->queue + get_rule_queue_single_pos(rq, pos));
+}
+
+const rule_instance* get_const_rule_instance_single(const rule_queue_single* rq, unsigned int pos){
+  return (const rule_instance*) (rq->queue + get_rule_queue_single_pos(rq, pos));
 }
 
 
@@ -144,7 +154,7 @@ rule_queue_single* push_rule_instance_single(rule_queue_single* rq, const axiom*
   return rq;
 }
 
-bool rule_queue_single_is_empty(rule_queue_single* rq){
+bool rule_queue_single_is_empty(const rule_queue_single* rq){
   return rq->first == rq->end;
 }
 
@@ -208,3 +218,17 @@ rule_queue_single* restore_rule_queue_single(rule_queue_single* rq, rule_queue_s
 unsigned int rule_queue_single_previous_application(rule_queue_single* rqs){
   return rqs->previous_appl;
 }
+
+/**
+   Printing
+**/
+void print_rule_queue_single(const rule_queue_single* rq, FILE* f){
+  unsigned int i, j;
+  fprintf(f, "queue with %zi entries: \n", get_rule_queue_single_size(rq));
+  for(j=0, i = rq->first; i < rq->end; i++, j++){
+    fprintf(f, "\t%i: ", j);
+    print_rule_instance(get_const_rule_instance_single(rq, i), f);
+    fprintf(f, "\n");
+  }
+}
+    

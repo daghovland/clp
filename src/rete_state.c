@@ -414,6 +414,19 @@ void print_rete_state(const rete_net_state* state, FILE*  f){
 }
 
 
+/**
+   Called from proof_writer.c via prover.c
+**/
+void print_state_rule_queues(rete_net_state* s, FILE* f){
+  unsigned int i;
+  for(i = 0; i < s->net->th->n_axioms; i++){
+    if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first){
+      printf("Axiom %s ", s->net->th->axioms[i]->name);
+      print_rule_queue(s->axiom_inst_queue[i], stdout);
+    }
+  }
+}
+
 void print_dot_rete_state_node(const rete_node* node, const rete_net_state* state, FILE* stream){
   unsigned int i;
   fprintf(stream, "n%li [label=\"", (unsigned long) node);

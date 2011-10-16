@@ -56,13 +56,19 @@ typedef struct rule_queue_single_backup_t {
 
 rule_queue_single* initialize_queue_single(substitution_size_info);
 void destroy_rule_queue_single(rule_queue_single*);
+
 rule_queue_single* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool);
 rule_instance* pop_rule_queue_single(rule_queue_single**, unsigned int);
 rule_instance* peek_rule_queue_single(rule_queue_single*);
+
 unsigned int rule_queue_single_age(rule_queue_single*);
+unsigned int rule_queue_single_previous_application(rule_queue_single*);
+
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
 rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
-unsigned int rule_queue_single_previous_application(rule_queue_single*);
-bool rule_queue_single_is_empty(rule_queue_single*);
 
+bool rule_queue_single_is_empty(const rule_queue_single*);
+unsigned int get_rule_queue_single_size(const rule_queue_single*);
+
+void print_rule_queue_single(const rule_queue_single*, FILE*);
 #endif

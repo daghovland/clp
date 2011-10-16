@@ -87,6 +87,10 @@ void pthread_error_test(int retno, const char* msg){
 /**
    Wrappers for write_proof_node
 **/
+void print_state_rule_queues_rqs(rule_queue_state rqs, FILE* f){
+  print_state_rule_queues(rqs.state, f);
+}
+
 
 void print_state_new_facts_rqs(rule_queue_state rqs, FILE* f){
   print_state_new_facts(rqs.state, f);
@@ -95,7 +99,7 @@ void print_state_new_facts_rqs(rule_queue_state rqs, FILE* f){
 void write_prover_node_old(rete_net_state* state, rule_instance* next){
   rule_queue_state rqs;
   rqs.state = state;
-  write_proof_node(state->step_no, get_current_state_step_no(state), state->proof_branch_id, state->net, rqs, print_state_new_facts_rqs, next);
+  write_proof_node(state->step_no, get_current_state_step_no(state), state->proof_branch_id, state->net, rqs, print_state_new_facts_rqs, print_state_rule_queues_rqs, next);
 }
 
 /**

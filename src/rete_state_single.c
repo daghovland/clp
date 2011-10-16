@@ -364,6 +364,21 @@ void print_state_new_fact_store(rete_state_single* state, FILE* f){
   }
 }
 
+
+/**
+   Called from proof_writer.c via prover.c
+**/
+void print_state_single_rule_queues(rete_state_single* s, FILE* f){
+  unsigned int i;
+  for(i = 0; i < s->net->th->n_axioms; i++){
+    if(!rule_queue_single_is_empty(s->rule_queues[i])){
+      printf("Axiom %s ", s->net->th->axioms[i]->name);
+      print_rule_queue_single(s->rule_queues[i], stdout);
+    }
+  }
+}
+
+
 /**
    Interface to strategy, choose_next_instance and rule_queue_state
 **/

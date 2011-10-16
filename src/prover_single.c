@@ -51,6 +51,11 @@ bool foundproof;
    Wrappers for write_proof_node
 **/
 
+void print_state_single_rule_queues_rqs(rule_queue_state rqs, FILE* f){
+  print_state_single_rule_queues(rqs.single, f);
+}
+
+
 void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
   print_state_new_fact_store(rqs.single, f);
 }
@@ -58,7 +63,7 @@ void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
 void write_prover_node_single(rete_state_single* state, rule_instance* next){
   rule_queue_state rqs;
   rqs.single = state;
-  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, print_state_new_fact_store_rqs, next);
+  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
 }
 
 

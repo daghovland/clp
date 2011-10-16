@@ -36,5 +36,5 @@ bool disjunction_true_in_fact_set(rete_net_state* state, const disjunction* dis,
 bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitution** sub);
 
 rule_instance* choose_next_instance_state(rete_net_state*);
-
+void print_state_rule_queues(rete_net_state*, FILE*);
 #endif

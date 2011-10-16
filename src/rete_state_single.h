@@ -42,6 +42,8 @@ bool inc_proof_step_counter_single(rete_state_single*);
 
 sub_store_iter get_state_sub_store_iter(rete_state_single*, unsigned int);
 fact_store_iter get_state_fact_store_iter(rete_state_single*, unsigned int);
+
+void print_state_single_rule_queues(rete_state_single*, FILE*);
 void print_state_fact_store(rete_state_single *, FILE*);
 void print_state_new_fact_store(rete_state_single*, FILE*);
 #endif
