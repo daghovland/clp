@@ -87,7 +87,6 @@ bool test_rule_instance(const rule_instance* ri){
   assert(ri->rule != NULL);
   assert(test_substitution(& ri->sub));
   assert(test_axiom(ri->rule, ri->rule->axiom_no));
-  assert(!ri->used_in_proof);
   if(!test_is_instantiation(ri->rule->rhs->free_vars, & (ri->sub))){
     fprintf(stderr, "An incorrect rule instance added to the queue\n");
     print_rule_instance(ri, stderr);

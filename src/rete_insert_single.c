@@ -220,6 +220,9 @@ bool insert_rete_alpha_fact_single(rete_state_single* state,
    An empty substitution is created on the heap and passed to the network
    This must not be touched after the call to insert_rete_alpha_fact, since it
    deletes or stores it
+
+   Note that calling this function may invalidate any rule_instance pointer, since these all 
+   point to members of the rule_queue_single arrays, which may be realloced as a consqequence of this call
 **/
 void insert_rete_net_fact_mt(rete_state_single* state, 
 			     const atom* fact){

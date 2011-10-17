@@ -51,7 +51,7 @@ substitution* get_substitution_memory(substitution_size_info ssi, substitution_s
   else {
     ret_val = alloc_heap_substitution(ssi);
   }
-  ret_val->sub_values_ptr = ret_val->sub_values + get_sub_values_offset(ssi);
+  ret_val->sub_values_offset = get_sub_values_offset(ssi);
   return ret_val;
 }
 
@@ -73,11 +73,11 @@ void free_substitution(substitution* sub){
    since there is an offset from the timestamps which has a flexible array member
 **/
 const term* get_sub_value(const substitution* sub, unsigned int no){
-  return sub->sub_values_ptr[no];
+  return (sub->sub_values + sub->sub_values_offset)[no];
 }
 
 void set_sub_value(substitution* sub, unsigned int no, const term* t){
-  sub->sub_values_ptr[no] = t;
+  (sub->sub_values + sub->sub_values_offset)[no] = t;
 }
 
 
@@ -143,7 +143,6 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a, su
 void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi){
   assert(test_substitution(orig));
   memcpy(dest, orig, get_size_substitution(ssi));
-  dest->sub_values_ptr = dest->sub_values + get_sub_values_offset(ssi);
   assert(test_substitution(dest));
 }
 

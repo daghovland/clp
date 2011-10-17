@@ -50,7 +50,7 @@ unsigned int alloc_store_substitution(substitution_store* store){
     store->max_n_subst *= 2;
     store->store = realloc_tester(store->store, store->max_n_subst * get_size_substitution(store->ssi));
   }
-  return store->n_subst - 1;
+  return new_i;
 }
 
 /**

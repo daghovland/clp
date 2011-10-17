@@ -60,7 +60,7 @@ void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
   print_state_new_fact_store(rqs.single, f);
 }
 
-void write_prover_node_single(rete_state_single* state, rule_instance* next){
+void write_prover_node_single(rete_state_single* state, const rule_instance* next){
   rule_queue_state rqs;
   rqs.single = state;
   write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
@@ -123,9 +123,8 @@ bool return_found_model_mt(rete_state_single* state){
    Called from run_prover_rete_coq when reaching max steps, as given with the 
    commandline option -m|--max=LIMIT
 **/
-bool return_reached_max_steps_mt(rete_state_single* state, rule_instance* ri){
+bool return_reached_max_steps_mt(rete_state_single* state, const rule_instance* ri){
   printf("Reached %i proof steps, higher than given maximum\n", get_state_step_single(state));
-  free(ri);
   foundproof = false;
   return false;
 }
@@ -133,9 +132,7 @@ bool return_reached_max_steps_mt(rete_state_single* state, rule_instance* ri){
 
 /**
    Runs a branch in the proof.
-
    Should be thread-safe. 
-
    Note that the rule instance on the stack is discarded, as the 
    conjunction is already inserted by insert_rete_net_disjunction_coq_single below
 **/
@@ -143,24 +140,18 @@ bool return_reached_max_steps_mt(rete_state_single* state, rule_instance* ri){
 bool run_prover_single(rete_state_single* state){
     while(true){
       unsigned int i, ts;
-      
-      rule_instance* next = choose_next_instance_single(state);
+      rule_instance* next;
+      bool incval;
+      next = choose_next_instance_single(state);
       if(next == NULL)
 	return return_found_model_mt(state);
-      
-      
-      bool incval = inc_proof_step_counter_single(state);
+      incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
-      
-      //     insert_rule_instance_history_single(state, next);
-
+      next = insert_rule_instance_history_single(state, next);            
       ts = get_state_step_single(state);
-
-
-
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	//check_used_rule_instances_coq_single(next, state, ts, ts);
+	check_used_rule_instances_coq_single(next, state, ts, ts);
 	//check_state_finished_single(state);
 	write_prover_node_single(state, next);
 	return true;
@@ -170,8 +161,8 @@ bool run_prover_single(rete_state_single* state){
 	  bool rv = start_rete_disjunction_coq_single(state, next, ts);
 	  return rv;
 	} else { // rhs is single conjunction
-	  insert_rete_net_conjunction_single(state, next->rule->rhs->args[0], & next->sub);
 	  write_prover_node_single(state, next);
+	  insert_rete_net_conjunction_single(state, next->rule->rhs->args[0], & next->sub);
 	  //write_proof_edge(state, state);  
 	}
       }
@@ -184,22 +175,30 @@ bool run_prover_single(rete_state_single* state){
    The disj_ri_stack_mutex MUST NOT be locked when this function is called.
 
    If net->treat_all_disjuncts is false, the first branch has already been run by start_rete_disjunction_coq_single below.
+
+   Note that the rule instance pointer next may be invalidated during this run
 **/
 bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step){
   unsigned int i;
+  const axiom* rule = next->rule;
+  unsigned int n_branches = rule->rhs->n_args;
+  substitution *sub = copy_substitution(&next->sub, &state->tmp_subs, state->net->th->sub_size_info);
   rete_state_backup backup = backup_rete_state(state);
-  for(i = 0; i < next->rule->rhs->n_args; i++){
+  for(i = 0; i < n_branches; i++){
+    bool rv;
     if(i > 0)
       state = restore_rete_state(&backup);
-    bool rv;
-    conjunction *con = next->rule->rhs->args[i];
-    insert_rete_net_conjunction_single(state, con, & next->sub);
+    conjunction *con = rule->rhs->args[i];
+    insert_rete_net_conjunction_single(state, con, sub);
     rv = run_prover_single(state);
     if(!rv)
       return false;
-    if(!next->used_in_proof)
+    if(!(get_historic_rule_instance(state, step))->used_in_proof){
+      //      fprintf(stdout, "Could eliminate other branches of step %i\n", step);
       break;
+    }
   }
+  free_substitution(sub);
   destroy_rete_backup(&backup);
 
   return true;
@@ -215,6 +214,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;
+  bool foundproof = true;
 
   srand(1000);
   
@@ -240,7 +240,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
 
   if(foundproof && rete->coq){
     //write_single_coq_proof(state);
-    //end_proof_coq_writer(rete->th);
+    end_proof_coq_writer(rete->th);
   }
   retval = get_state_step_single(state);
   delete_rete_state_single(state);

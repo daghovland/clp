@@ -61,7 +61,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
   for(i = 0; i < net->th->n_axioms; i++)
     state->rule_queues[i] = initialize_queue_single(ssi);
-  
+  state->history = initialize_queue_single(ssi);
   if(state->net->has_factset){
     state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
     state->new_facts_iters = calloc_tester(net->th->n_predicates, sizeof(fact_store_iter));
@@ -75,7 +75,11 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   return state;
 }
 
+/**
+   Creates information necessary to return to a branching point after treating a branch
 
+   Backs up factsets, rule queues, and node caches. 
+**/
 rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
@@ -187,8 +191,8 @@ fact_store_iter get_state_fact_store_iter(rete_state_single* state, unsigned int
 
 **/
 bool insert_substitution_single(rete_state_single* state, size_t sub_no, const substitution* a, const freevars* relevant_vars){
-  substitution_store store = state->subs[sub_no];
-  sub_store_iter iter = get_sub_store_iter(&store);
+  substitution_store * store = & state->subs[sub_no];
+  sub_store_iter iter = get_sub_store_iter(store);
   
   while(has_next_sub_store(&iter)){
     substitution* next_sub = get_next_sub_store(&iter);
@@ -196,7 +200,7 @@ bool insert_substitution_single(rete_state_single* state, size_t sub_no, const s
       return false;
   }
   destroy_sub_store_iter(&iter);
-  push_substitution_sub_store(&store, a);
+  push_substitution_sub_store(store, a);
   return true;
 }
 
@@ -204,12 +208,12 @@ bool insert_substitution_single(rete_state_single* state, size_t sub_no, const s
 void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
   rete_state_single* state = rqs.single;
   assert(test_is_instantiation(rule->rhs->free_vars, sub));
-  state->rule_queues[rule->axiom_no] = push_rule_instance_single(state->rule_queues[rule->axiom_no]
-								 , rule
-								 , sub
-								 , get_state_step_no_single(state)
-								 , state->net->strat == clpl_strategy
-								 );
+  push_rule_instance_single(& (state->rule_queues[rule->axiom_no])
+			    , rule
+			    , sub
+			    , get_state_step_no_single(state)
+			    , state->net->strat == clpl_strategy
+			    );
 }
 
 unsigned int axiom_queue_previous_application_single_state(rete_state_single* state, size_t axiom_no){
@@ -259,7 +263,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
     const atom* fact = get_next_fact_store(&iter);
     copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info);
     if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub)){
-      if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, tmp_sub)){
+      if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
 	found_true = true;
 	break;
       }
@@ -287,11 +291,56 @@ bool disjunction_true_in_fact_store(rete_state_single* state, const disjunction*
   return false;
 }
 
+/**
+   Inserts a copy of ri into the history array. 
+   Returns a pointer to the position in the array
+   Note that this pointer may be invalidated on the next call to this function
+   (But not before)
+**/
+rule_instance* insert_rule_instance_history_single(rete_state_single* state, const rule_instance* ri){
+  unsigned int step =  get_state_step_no_single(state);
+  while(get_rule_queue_single_size(state->history) < step) {
+    fprintf(stdout, "Pushing dummy rule instance on history for step %i\n", step);
+    push_rule_instance_single(& state->history, ri->rule, & ri->sub, step, false);
+  }
+  return push_rule_instance_single(& state->history, ri->rule, & ri->sub, step, false);
+}
 
+rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int step_no){
+  return get_rule_instance_single(state->history, step_no);
+}
+
+/**
+   Called at the end of a disjunctive branch
+   Checks what rule instances were used
+   Called from run_prover_rete_coq_mt
+
+   At the moment, all rule instances are unique in eqch branch (they are copied when popped from the queue)
+   So we know that changing the "used_in_proof" here is ok.
+**/
+void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, unsigned int historic_ts, unsigned int current_ts){
+  unsigned int i;
+  substitution_size_info ssi = state->net->th->sub_size_info;
+  if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
+    timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
+    //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
+    ri->used_in_proof = true;
+    while(has_next_timestamps_iter(&iter)){
+      int premiss_no = get_next_timestamps_iter(&iter);
+      if(premiss_no > 0){
+	rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no);
+	check_used_rule_instances_coq_single(premiss_ri, state, premiss_no, current_ts);
+      }
+    }
+    destroy_timestamps_iter(&iter);
+    //    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
+    //      push_ri_stack(historic_state->elim_stack, ri, historic_ts, current_ts);
+  }
+}
 
 
 /**
-   These two functions both return true if the queue is empty.
+   These two functions both return false if the queue is empty.
    When the net becomes lazy, or multithreaded, the "may_have" version
    will be different, while the has_new will wait till a new one comes out.
 **/

@@ -46,7 +46,7 @@
 typedef struct substitution_t {
   unsigned int n_subs;
   const freevars* allvars;
-  const term** sub_values_ptr;
+  unsigned int sub_values_offset;
   timestamps sub_ts;
   const term* sub_values[];
 } substitution;

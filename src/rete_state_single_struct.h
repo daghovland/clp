@@ -40,6 +40,7 @@ typedef struct rete_state_single_t {
   substitution_store * subs;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
+  rule_queue_single * history;
   fact_store * factsets;
   fact_store_iter * new_facts_iters;
   const rete_net* net;

@@ -26,14 +26,14 @@
 #include "proof_writer.h"
 #include "rete.h"
 #include "substitution.h"
-
-#include <string.h>
+#include "rule_instance.h"
+#include "error_handling.h"
 
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
 
-#include <errno.h>
+
 
 extern bool debug, verbose, proof, dot, text, pdf;
 
@@ -47,50 +47,6 @@ static pthread_mutex_t history_array_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static bool file_open, coq_file_open;
-
-#ifdef HAVE_PTHREAD
-/**
-   Wrapper for pthread function calls
-**/
-void pt_err(int errval, const char* msg){
-  if(errval != 0){
-    errno = errval;
-    perror(msg);
-    exit(EXIT_FAILURE);
-  }
-}
-#endif
-/**
-   Wrapper for function calls like fprintf, which return 
-   a negative value on error
-**/
-void fp_err(int retval, const char* msg){
-  if(retval < 0){
-    perror(msg);
-    exit(EXIT_FAILURE);
-  }
-}
-
-/**
-   Wrapper for calls like, system and fclose
-   which return 0 on success
-**/
-void sys_err(int retval, const char* msg){
-  if(retval != 0){
-    perror(msg);
-    exit(EXIT_FAILURE);
-  }
-}
-
-
-/**
-   Checks for errors in calls that return FILE* or NULL on error, like fopen
-**/
-FILE* file_err(FILE* retval, const char* msg){
-  if(retval == NULL)
-    perror(msg);
-  return retval;
-}
 
 /**
    Used for prinitng debugging messsages in prover.c

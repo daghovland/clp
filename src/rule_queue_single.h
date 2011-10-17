@@ -23,6 +23,9 @@
 
 #include "rule_instance.h"
 #include "substitution_size_info.h"
+#ifdef HAVE_PTHREAD
+#include "pthread.h"
+#endif
 
 /**
    The queue of rule instances to be treated
@@ -37,6 +40,12 @@
    n_appl indicates how many times instances have been removed from the queue.
 **/
 typedef struct rule_queue_single_t {
+#ifdef HAVE_PTHREAD
+  pthread_t queue_worker;
+  bool working;
+  pthread_mutex_t queue_mutex;
+  pthread_cond_t queue_cond;
+#endif
   size_t size_queue;
   size_t first;
   size_t end;
@@ -57,9 +66,10 @@ typedef struct rule_queue_single_backup_t {
 rule_queue_single* initialize_queue_single(substitution_size_info);
 void destroy_rule_queue_single(rule_queue_single*);
 
-rule_queue_single* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool);
+rule_instance* push_rule_instance_single(rule_queue_single**, const axiom*, const substitution*, unsigned int, bool);
 rule_instance* pop_rule_queue_single(rule_queue_single**, unsigned int);
 rule_instance* peek_rule_queue_single(rule_queue_single*);
+rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
 
 unsigned int rule_queue_single_age(rule_queue_single*);
 unsigned int rule_queue_single_previous_application(rule_queue_single*);
@@ -67,8 +77,8 @@ unsigned int rule_queue_single_previous_application(rule_queue_single*);
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
 rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
 
-bool rule_queue_single_is_empty(const rule_queue_single*);
+bool rule_queue_single_is_empty(rule_queue_single*);
 unsigned int get_rule_queue_single_size(const rule_queue_single*);
 
-void print_rule_queue_single(const rule_queue_single*, FILE*);
+void print_rule_queue_single(rule_queue_single*, FILE*);
 #endif
