@@ -1,4 +1,4 @@
-/* rule_queue_single.c
+/* queue.c
 
    Copyright 2011 
 
@@ -20,10 +20,7 @@
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
 #include "common.h"
-#include "rete.h"
-#include "rule_queue_single.h"
-#include "rule_queue_state.h"
-#include "rule_instance.h"
+#include "queue.h"
 #include "error_handling.h"
 
 
@@ -31,53 +28,36 @@
 /**
    pthread functionality for locking, signaling etc. 
 **/
-void lock_queue_single(rule_queue_single* rq){
-  pt_err(pthread_mutex_lock(& rq->queue_mutex), "rule_queue_single.c: lock_queue_single: mutex_lock");
+void lock_queue(queue* rq){
+  pt_err(pthread_mutex_lock(& rq->queue_mutex), "queue.c: lock_queue_single: mutex_lock");
 }
 
-void unlock_queue_single(rule_queue_single* rq){
-  pt_err(pthread_mutex_unlock(& rq->queue_mutex), "rule_queue_single.c: unlock_queue_single: mutex_unlock");
+void unlock_queue(queue* rq){
+  pt_err(pthread_mutex_unlock(& rq->queue_mutex), "queue.c: unlock_queue_single: mutex_unlock");
 }
 #endif
 
 size_t get_rq_size_t(size_t size_queue, substitution_size_info ssi){
-  return sizeof(rule_queue_single) + size_queue * get_size_rule_instance(ssi);
+  return sizeof(queue) + size_queue * rq->size_queue_elem;
 }
 
-void resize_rq_size(rule_queue_single** rq){
+void resize_rq_size(queue** rq){
   *rq = realloc_tester(*rq, get_rq_size_t((*rq)->size_queue, (*rq)->ssi));
 }
 
-void check_rq_too_large(rule_queue_single** rq){
+void check_rq_too_large(queue** rq){
   while((*rq)->end < (*rq)->size_queue / 2 && (*rq)->size_queue > 20){
     (*rq)->size_queue /= 2;
     resize_rq_size(rq);
   }
 }
 
-void check_rq_too_small(rule_queue_single** rq){
+void check_rq_too_small(queue** rq){
   if((*rq)->end + 1 >= (*rq)->size_queue){
     (*rq)->size_queue *= 2;
     resize_rq_size(rq);
   }
 }
-#ifdef HAVE_PTHREAD
-/**
-   The main routine of the queue worker
-
-   This is set to asynchornous canceling, since the data it changes is 
-   not used after cancelation. 
-**/
-void * queue_worker_routine(void* arg){
-  int oldtype;
-  rule_queue_single * rq = arg;
-  //  pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "rule_queue_single.c: queue_worker_routine: set cancel type");
-  lock_queue_single(rq);
-  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: queue_worker_routine: wait");
-  unlock_queue_single(rq);
-  return NULL;
-}
-#endif
 
 /**
    Creates the initial queue containing
@@ -85,37 +65,37 @@ void * queue_worker_routine(void* arg){
 
    Also allocates memory for the qeue
  **/
-rule_queue_single* initialize_queue_single(substitution_size_info ssi){
+queue* initialize_queue(unsigned int size_queue_elem){
   unsigned int i;
   size_t size_queue = 10;
-  rule_queue_single* rq = malloc_tester(get_rq_size_t(size_queue, ssi));
+  queue* rq = malloc_tester(get_rq_size_t(size_queue, size_queue_elem));
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t mutex_attr;
 #endif
-  rq->ssi = ssi;
+  rq->size_queue_elem = size_queue_elem;
   rq->first = 0;
   rq->end = 0;
   rq->previous_appl = 0;
   rq->n_appl = 0;
   rq->size_queue = size_queue;
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
+  pt_err(pthread_mutexattr_init(&mutex_attr), "queue.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
-  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
+  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "queue.c: initialize_queue_single: mutex attr settype");
 #endif
-  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr),   "rule_queue_single.c: initialize_queue_single: mutex init");
-  pt_err(pthread_mutexattr_destroy(&mutex_attr),   "rule_queue_single.c: initialize_queue_single: mutexattr destroy");
-  pt_err(pthread_cond_init(& rq->queue_cond, NULL),   "rule_queue_single.c: initialize_queue_single: cond init");
+  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr),   "queue.c: initialize_queue_single: mutex init");
+  pt_err(pthread_mutexattr_destroy(&mutex_attr),   "queue.c: initialize_queue_single: mutexattr destroy");
+  pt_err(pthread_cond_init(& rq->queue_cond, NULL),   "queue.c: initialize_queue_single: cond init");
 #endif
   return rq;
 }
 
-unsigned int get_rule_queue_single_pos(const rule_queue_single* rq, unsigned int no){
-  return no * get_size_rule_instance(rq->ssi);
+unsigned int get_queue_pos(const queue* rq, unsigned int no){
+  return no * get_size_rule_instance(rq->size_queue_elem);
 }
 
 
-unsigned int get_rule_queue_single_size(const rule_queue_single* rq){
+unsigned int get_queue_size(const queue* rq){
   return rq->end - rq->first;
 }
 
@@ -123,12 +103,12 @@ unsigned int get_rule_queue_single_size(const rule_queue_single* rq){
 /**
    Gets a rule instance at a position in the queue
 **/
-rule_instance* get_rule_instance_single(rule_queue_single* rq, unsigned int pos){
-  return (rule_instance*) (rq->queue + get_rule_queue_single_pos(rq, pos));
+char* get_rule_instance_single(queue* rq, unsigned int pos){
+  return rq->queue + get_queue_pos(rq, pos);
 }
 
-const rule_instance* get_const_rule_instance_single(const rule_queue_single* rq, unsigned int pos){
-  return (const rule_instance*) (rq->queue + get_rule_queue_single_pos(rq, pos));
+const char* get_const_rule_instance_single(const queue* rq, unsigned int pos){
+  return rq->queue + get_queue_pos(rq, pos);
 }
 
 
@@ -136,10 +116,10 @@ const rule_instance* get_const_rule_instance_single(const rule_queue_single* rq,
 /**
    Frees memory allocated for the rule queue
 **/
-void destroy_rule_queue_single(rule_queue_single* rq){
+void destroy_queue(queue* rq){
 #ifdef HAVE_PTHREAD
-  pt_err( pthread_mutex_destroy(&rq->queue_mutex), "rule_queue_single.c: destroy_rule_queue_single: mutex destroy");
-  pt_err( pthread_cond_destroy(&rq->queue_cond),  "rule_queue_single.c: destroy_rule_queue_single: cond destroy");
+  pt_err( pthread_mutex_destroy(&rq->queue_mutex), "queue.c: destroy_queue: mutex destroy");
+  pt_err( pthread_cond_destroy(&rq->queue_cond),  "queue.c: destroy_queue: cond destroy");
   
 #endif
   free(rq);
@@ -148,7 +128,7 @@ void destroy_rule_queue_single(rule_queue_single* rq){
 /**
    Assigns position pos in the rule queue the according values.
 **/
-void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step){
+void assign_rule_queue_instance(queue* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step){
   assert(pos < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
@@ -160,7 +140,7 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const a
    Tests everything in a queue.
    Only for serious debugging
 **/
-bool test_rule_queue_single(rule_queue_single* rq){
+bool test_queue(queue* rq){
   unsigned int i;
   assert(rq->first <= rq->end);
   for(i = rq->first; i < rq->end; i++){
@@ -174,15 +154,15 @@ bool test_rule_queue_single(rule_queue_single* rq){
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-rule_instance* push_rule_instance_single(rule_queue_single ** rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted){
+rule_instance* push_rule_instance_single(queue ** rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted){
   unsigned int pos;
   assert(test_is_instantiation(rule->rhs->free_vars, sub));
 #ifdef HAVE_PTHREAD
   lock_queue_single(*rq);
 #endif
-  assert(test_rule_queue_single(*rq));
+  assert(test_queue(*rq));
   check_rq_too_small(rq);
-  assert(test_rule_queue_single(*rq));
+  assert(test_queue(*rq));
   if(clpl_sorted){
     for(pos = (*rq)->end
 	  ; pos > (*rq)->first 
@@ -195,10 +175,10 @@ rule_instance* push_rule_instance_single(rule_queue_single ** rq, const axiom* r
 				);
   } else
     pos = (*rq)->end;
-  assert(test_rule_queue_single(*rq));
+  assert(test_queue(*rq));
   (*rq)->end ++;
   assign_rule_queue_instance(*rq, pos, rule, sub, step);
-  assert(test_rule_queue_single(*rq));
+  assert(test_queue(*rq));
 #ifdef HAVE_PTHREAD
   unlock_queue_single(*rq);
 #endif
@@ -207,7 +187,7 @@ rule_instance* push_rule_instance_single(rule_queue_single ** rq, const axiom* r
 
 
 
-bool rule_queue_single_is_empty(rule_queue_single* rq){
+bool queue_is_empty(queue* rq){
   bool is_empty;
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
@@ -225,7 +205,7 @@ bool rule_queue_single_is_empty(rule_queue_single* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-rule_instance* peek_rule_queue_single(rule_queue_single* rq){
+rule_instance* peek_queue(queue* rq){
   assert(rq->first < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, rq->first);
   assert(test_rule_instance(ri));
@@ -235,8 +215,8 @@ rule_instance* peek_rule_queue_single(rule_queue_single* rq){
 /**
    Returns timestamp of oldest rule instance
 **/
-unsigned int rule_queue_single_age(rule_queue_single* rq){
-  return (peek_rule_queue_single(rq))->timestamp;
+unsigned int queue_age(queue* rq){
+  return (peek_queue(rq))->timestamp;
 }
 
 
@@ -247,12 +227,12 @@ unsigned int rule_queue_single_age(rule_queue_single* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-rule_instance* pop_rule_queue_single(rule_queue_single** rqp, unsigned int step){
-  rule_queue_single* rq = *rqp;
+rule_instance* pop_queue(queue** rqp, unsigned int step){
+  queue* rq = *rqp;
 #ifdef HAVE_PTHREAD
   lock_queue_single(*rqp);
 #endif
-  rule_instance* ri = peek_rule_queue_single(rq);
+  rule_instance* ri = peek_queue(rq);
   assert(test_rule_instance(ri));
   assert(rq->end > rq->first);
   rq->first++;
@@ -266,8 +246,8 @@ rule_instance* pop_rule_queue_single(rule_queue_single** rqp, unsigned int step)
 
 
 
-rule_queue_single_backup backup_rule_queue_single(rule_queue_single* rq){
-  rule_queue_single_backup backup;
+queue_backup backup_queue(queue* rq){
+  queue_backup backup;
   backup.first = rq->first;
   backup.end = rq->end;
   backup.previous_appl = rq->previous_appl;
@@ -275,7 +255,7 @@ rule_queue_single_backup backup_rule_queue_single(rule_queue_single* rq){
   return backup;
 }
 
-rule_queue_single* restore_rule_queue_single(rule_queue_single* rq, rule_queue_single_backup* backup){
+queue* restore_queue(queue* rq, queue_backup* backup){
   rq->first = backup->first;
   rq->end = backup->end;
   rq->previous_appl = backup->previous_appl;
@@ -286,19 +266,19 @@ rule_queue_single* restore_rule_queue_single(rule_queue_single* rq, rule_queue_s
 
 
 
-unsigned int rule_queue_single_previous_application(rule_queue_single* rqs){
+unsigned int queue_previous_application(queue* rqs){
   return rqs->previous_appl;
 }
 
 /**
    Printing
 **/
-void print_rule_queue_single(rule_queue_single* rq, FILE* f){
+void print_queue(queue* rq, FILE* f){
   unsigned int i, j;
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
 #endif
-  fprintf(f, "queue with %zi entries: \n", get_rule_queue_single_size(rq));
+  fprintf(f, "queue with %zi entries: \n", get_queue_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
     fprintf(f, "\t%i: ", j);
     print_rule_instance(get_const_rule_instance_single(rq, i), f);

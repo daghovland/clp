@@ -1,4 +1,4 @@
-/* rule_queue_single.h
+/* queue.h
 
    Copyright 2011 
 
@@ -18,65 +18,56 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-#ifndef __INCLUDED_RULE_QUEUE_SINGLE_H
-#define __INCLUDED_RULE_QUEUE_SINGLE_H
+#ifndef __INCLUDED_QUEUE_H
+#define __INCLUDED_QUEUE_H
 
-#include "rule_instance.h"
-#include "substitution_size_info.h"
+#include "common.h"
 #ifdef HAVE_PTHREAD
 #include "pthread.h"
 #endif
 
 /**
-   The queue of rule instances to be treated
-   Called "conflict set" by Forgy
-
-   Is a fifo, implemented by an array
-
-   first is the index of the oldest element, while end is the next free index
-
-   previous_appl is used by the strategy, and indicates the
-   timestamp of the previous time instances were removed from the queue. 
-   n_appl indicates how many times instances have been removed from the queue.
+   A generic queue. Plan is to use for queues of rule_instances and
+   pairs of substitutions, facts and alpha nodes
 **/
-typedef struct rule_queue_single_t {
+typedef struct queue_t {
 #ifdef HAVE_PTHREAD
   pthread_mutex_t queue_mutex;
   pthread_cond_t queue_cond;
 #endif
-  size_t size_queue;
-  size_t first;
-  size_t end;
-  unsigned int previous_appl;
-  unsigned int n_appl;
-  substitution_size_info ssi;
-  char queue[];
-} rule_queue_single;
-
-
-typedef struct rule_queue_single_backup_t {
+  unsigned int size_queue;
   unsigned int first;
   unsigned int end;
   unsigned int previous_appl;
   unsigned int n_appl;
-} rule_queue_single_backup;
+  unsigned int size_queue_elem;
+  char queue[];
+} queue;
 
-rule_queue_single* initialize_queue_single(substitution_size_info);
-void destroy_rule_queue_single(rule_queue_single*);
 
-rule_instance* push_rule_instance_single(rule_queue_single**, const axiom*, const substitution*, unsigned int, bool);
-rule_instance* pop_rule_queue_single(rule_queue_single**, unsigned int);
-rule_instance* peek_rule_queue_single(rule_queue_single*);
-rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
+typedef struct queue_backup_t {
+  unsigned int first;
+  unsigned int end;
+  unsigned int previous_appl;
+  unsigned int n_appl;
+} queue_backup;
 
-unsigned int rule_queue_single_age(rule_queue_single*);
-unsigned int rule_queue_single_previous_application(rule_queue_single*);
+queue* initialize_queue(unsigned int);
+void destroy_queue(queue*);
 
-rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
-rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_single_backup*);
+char* push_queue(queue**, const axiom*, const substitution*, unsigned int, bool);
+char* pop_queue(queue**, unsigned int);
+char* peek_queue(queue*);
+char* get_queue_elem(queue*, unsigned int);
 
-bool rule_queue_single_is_empty(rule_queue_single*);
-unsigned int get_rule_queue_single_size(const rule_queue_single*);
+unsigned int queue_age(queue*);
+unsigned int queue_previous_application(queue*);
 
-void print_rule_queue_single(rule_queue_single*, FILE*);
+queue_backup backup_queue(queue*);
+queue* restore_queue(queue*, queue_backup*);
+
+bool queue_is_empty(queue*);
+unsigned int get_queue_size(const queue*);
+
+void print_queue(queue*, FILE*);
 #endif

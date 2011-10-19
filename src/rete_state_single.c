@@ -366,6 +366,25 @@ bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t a
 }
 
 
+#ifdef HAVE_PTHREAD
+/**
+   The main routine of the queue worker
+
+   This is set to asynchornous canceling, since the data it changes is 
+   not used after cancelation. 
+**/
+void * queue_worker_routine(void* arg){
+  int oldtype;
+  queue * rq = arg;
+  //  pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "queue.c: queue_worker_routine: set cancel type");
+  lock_queue_single(rq);
+  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "queue.c: queue_worker_routine: wait");
+  unlock_queue_single(rq);
+  return NULL;
+}
+#endif
+
+
 /**
    Factset functions
 **/
