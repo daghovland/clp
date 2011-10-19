@@ -37,10 +37,10 @@ check_SCRIPTS = check_clp.sh
 check_DATA = $(srcdir)/anc.in  $(srcdir)/anl.in 
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
-	echo "./clpmemdebug -q $(srcdir)/anl.in" > check_clp.sh
-	echo "coqc anl.v" >> check_clp.sh
-	echo "rm anl.v anl.vo" >> check_clp.sh
-	chmod +x check_clp.sh
+	echo "./clpmemdebug $(srcdir)/nl.in" > $(check_SCRIPTS)
+#	echo "coqc anl.v" >> $(check_SCRIPTS)
+#	echo "rm anl.v anl.vo" >> $(check_SCRIPTS)
+	chmod +x $(check_SCRIPTS)
 CLEANFILES = $(check_SCRIPTS) geolog_parser.h clpl_parser.h geolog_parser.c clpl_parser.c geolog_parser.tab.h clpl_parser.tab.h geolog_parser.tab.c clpl_parser.tab.c y.tab.c y.tab.h clpl.c geolog.c
 
 #Remark that DNDEBUG is not in the flags of the clpdebug / check 

@@ -235,6 +235,9 @@ void insert_rete_net_fact_mt(rete_state_single* state,
   for(i = 0; i < sel->n_children; i++){
     init_substitution(tmp_sub, state->net->th, step);
     insert_rete_alpha_fact_single(state, sel->children[i], fact, tmp_sub);
+#ifdef PARALLELL_QUEUE_WORKERS
+    insert_rete_worker_queue(state, tmp_sub, fact, sel->children[i]);
+#endif
   }
   free_substitution(tmp_sub);
 }

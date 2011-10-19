@@ -27,6 +27,7 @@
 #include "rete_net.h"
 #include "rule_queue_state.h"
 
+
 rete_state_single* create_rete_state_single(const rete_net*, bool);
 void delete_rete_state_single(rete_state_single*);
 
@@ -46,6 +47,8 @@ bool inc_proof_step_counter_single(rete_state_single*);
 
 sub_store_iter get_state_sub_store_iter(rete_state_single*, unsigned int);
 fact_store_iter get_state_fact_store_iter(rete_state_single*, unsigned int);
+
+void insert_rete_worker_queue(rete_state_single*, substitution*, const atom*, const rete_node*);
 
 void print_state_single_rule_queues(rete_state_single*, FILE*);
 void print_state_fact_store(rete_state_single *, FILE*);

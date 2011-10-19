@@ -59,8 +59,13 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->step = 0;
 
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
-  for(i = 0; i < net->th->n_axioms; i++)
+  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(sub_alpha_queue));
+  for(i = 0; i < net->th->n_axioms; i++){
     state->rule_queues[i] = initialize_queue_single(ssi);
+    state->worker_queues[i] = init_sub_alpha_queue();
+  }
+
+  
   state->history = initialize_queue_single(ssi);
   if(state->net->has_factset){
     state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));

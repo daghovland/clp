@@ -33,26 +33,33 @@
    The last elements are common between more threads, while
    the first ones are more specific for single threads
    
-   prev is set when creating a sub_list_iter 
-   prev is not threadsafe!
+   
    
    The last element has next = NULL
 
    is_splitting_point indicates whether it is the last queue element before a split
    It is set to false when constructed in insert_in_sub_alpha_queue, and set to true in split_rete_state (rete_state.c)
 **/
-typedef struct sub_alpha_queue_t {
-  struct sub_alpha_queue_t * next;
+typedef struct sub_alpha_queue_elem_t {
+  struct sub_alpha_queue_elem_t * next;
+  struct sub_alpha_queue_elem_t * prev;
   substitution * sub;
   const rete_node * alpha_node;
   const atom * fact;
   bool is_splitting_point;
+} sub_alpha_queue_elem;
+
+typedef struct sub_alpha_queue_t {
+  sub_alpha_queue_elem* root;
+  sub_alpha_queue_elem* end;
 } sub_alpha_queue;
 
+sub_alpha_queue init_sub_alpha_queue(void);
 void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit);
-bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
+bool insert_in_sub_alpha_queue(sub_alpha_queue *,
 			       const atom * fact, 
 			       substitution* a, 
 			       const rete_node* alpha_node);
-
+void pop_sub_alpha_queue_mt(sub_alpha_queue*, substitution**, const atom**, const rete_node**);
+bool is_empty_sub_alpha_queue(sub_alpha_queue*);
 #endif

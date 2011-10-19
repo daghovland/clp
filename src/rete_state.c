@@ -62,26 +62,18 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   for(i = 0; i < net->n_subs; i++){
     state->subs[i] = NULL;
   }
-  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
-  state->sub_alpha_queue_roots = calloc_tester(sizeof(sub_alpha_queue*), net->th->n_axioms);
-  for(i = 0; i < net->th->n_axioms; i++){
-    state->sub_alpha_queues[i] = NULL;
-    state->sub_alpha_queue_roots[i] = NULL;
-  }
-
+  state->sub_alpha_queues = calloc_tester(sizeof(sub_alpha_queue), net->th->n_axioms);
+  for(i = 0; i < net->th->n_axioms; i++)
+    state->sub_alpha_queues[i] = init_sub_alpha_queue();
   state->net = net;
-  
-
-  for(i = 0; i < net->th->n_axioms; i++){
+  for(i = 0; i < net->th->n_axioms; i++)
     state->axiom_inst_queue[i] = initialize_queue();
-  }
   state->step_no = 0;
   state->cursteps = 0;
   state->start_step_no = 0;
   state->global_step_counter = malloc_tester(sizeof(unsigned int));
   * state->global_step_counter = 0;
   state->proof_branch_id = "";
- 
   if(state->net->has_factset){
     state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
     state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
@@ -112,10 +104,9 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   free(state->subs);
   for(i = 0; i < state->net->th->n_axioms; i++){
     free(state->axiom_inst_queue[i]);
-    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], orig->sub_alpha_queues[i]);
+    delete_sub_alpha_queue_below(& state->sub_alpha_queues[i], & orig->sub_alpha_queues[i]);
   }
   free(state->sub_alpha_queues);
-  free(state->sub_alpha_queue_roots);
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
   delete_ri_stack(state->elim_stack);
@@ -142,10 +133,9 @@ void delete_full_rete_state(rete_net_state* state){
   free(state->subs);
   for(i = 0; i < state->net->th->n_axioms; i++){
     delete_full_rule_queue(state->axiom_inst_queue[i]);
-    delete_sub_alpha_queue_below(state->sub_alpha_queues[i], NULL);
+    delete_sub_alpha_queue_below(& state->sub_alpha_queues[i], NULL);
   }
   free(state->sub_alpha_queues);
-  free(state->sub_alpha_queue_roots);
   if(strlen(state->proof_branch_id) > 0)
     free((char *) state->proof_branch_id);
   free(state->global_step_counter);
@@ -191,13 +181,11 @@ rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
 
   
   copy->sub_alpha_queues = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
-  copy->sub_alpha_queue_roots = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
   memcpy(copy->sub_alpha_queues, orig->sub_alpha_queues, sizeof(sub_alpha_queue*) * n_axioms);
-  memcpy(copy->sub_alpha_queue_roots, orig->sub_alpha_queue_roots, sizeof(sub_alpha_queue*) * n_axioms);
   for(i = 0; i < n_axioms; i++){
-    if(copy->sub_alpha_queues[i] != NULL){
-      copy->sub_alpha_queues[i]->is_splitting_point = true;
-      assert(orig->sub_alpha_queues[i]->is_splitting_point);
+    if(!is_empty_sub_alpha_queue(&copy->sub_alpha_queues[i])){
+      copy->sub_alpha_queues[i].end->is_splitting_point = true;
+      assert(orig->sub_alpha_queues[i].end->is_splitting_point);
     }
   }
 

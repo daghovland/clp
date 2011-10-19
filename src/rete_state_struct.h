@@ -68,8 +68,7 @@ typedef struct rete_net_state_t {
   substitution_store_mt local_subst_mem;
   substitution_store_mt* global_subst_mem;
   substitution_list ** subs;
-  sub_alpha_queue ** sub_alpha_queues;
-  sub_alpha_queue ** sub_alpha_queue_roots;
+  sub_alpha_queue * sub_alpha_queues;
   bool * is_applied_fact;
   const rete_net* net;
   unsigned int * global_step_counter;

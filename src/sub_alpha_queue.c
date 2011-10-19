@@ -27,7 +27,12 @@
 #include "substitution.h"
 #include "sub_alpha_queue.h"
 
-
+sub_alpha_queue init_sub_alpha_queue(void){
+  sub_alpha_queue queue;
+  queue.root = NULL;
+  queue.end = NULL;
+  return queue;
+}
 
 /**
    Insert pair of substitution and alpha node into list.
@@ -41,23 +46,25 @@
    Before the call, the sub_list_ptr points to a pointer which has the previous sub list, and after the
    call, this will point to the new sub_alpha_queue.
 **/
-bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
+bool insert_in_sub_alpha_queue(sub_alpha_queue * queue,
 			       const atom * fact, 
 			       substitution* a, 
 			       const rete_node* alpha_node){
-  sub_alpha_queue* sub_list = (sub_list_ptr == NULL) ? NULL : *sub_list_ptr; 
-  
+  sub_alpha_queue_elem* sub_list = queue->end;
+
   assert(test_substitution(a));
   assert(alpha_node->type == alpha);
-
   
-  *sub_list_ptr = malloc_tester(sizeof(sub_alpha_queue));
-  (*sub_list_ptr)->sub = a;
-  (*sub_list_ptr)->fact = fact;
-  (*sub_list_ptr)->alpha_node = alpha_node;
-  (*sub_list_ptr)->next = sub_list;
-  (*sub_list_ptr)->is_splitting_point = false;
-
+  
+  queue->end = malloc_tester(sizeof(sub_alpha_queue));
+  queue->end->sub = a;
+  queue->end->fact = fact;
+  queue->end->alpha_node = alpha_node;
+  queue->end->next = sub_list;
+  sub_list->prev = queue->end;
+  queue->end->is_splitting_point = false;
+  if(queue->root == NULL)
+    queue->root = queue->end;
   assert(test_substitution(a));
   
   return true;
@@ -70,7 +77,7 @@ bool insert_in_sub_alpha_queue(sub_alpha_queue ** sub_list_ptr,
    when following the "next" pointer. 
    Uses the timestamp in the substitutions.
 **/
-void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit){
+void delete_sub_alpha_queue_below(sub_alpha_queue* queue, sub_alpha_queue* limit_queue){
   //  sub_alpha_queue * above_limit;
   
   /*
@@ -82,13 +89,34 @@ void delete_sub_alpha_queue_below(sub_alpha_queue* list, sub_alpha_queue* limit)
     return;
     }
   */
-  while(list != NULL && list != limit && ( limit == NULL || compare_sub_timestamps(list->sub, limit->sub) > 0 )){
-    assert(limit == NULL || compare_sub_timestamps(list->sub, limit->sub) > 0 );
-    assert(list != NULL);
-    sub_alpha_queue* next = list->next;
-    free(list);
-    list = next;
+  sub_alpha_queue_elem * limit = limit_queue->end;
+  while(queue->end != NULL && queue->end != limit && ( limit == NULL || compare_sub_timestamps(queue->end->sub, limit->sub) > 0 )){
+    assert(limit == NULL || compare_sub_timestamps(queue->end->sub, limit->sub) > 0 );
+    assert(queue->end != NULL);
+    sub_alpha_queue_elem* next = queue->end->next;
+    free(queue->end);
+    queue->end = next;
   }
+}
+
+bool is_empty_sub_alpha_queue(sub_alpha_queue* root){
+  return root == NULL;
+}
+
+/**
+   Assume the "root" has a non-null prev pointer. This element replaces the root
+   The adress of the current root substitution and fact are put into the given addresses
+ **/
+void pop_sub_alpha_queue_mt(sub_alpha_queue* queue, substitution** sub, const atom** fact, const rete_node** alpha_node){
+  assert(queue->root->next == NULL);
+  *sub = queue->root->sub;
+  *fact = queue->root->fact;
+  *alpha_node = queue->root->alpha_node;
+  queue->root = queue->root->prev;
+  if(queue->root == NULL)
+    queue->end = NULL;
+  else 
+    queue->root->next = NULL;
 }
 
 /**
@@ -135,16 +163,15 @@ bool axiom_has_new_instance(rule_queue_state rqs, size_t axiom_no){
   if(state->net->factset_lhs)
     return !is_empty_axiom_rule_queue(state, axiom_no);
   else {
-    sub_alpha_queue * sub_list = state->sub_alpha_queues[axiom_no];
-    sub_alpha_queue * sub_list_root = state->sub_alpha_queue_roots[axiom_no];
+    sub_alpha_queue * sub_queue = & state->sub_alpha_queues[axiom_no];
     if(axiom_queue_has_interesting_instance(axiom_no, state))
       return true;
     
-    while(sub_list != sub_list_root && sub_list != NULL){
-      sub_alpha_queue* new_root;
+    while(sub_queue->end != sub_queue->root && sub_queue->end != NULL){
+      sub_alpha_queue_elem* new_root;
       
       // TODO: This might be a performance hit if the queues become very long. 
-      for( new_root = sub_list; new_root->next != sub_list_root; new_root = new_root->next)
+      for( new_root = sub_queue->end; new_root->next != sub_queue->root; new_root = new_root->next)
 	;
       
       insert_rete_alpha_fact_children(state, 
@@ -153,9 +180,9 @@ bool axiom_has_new_instance(rule_queue_state rqs, size_t axiom_no){
 				      copy_substitution(new_root->sub, & state->local_subst_mem, state->net->th->sub_size_info), 
 				      true);
       
-      state->sub_alpha_queue_roots[axiom_no] = new_root;
+      state->sub_alpha_queues[axiom_no].root = new_root;
       
-      sub_list_root = new_root; 
+      sub_queue->root = new_root; 
       
       if(axiom_queue_has_interesting_instance(axiom_no, state))
 	return true;
@@ -171,7 +198,7 @@ bool axiom_may_have_new_instance(rule_queue_state rqs, size_t axiom_no){
   rete_net_state* state = rqs.state;
   if(state->net->factset_lhs)
      return !is_empty_axiom_rule_queue(state, axiom_no);
-   return( (!is_empty_axiom_rule_queue(state, axiom_no)) || (state->sub_alpha_queues[axiom_no] != state->sub_alpha_queue_roots[axiom_no]));
+  return( (!is_empty_axiom_rule_queue(state, axiom_no)) || !is_empty_sub_alpha_queue(&state->sub_alpha_queues[axiom_no]));
 }
 
 /**
@@ -186,11 +213,11 @@ unsigned int rule_queue_possible_age(rule_queue_state rqs, size_t axiom_no){
     rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
     return ri->timestamp;
   } else {
-    sub_alpha_queue *new_root, * root;
-    root = state->sub_alpha_queue_roots[axiom_no];
-    assert(state->sub_alpha_queues[axiom_no] != root);
+    sub_alpha_queue_elem *new_root, * root;
+    root = state->sub_alpha_queues[axiom_no].root;
+    assert(NULL != root);
     // TODO: This might be a performance hit if the queues become very long. 
-    for( new_root = state->sub_alpha_queues[axiom_no]; new_root->next != root; new_root = new_root->next)
+    for( new_root = state->sub_alpha_queues[axiom_no].root; new_root->next != root; new_root = new_root->next)
       ;
     return new_root->sub->sub_ts.timestamps[0];
   }

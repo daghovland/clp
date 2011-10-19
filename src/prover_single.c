@@ -80,23 +80,16 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
   unsigned int i, j;
   assert(test_conjunction(con));
   assert(test_substitution(sub));
-
   fresh_exist_constants(con, sub, & state->constants);
-  
   assert(test_is_conj_instantiation(con, sub));
-  
   for(i = 0; i < con->n_args; i++){
     atom* ground = instantiate_atom(con->args[i], sub);
-    
     assert(test_ground_atom(ground));
-    
-    
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");
     print_fol_atom(ground, stdout);
     printf("\n");
 #endif
-    
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact_mt(state, ground, get_state_step_single(state));
     if(state->net->has_factset)
@@ -152,7 +145,6 @@ bool run_prover_single(rete_state_single* state){
       ts = get_state_step_single(state);
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	check_used_rule_instances_coq_single(next, state, ts, ts);
-	//check_state_finished_single(state);
 	write_prover_node_single(state, next);
 	return true;
       } else {	// not goal rule
@@ -204,7 +196,51 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
   return true;
 }
 
+#if SINGLE_WRITES_PROOF
+/**
+   Writes the coq proof after the prover is done.
+   Used by the multithreaded version
+**/
+void write_single_coq_proof(rete_state_single* state){
+  FILE* coq_fp = get_coq_fdes();
+  unsigned int n_branches = state->end_of_branch->rule->rhs->n_args;
+  unsigned int step = get_current_state_step_no(state);
+  unsigned int step_ri, pusher;
+  init_rev_stack(state->elim_stack);
+  fprintf(coq_fp, "(* Treating branch %s *)\n", state->proof_branch_id);
+  assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
+  while(!is_empty_rev_ri_stack(state->elim_stack)){
+    rule_instance* ri = pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher);
+    write_elim_usage_proof(state, ri, step_ri);
+  }
+  if(state->end_of_branch->rule->type == goal && n_branches <= 1){
+    fprintf(coq_fp, "(* Reached leaf at step %i *)\n", step);
+    write_goal_proof(state->end_of_branch, state, step, history);
+    fprintf(coq_fp, "(* Finished goal proof of leaf at step %i *)\n", step);
 
+  } else {
+    unsigned int i;
+    assert(n_branches > 1);
+    write_elim_usage_proof(state, state->end_of_branch, step);
+    for(i = 0; i < n_branches; i++){
+      assert(state != state->branches[i]);
+      if(i > 0)
+	write_disj_proof_start(state->end_of_branch, step, i);
+      write_mt_coq_proof(state->branches[i]);
+    }
+    fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
+    write_premiss_proof(state->end_of_branch, step, history);
+    fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
+  }
+  while(!is_empty_ri_stack(state->elim_stack)){
+    rule_instance* ri = pop_ri_stack(state->elim_stack, &step_ri, &pusher);
+    fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
+    write_premiss_proof(ri, step_ri, history);
+    fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
+  }
+  fprintf(coq_fp, "(* Finished with branch %s *)\n", state->proof_branch_id);
+}
+#endif
 /**
    The main prover function 
 **/

@@ -27,6 +27,7 @@
 #include "substitution_store.h"
 #include "rule_queue_single.h"
 #include "fact_store.h"
+#include "sub_alpha_queue.h"
 
 /**
    This version of a rete state is intended for a prover without or-parallellism, but
@@ -41,6 +42,7 @@ typedef struct rete_state_single_t {
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
   rule_queue_single * history;
+  sub_alpha_queue * worker_queues;
   fact_store * factsets;
   fact_store_iter * new_facts_iters;
   const rete_net* net;
