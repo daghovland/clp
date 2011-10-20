@@ -20,23 +20,14 @@
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
 #include "common.h"
-#include "substitution_store.h"
+#include "substitution_store_array.h"
 #include "rule_queue_single.h"
 #include "rete_state_single.h"
+#include "rete_worker_queue.h"
+#include "rete_worker.h"
 #include "theory.h"
 #include "rete.h"
 #include <string.h>
-
-/**
-   Auxiliary function for create_rete_state_single
-**/
-void init_substitution_store_array(substitution_store ** array, unsigned int n_stores, substitution_size_info ssi){
-  unsigned int i;
-  *array = calloc_tester(n_stores, sizeof(substitution_store));
-  for(i = 0; i < n_stores; i++)
-    (*array)[i] = init_substitution_store(ssi);
-}
-
 
 /**
    Called after the rete net is created.
@@ -45,11 +36,8 @@ void init_substitution_store_array(substitution_store ** array, unsigned int n_s
 rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   unsigned int i;
   substitution_size_info ssi = net->th->sub_size_info;
-
   rete_state_single* state = malloc_tester(sizeof(rete_state_single));
-
-  init_substitution_store_array(&state->subs, net->n_subs, net->th->sub_size_info);
-  
+  state->node_subs = init_substitution_store_array(net->th->sub_size_info, net->n_subs);
   state->tmp_subs = init_substitution_store_mt(ssi);
   state->verbose = verbose;
   state->net = net;
@@ -57,15 +45,14 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   assert(state->fresh != NULL);
   state->constants = init_constants(net->th->vars->n_vars);
   state->step = 0;
-
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
-  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(sub_alpha_queue));
+  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
+  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
   for(i = 0; i < net->th->n_axioms; i++){
     state->rule_queues[i] = initialize_queue_single(ssi);
-    state->worker_queues[i] = init_sub_alpha_queue();
+    state->worker_queues[i] = init_rete_worker_queue();
+    state->workers[i] = init_rete_worker(state->net, & state->tmp_subs, state->node_subs,  state->rule_queues + i, state->worker_queues + i);
   }
-
-  
   state->history = initialize_queue_single(ssi);
   if(state->net->has_factset){
     state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
@@ -88,16 +75,24 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
 rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
-  backup.sub_backups = backup_substitution_store_array(state->subs, state->net->n_subs);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    pause_rete_worker(state->workers[i]);
+
+  backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
     backup.new_facts_backups = calloc(state->net->th->n_predicates, sizeof(fact_store_iter));
     copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   }
   backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
-  for(i = 0; i < state->net->th->n_axioms; i++)
+  backup.worker_backups = calloc_tester(state->net->th->n_axioms, sizeof(rete_worker_queue_backup));
+  for(i = 0; i < state->net->th->n_axioms; i++){
     backup.rq_backups[i] = backup_rule_queue_single(state->rule_queues[i]);
+    backup.worker_backups[i] = backup_rete_worker_queue(state->worker_queues[i]);
+  }
   backup.state = state;
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    continue_rete_worker(state->workers[i]);
   return backup;
 }
 
@@ -114,26 +109,32 @@ unsigned int get_state_step_no_single(rete_state_single* state){
    the backup itself, since this is assumed to be static in prover_single.c
 **/
 void destroy_rete_backup(rete_state_backup* backup){
-  destroy_substitution_store_backup_array(backup->sub_backups, backup->state->net->n_subs);
+  destroy_substitution_store_array_backup(backup->node_sub_backups, backup->state->net->n_subs);
   if(backup->state->net->has_factset){
     destroy_fact_store_backup_array(backup->factset_backups, backup->state->net->th->n_predicates);
     free(backup->new_facts_backups);
   }
   free(backup->rq_backups);
+  free(backup->worker_backups);
 }
 
 rete_state_single* restore_rete_state(rete_state_backup* backup){
   unsigned int i;
   rete_state_single* state = backup->state;
-  for(i = 0; i < state->net->n_subs; i++)
-    restore_substitution_store(& state->subs[i], backup->sub_backups[i]);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    pause_rete_worker(state->workers[i]);
+  state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++)
       restore_fact_store(& state->factsets[i], backup->factset_backups[i]);
     copy_fact_iter_array(state->new_facts_iters, backup->new_facts_backups, state->net->th->n_predicates);
   }
-  for(i = 0; i < backup->state->net->th->n_axioms; i++)
+  for(i = 0; i < backup->state->net->th->n_axioms; i++){
     backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
+    backup->state->worker_queues[i] = restore_rete_worker_queue(backup->state->worker_queues[i], & backup->worker_backups[i]);
+  }
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    restart_rete_worker(state->workers[i]);
   return backup->state;
 }
 
@@ -143,10 +144,9 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
 **/
 void delete_rete_state_single(rete_state_single* state){
   unsigned int i;
-  for(i = 0; i < state->net->n_subs; i++){
-    destroy_substitution_store(& state->subs[i]);
-  }
-  free(state->subs);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    destroy_rete_worker(state->workers[i]);
+  destroy_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++){
       destroy_fact_store(& state->factsets[i]);
@@ -177,7 +177,7 @@ bool inc_proof_step_counter_single(rete_state_single* state){
 }
 
 sub_store_iter get_state_sub_store_iter(rete_state_single* state, unsigned int node_no){
-  return get_sub_store_iter(& state->subs[node_no]);
+  return get_array_sub_store_iter(state->node_subs, node_no);
 }
 
 
@@ -185,41 +185,6 @@ fact_store_iter get_state_fact_store_iter(rete_state_single* state, unsigned int
   return get_fact_store_iter(& state->factsets[pred_no]);
 }
 
-
-/**
-   Insert a copy of substition into the state, if not already there (modulo relevant_vars)
-   Used when inserting into alpha- and beta-stores and rule-stores.
-   
-   Note that this functions is not thread-safe, since substitution_store is not
-
-   The substitution a is not changed or freed. THe calling function must free it after the call returns
-
-**/
-bool insert_substitution_single(rete_state_single* state, size_t sub_no, const substitution* a, const freevars* relevant_vars){
-  substitution_store * store = & state->subs[sub_no];
-  sub_store_iter iter = get_sub_store_iter(store);
-  
-  while(has_next_sub_store(&iter)){
-    substitution* next_sub = get_next_sub_store(&iter);
-    if(equal_substitutions(a, next_sub, relevant_vars))
-      return false;
-  }
-  destroy_sub_store_iter(&iter);
-  push_substitution_sub_store(store, a);
-  return true;
-}
-
-
-void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
-  rete_state_single* state = rqs.single;
-  assert(test_is_instantiation(rule->rhs->free_vars, sub));
-  push_rule_instance_single(& (state->rule_queues[rule->axiom_no])
-			    , rule
-			    , sub
-			    , get_state_step_no_single(state)
-			    , state->net->strat == clpl_strategy
-			    );
-}
 
 unsigned int axiom_queue_previous_application_single_state(rete_state_single* state, size_t axiom_no){
   return rule_queue_single_previous_application(state->rule_queues[axiom_no]);
@@ -229,6 +194,19 @@ unsigned int axiom_queue_previous_application_single_state(rete_state_single* st
 rule_instance* pop_axiom_rule_queue_single_state(rete_state_single* state, size_t axiom_no){
   return pop_rule_queue_single(& state->rule_queues[axiom_no], get_state_step_no_single(state));
 }
+
+
+void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
+  rete_state_single* state = rqs.single;
+  assert(test_is_instantiation(rule->rhs->free_vars, sub));
+  push_rule_instance_single(& (state->rule_queues[rule->axiom_no])
+                            , rule
+                            , sub
+                            , get_state_step_no_single(state)
+                            , state->net->strat == clpl_strategy
+                            );
+}
+
 
 
 /**
@@ -365,24 +343,34 @@ bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t a
   return ! is_empty_axiom_rule_queue_single_state(state, axiom_no);
 }
 
-
-#ifdef HAVE_PTHREAD
 /**
-   The main routine of the queue worker
+   Inserts fact into rete network.
 
-   This is set to asynchornous canceling, since the data it changes is 
-   not used after cancelation. 
+   An empty substitution is created on the heap and passed to the network
+   This must not be touched after the call to insert_rete_alpha_fact, since it
+   deletes or stores it
+
+   Note that calling this function may invalidate any rule_instance pointer, since these all 
+   point to members of the rule_queue_single arrays, which may be realloced as a consqequence of this call
 **/
-void * queue_worker_routine(void* arg){
-  int oldtype;
-  queue * rq = arg;
-  //  pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "queue.c: queue_worker_routine: set cancel type");
-  lock_queue_single(rq);
-  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "queue.c: queue_worker_routine: wait");
-  unlock_queue_single(rq);
-  return NULL;
-}
+void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
+  unsigned int i;
+  substitution * tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
+  const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
+  unsigned int step = get_state_step_no_single(state);
+  assert(test_atom(fact));
+  assert(sel != NULL && sel->val.selector == fact->pred);
+  for(i = 0; i < sel->n_children; i++){
+    const rete_node* child = sel->children[i];
+#ifdef HAVE_PTHREAD
+    push_rete_worker_queue(& state->worker_queues[child->axiom_no], fact, child, step);
+#else
+    init_substitution(tmp_sub, state->net->th, step);
+    insert_rete_alpha_fact_single(state->net, state->node_caches, &state->tmp_subs, & state->rule_queues[child->axiom_no], child, fact, step, tmp_sub);
 #endif
+  }
+  free_substitution(tmp_sub);
+}
 
 
 /**

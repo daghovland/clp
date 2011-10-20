@@ -61,23 +61,6 @@ void check_rq_too_small(rule_queue_single** rq){
     resize_rq_size(rq);
   }
 }
-#ifdef HAVE_PTHREAD
-/**
-   The main routine of the queue worker
-
-   This is set to asynchornous canceling, since the data it changes is 
-   not used after cancelation. 
-**/
-void * queue_worker_routine(void* arg){
-  int oldtype;
-  rule_queue_single * rq = arg;
-  //  pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "rule_queue_single.c: queue_worker_routine: set cancel type");
-  lock_queue_single(rq);
-  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: queue_worker_routine: wait");
-  unlock_queue_single(rq);
-  return NULL;
-}
-#endif
 
 /**
    Creates the initial queue containing

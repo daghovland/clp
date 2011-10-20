@@ -28,23 +28,23 @@
 #include "rete_insert_single.h"
 #include "substitution.h"
 
-bool insert_rete_alpha_fact_single(rete_state_single*, const rete_node*,  const atom* , substitution*);
-
 /**
    Inserting a substitution into a beta node in a rete network
    The substitution sub is changed, but not freed
    The calling function must not use the values in sub, and must free sub after the call returns
 **/
-void insert_rete_beta_sub_single(rete_state_single* state, 
+void insert_rete_beta_sub_single(const rete_net* net,
+				 substitution_store_array * node_caches, 
+				 substitution_store_mt * tmp_subs,
+				 rule_queue_single** rule_queue, 
 				 const rete_node* parent, 
 				 const rete_node* node, 
+				 unsigned int step, 
 				 const substitution* sub)
 {
   sub_store_iter iter;
-  substitution_size_info ssi = state->net->th->sub_size_info;
-  substitution * tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
-  rule_queue_state rqs;
-  rqs.single = state;
+  substitution_size_info ssi = net->th->sub_size_info;
+  substitution * tmp_sub = create_empty_substitution(net->th, tmp_subs);
 
   assert(parent == node->left_parent || parent == node->val.beta.right_parent);
   assert(test_substitution(sub));
@@ -53,11 +53,15 @@ void insert_rete_beta_sub_single(rete_state_single* state,
     assert(node->n_children == 0);
     assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
     assert(test_substitution(sub));	
-    if(insert_substitution_single(state, 
-				  node->val.rule.store_no, 
-				  sub, node->free_vars
-				  ))
-      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
+    if(insert_substitution_single(node_caches, node->val.rule.store_no, sub, node->free_vars)){
+      push_rule_instance_single(rule_queue
+				, node->val.rule.axm
+				, sub
+				, step
+				, net->strat == clpl_strategy
+				);
+      //      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
+    }
   } else {
 
     assert(node->type == beta_and);
@@ -67,12 +71,12 @@ void insert_rete_beta_sub_single(rete_state_single* state,
     
     switch(node->type){
     case beta_and:
-      if(insert_substitution_single(state, 
+      if(insert_substitution_single(node_caches, 
 				    node->val.beta.b_store_no, 
 				    sub, node->free_vars
 				    ))
 	{
-	  iter = get_state_sub_store_iter(state, node->val.beta.a_store_no);
+	  iter = get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
 	  while(has_next_sub_store(& iter)){
 	    bool overlapping_subs = false;
 	    if(node->in_positive_lhs_part)
@@ -80,7 +84,7 @@ void insert_rete_beta_sub_single(rete_state_single* state,
 	    else
 	      overlapping_subs = union_substitutions_struct_one_ts(tmp_sub, sub, get_next_sub_store(&iter), ssi);
 	    if(overlapping_subs) 
-	      insert_rete_beta_sub_single(state, node, node->children[0], tmp_sub);
+	      insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue,  node, node->children[0], step, tmp_sub);
 	  } // end while has next ..
 	  destroy_sub_store_iter(& iter);
 	} // end if insert ..
@@ -88,13 +92,13 @@ void insert_rete_beta_sub_single(rete_state_single* state,
 #if false
     case beta_not:
       if(parent == node->left_parent){
-	if(insert_substitution_single(state, 
+	if(insert_substitution_single(node_caches, 
 				      node->val.beta.b_store_no, 
 				      sub, node->free_vars
 				      ))
 	  {
 	    bool found_overlapping_sub = false;
-	    iter = get_state_sub_store_iter(state, node->val.beta.a_store_no);
+	    iter = get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
 	    while(has_next_sub_store(& iter)){
 	      if(subs_equal_intersection(sub, get_next_sub_store(& iter))){
 		found_overlapping_sub = true;
@@ -103,10 +107,10 @@ void insert_rete_beta_sub_single(rete_state_single* state,
 	    }
 	    destroy_sub_store_iter(& iter);
 	    if(!found_overlapping_sub)
-	      insert_rete_beta_sub_single(state, node, node->children[0], sub);
+	      insert_rete_beta_sub_single(net->th, node_caches, tmp_subs,  node, node->children[0], step, sub);
 	  } // end if(insert_sub...
       } else // right parent 
-	if(insert_substitution_single(state, 
+	if(insert_substitution_single(node_caches, 
 				      node->val.beta.a_store_no, 
 				      sub, node->free_vars
 				      ))
@@ -128,13 +132,20 @@ void insert_rete_beta_sub_single(rete_state_single* state,
    
    The substitution is changed, but not deleted, the calling function must deallocate it and not depend on the contents after calling
 **/
-void insert_rete_alpha_fact_children_single(rete_state_single* state, const rete_node* node, const atom* fact, substitution* sub){
+void insert_rete_alpha_fact_children_single(const rete_net* net,
+					    substitution_store_array * node_caches, 
+					    substitution_store_mt * tmp_subs,
+					    rule_queue_single ** rule_queue,
+					    const rete_node* node, 
+					    const atom* fact, 
+					    unsigned int step, 
+					    substitution* sub){
   unsigned int i;
-  substitution* tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
+  substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++){
-    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info);
-    insert_rete_alpha_fact_single(state, node->children[i], fact, tmp_sub);
+    copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info);
+    insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  rule_queue, node->children[i], fact, step, tmp_sub);
   }
   free_substitution(tmp_sub);
 }
@@ -148,16 +159,20 @@ void insert_rete_alpha_fact_children_single(rete_state_single* state, const rete
    propagate is true when call originates from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate
 **/
-bool insert_rete_alpha_fact_single(rete_state_single* state, 
+bool insert_rete_alpha_fact_single(const rete_net* net,
+				   substitution_store_array * node_caches, 
+				   substitution_store_mt * tmp_subs,
+				   rule_queue_single ** rule_queue,
 				   const rete_node* node, 
 				   const atom* fact, 
+				   unsigned int step, 
 				   substitution* sub)
 {
   unsigned int i;
   const term *arg;
   sub_store_iter iter;
-  substitution_size_info ssi = state->net->th->sub_size_info;
-  substitution* tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
+  substitution_size_info ssi = net->th->sub_size_info;
+  substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   bool ret_val = true;
 
   assert(test_substitution(sub));
@@ -173,17 +188,17 @@ bool insert_rete_alpha_fact_single(rete_state_single* state,
     if( ! unify_substitution_terms(arg, node->val.alpha.value, sub))
       ret_val = false;
     else
-      insert_rete_alpha_fact_children_single(state, node, fact, sub);
+      insert_rete_alpha_fact_children_single(net, node_caches, tmp_subs, rule_queue, node, fact, step, sub);
     break;
   case beta_and:
     assert(node->n_children == 1);
-    if(!insert_substitution_single(state, node->val.beta.a_store_no, sub, node->free_vars))
+    if(!insert_substitution_single(node_caches, node->val.beta.a_store_no, sub, node->free_vars))
       ret_val = false;
     else {
       if(node->left_parent->type == beta_root)
-	insert_rete_beta_sub_single(state, node, node->children[0], sub);
+	insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub);
       else {
-	iter = get_state_sub_store_iter(state, node->val.beta.b_store_no);
+	iter = get_array_sub_store_iter(node_caches, node->val.beta.b_store_no);
 	while(has_next_sub_store(& iter)){
 	  bool has_overlap;
 	  if(node->in_positive_lhs_part)
@@ -191,14 +206,14 @@ bool insert_rete_alpha_fact_single(rete_state_single* state,
 	  else
 	    has_overlap = union_substitutions_struct_one_ts(tmp_sub, get_next_sub_store(& iter), sub, ssi);
 	  if(has_overlap) 
-	    insert_rete_beta_sub_single(state, node, node->children[0], tmp_sub);
+	    insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, tmp_sub);
 	}
 	destroy_sub_store_iter(& iter);
       }
     }
     break;
   case beta_not: 
-    if(insert_substitution_single(state, 
+    if(insert_substitution_single(node_caches, 
 				  node->val.beta.a_store_no, 
 				  sub, node->free_vars
 				  ))
@@ -214,30 +229,3 @@ bool insert_rete_alpha_fact_single(rete_state_single* state,
   return ret_val;
 }    
 
-/**
-   Inserts fact into rete network.
-
-   An empty substitution is created on the heap and passed to the network
-   This must not be touched after the call to insert_rete_alpha_fact, since it
-   deletes or stores it
-
-   Note that calling this function may invalidate any rule_instance pointer, since these all 
-   point to members of the rule_queue_single arrays, which may be realloced as a consqequence of this call
-**/
-void insert_rete_net_fact_mt(rete_state_single* state, 
-			     const atom* fact){
-  unsigned int i;
-  substitution * tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
-  const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
-  unsigned int step = get_state_step_no_single(state);
-  assert(test_atom(fact));
-  assert(sel != NULL && sel->val.selector == fact->pred);
-  for(i = 0; i < sel->n_children; i++){
-    init_substitution(tmp_sub, state->net->th, step);
-    insert_rete_alpha_fact_single(state, sel->children[i], fact, tmp_sub);
-#ifdef PARALLELL_QUEUE_WORKERS
-    insert_rete_worker_queue(state, tmp_sub, fact, sel->children[i]);
-#endif
-  }
-  free_substitution(tmp_sub);
-}

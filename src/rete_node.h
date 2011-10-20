@@ -85,7 +85,7 @@ struct rete_node_t {
     } beta;
     struct rule_t {
       const axiom* axm;
-      size_t store_no;
+      unsigned int store_no;
     } rule;
   } val;
   const freevars* free_vars;
@@ -94,7 +94,7 @@ struct rete_node_t {
   bool in_positive_lhs_part;
   size_t size_children;
   const struct rete_node_t* left_parent;
-  size_t axiom_no;
+  unsigned int axiom_no;
 };
 
 typedef struct rete_node_t rete_node;

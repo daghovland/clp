@@ -112,22 +112,3 @@ void destroy_substitution_backup(substitution_store_backup * backup){
   ;
 }
 
-/**
-   Auxiliaries for manipulating array of substitution store backups
-**/
-
-substitution_store_backup * backup_substitution_store_array(substitution_store* stores, unsigned int n_stores){
-  unsigned int i;
-  substitution_store_backup* backups = calloc_tester(n_stores, sizeof(substitution_store_backup));
-  for(i = 0; i < n_stores; i++)
-    backups[i] = backup_substitution_store(& stores[i]);
-  return backups;
-}
-
-
-void destroy_substitution_store_backup_array(substitution_store_backup* backups, unsigned int n_backups){
-  unsigned int i;
-  for(i = 0; i < n_backups; i++)
-    destroy_substitution_backup(& backups[i]);
-  free(backups);
-}

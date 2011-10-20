@@ -75,6 +75,4 @@ substitution_store_backup backup_substitution_store(substitution_store*);
 void restore_substitution_store(substitution_store*, substitution_store_backup);
 void destroy_substitution_backup(substitution_store_backup*);
 
-substitution_store_backup * backup_substitution_store_array(substitution_store*, unsigned int);
-void destroy_substitution_store_backup_array(substitution_store_backup*, unsigned int);
 #endif

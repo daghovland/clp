@@ -25,9 +25,18 @@
    Code for updating state of rete network
 **/
 #include "common.h"
-#include "rete_state_single.h"
+#include "theory.h"
+#include "substitution_store_array.h"
+#include "substitution_store_mt.h"
+#include "rete_node.h"
 #include "atom.h"
 
-void insert_rete_net_fact_mt(rete_state_single* state, const atom* fact);
-
+bool insert_rete_alpha_fact_single(const rete_net* net,
+				   substitution_store_array * node_caches, 
+				   substitution_store_mt * tmp_subs,
+				   rule_queue_single ** rule_queues,
+				   const rete_node* node, 
+				   const atom* fact, 
+				   unsigned int step, 
+				   substitution* sub);
 #endif

@@ -24,10 +24,10 @@
 #include "common.h"
 #include "rete_net.h"
 #include "constants.h"
-#include "substitution_store.h"
 #include "rule_queue_single.h"
 #include "fact_store.h"
-#include "sub_alpha_queue.h"
+#include "substitution_store_array.h"
+#include "rete_worker.h"
 
 /**
    This version of a rete state is intended for a prover without or-parallellism, but
@@ -38,11 +38,12 @@
    new_facts_iters is used to keep track of what are the new facts at each step
 **/
 typedef struct rete_state_single_t {
-  substitution_store * subs;
+  substitution_store_array * node_subs;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
   rule_queue_single * history;
-  sub_alpha_queue * worker_queues;
+  rete_worker ** workers;
+  rete_worker_queue ** worker_queues;
   fact_store * factsets;
   fact_store_iter * new_facts_iters;
   const rete_net* net;
@@ -59,7 +60,8 @@ typedef struct rete_state_single_t {
 **/
 typedef struct rete_state_backup_t {
   rule_queue_single_backup * rq_backups;
-  substitution_store_backup * sub_backups;
+  substitution_store_array_backup * node_sub_backups;
+  rete_worker_queue_backup * worker_backups;
   fact_store_backup * factset_backups;
   fact_store_iter * new_facts_backups;
   rete_state_single* state;

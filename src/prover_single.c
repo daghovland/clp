@@ -91,7 +91,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     if(!state->net->factset_lhs || state->net->use_beta_not)
-      insert_rete_net_fact_mt(state, ground, get_state_step_single(state));
+      insert_state_rete_net_fact(state, ground, get_state_step_single(state));
     if(state->net->has_factset)
       insert_state_factset_single(state, ground);
     else 
@@ -270,7 +270,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     insert_state_factset_single(state, true_atom);
 
   if(!state->net->factset_lhs || state->net->use_beta_not)
-    insert_rete_net_fact_mt(state, true_atom);
+    insert_state_rete_net_fact(state, true_atom);
   
   run_prover_single(state);
 
