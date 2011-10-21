@@ -32,7 +32,8 @@
 **/
 substitution_store_array* init_substitution_store_array(substitution_size_info ssi, unsigned int n_stores){
   unsigned int i;
-  substitution_store_array * stores = malloc_tester(sizeof(substitution_store_array) + n_stores * sizeof(substitution_store));
+  substitution_store_array * stores = malloc_tester(sizeof(substitution_store_array));
+  stores->stores = calloc_tester(n_stores, sizeof(substitution_store));
   stores->n_stores = n_stores;
   for(i = 0; i < stores->n_stores; i++)
     stores->stores[i] = init_substitution_store(ssi);
@@ -45,6 +46,7 @@ void destroy_substitution_store_array(substitution_store_array* stores){
   unsigned int i;
   for(i = 0; i < stores->n_stores; i++)
     destroy_substitution_store(&stores->stores[i]);
+  free(stores->stores);
   free(stores);
 }
 
@@ -87,8 +89,8 @@ bool insert_substitution_single(substitution_store_array* stores, unsigned int s
 
 substitution_store_array_backup * backup_substitution_store_array(substitution_store_array* stores){
   unsigned int i;
-  substitution_store_array_backup * backup = malloc(sizeof(substitution_store_array_backup) 
-						    + stores->n_stores * sizeof(substitution_store_backup)); 
+  substitution_store_array_backup * backup = malloc(sizeof(substitution_store_array_backup)) ;
+  backup->backups = calloc_tester(stores->n_stores, sizeof(substitution_store_backup)); 
   backup->stores = stores;
   for(i = 0; i < stores->n_stores; i++)
     backup->backups[i] = backup_substitution_store(& stores->stores[i]);
@@ -107,5 +109,6 @@ void destroy_substitution_store_array_backup(substitution_store_array_backup* ba
   unsigned int i;
   for(i = 0; i < backups->stores->n_stores; i++)
     destroy_substitution_backup(& backups->backups[i]);
+  free(backups->backups);
   free(backups);
 }

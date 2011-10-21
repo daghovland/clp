@@ -28,6 +28,8 @@
 #include "pthread.h"
 #endif
 
+#define WORKER_QUEUE_INIT_SIZE 10
+
 typedef struct worker_queue_elem_t {
   unsigned int step;
   const atom* fact;
@@ -45,10 +47,10 @@ typedef struct rete_worker_queue_t {
   pthread_mutex_t queue_mutex;
   pthread_cond_t queue_cond;
 #endif
+  worker_queue_elem * queue;
   size_t size_queue;
   size_t first;
   size_t end;
-  worker_queue_elem queue[];
 } rete_worker_queue;
 
 
@@ -62,8 +64,9 @@ rete_worker_queue* init_rete_worker_queue(void);
 void destroy_rete_worker_queue(rete_worker_queue*);
 
 
-void push_rete_worker_queue(rete_worker_queue**, const atom*, const rete_node*, unsigned int); 
-void pop_rete_worker_queue(rete_worker_queue**, const atom**, const rete_node**, unsigned int*);
+void push_rete_worker_queue(rete_worker_queue*, const atom*, const rete_node*, unsigned int); 
+void pop_rete_worker_queue(rete_worker_queue*, const atom**, const rete_node**, unsigned int*);
+unsigned int get_timestamp_rete_worker_queue(rete_worker_queue*);
 void unpop_rete_worker_queue(rete_worker_queue*);
 
 #ifdef HAVE_PTHREAD

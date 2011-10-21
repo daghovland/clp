@@ -47,11 +47,11 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->step = 0;
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
   state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
-  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
+  state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
   for(i = 0; i < net->th->n_axioms; i++){
     state->rule_queues[i] = initialize_queue_single(ssi);
     state->worker_queues[i] = init_rete_worker_queue();
-    state->workers[i] = init_rete_worker(state->net, & state->tmp_subs, state->node_subs,  state->rule_queues + i, state->worker_queues + i);
+    state->workers[i] = init_rete_worker(state->net, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i]);
   }
   state->history = initialize_queue_single(ssi);
   if(state->net->has_factset){
@@ -192,14 +192,14 @@ unsigned int axiom_queue_previous_application_single_state(rete_state_single* st
 
 
 rule_instance* pop_axiom_rule_queue_single_state(rete_state_single* state, size_t axiom_no){
-  return pop_rule_queue_single(& state->rule_queues[axiom_no], get_state_step_no_single(state));
+  return pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
 }
 
 
 void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
   rete_state_single* state = rqs.single;
   assert(test_is_instantiation(rule->rhs->free_vars, sub));
-  push_rule_instance_single(& (state->rule_queues[rule->axiom_no])
+  push_rule_instance_single((state->rule_queues[rule->axiom_no])
                             , rule
                             , sub
                             , get_state_step_no_single(state)
@@ -284,9 +284,9 @@ rule_instance* insert_rule_instance_history_single(rete_state_single* state, con
   unsigned int step =  get_state_step_no_single(state);
   while(get_rule_queue_single_size(state->history) < step) {
     fprintf(stdout, "Pushing dummy rule instance on history for step %i\n", step);
-    push_rule_instance_single(& state->history, ri->rule, & ri->sub, step, false);
+    push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
   }
-  return push_rule_instance_single(& state->history, ri->rule, & ri->sub, step, false);
+  return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
 }
 
 rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int step_no){
@@ -322,6 +322,11 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
 }
 
 
+bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t axiom_no){
+  return ! is_empty_axiom_rule_queue_single_state(state, axiom_no) || ! rete_worker_queue_is_empty(state->worker_queues[axiom_no]) || rete_worker_is_working(state->workers[axiom_no]);
+}
+
+
 /**
    These two functions both return false if the queue is empty.
    When the net becomes lazy, or multithreaded, the "may_have" version
@@ -329,19 +334,39 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
 **/
 bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   rete_state_single* state = rqs.single;
-  while( ! is_empty_axiom_rule_queue_single_state(state, axiom_no)){
-    rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
-    if(!disjunction_true_in_fact_store(state, ri->rule->rhs, & ri->sub))
-      return true;
-    pop_axiom_rule_queue_single_state(state, axiom_no);
+  rule_queue_single* rq = state->rule_queues[axiom_no];
+  rete_worker_queue* wq = state->worker_queues[axiom_no];
+  bool retval = false;
+#ifdef HAVE_PTHREAD
+  lock_queue_single(rq);
+#endif
+  while( axiom_may_have_new_instance_single_state(state, axiom_no)){
+    while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
+      wait_queue_single(rq);
+    if(!rule_queue_single_is_empty(rq)){
+      rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
+#ifdef HAVE_PTHREAD
+      unlock_queue_single(rq);
+#endif
+      if(!disjunction_true_in_fact_store(state, ri->rule->rhs, & ri->sub))
+	return true;
+#ifdef HAVE_PTHREAD
+      lock_queue_single(rq);
+#endif
+      pop_axiom_rule_queue_single_state(state, axiom_no);
+    } else {
+      // This should only happen if the prover is interrupted in some way
+      assert(false);
+      return false;
+    }      
   }
-  return false;
+#ifdef HAVE_PTHREAD
+  unlock_queue_single(rq);
+#endif
+  return retval;
 }
 
 
-bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t axiom_no){
-  return ! is_empty_axiom_rule_queue_single_state(state, axiom_no);
-}
 
 /**
    Inserts fact into rete network.
@@ -363,10 +388,10 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
   for(i = 0; i < sel->n_children; i++){
     const rete_node* child = sel->children[i];
 #ifdef HAVE_PTHREAD
-    push_rete_worker_queue(& state->worker_queues[child->axiom_no], fact, child, step);
+    push_rete_worker_queue(state->worker_queues[child->axiom_no], fact, child, step);
 #else
     init_substitution(tmp_sub, state->net->th, step);
-    insert_rete_alpha_fact_single(state->net, state->node_caches, &state->tmp_subs, & state->rule_queues[child->axiom_no], child, fact, step, tmp_sub);
+    insert_rete_alpha_fact_single(state->net, state->node_caches, &state->tmp_subs, state->rule_queues[child->axiom_no], child, fact, step, tmp_sub);
 #endif
   }
   free_substitution(tmp_sub);
@@ -425,6 +450,40 @@ void print_state_new_fact_store(rete_state_single* state, FILE* f){
   }
 }
 
+/**
+   In the lazy version of rete, we calculuate the maximum age of any instance of a rule by taking either the oldest rule instance already in the queue, 
+   or if the queue is empty, the oldest substitution waiting to be inserted. 
+
+   This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
+**/
+unsigned int rule_queue_possible_age_single_state(rete_state_single* state, size_t axiom_no){
+  rule_queue_single* rq = state->rule_queues[axiom_no];
+  rete_worker_queue *wq = state->worker_queues[axiom_no];
+  rete_worker *worker = state->workers[axiom_no];
+  unsigned int age;
+#ifdef HAVE_PTHREAD
+  lock_queue_single(rq);
+#endif
+  if(!rule_queue_single_is_empty(rq)){
+    rule_instance * ri = peek_rule_queue_single(rq);
+    age = ri->timestamp;
+  } else {
+#ifdef HAVE_PTHREAD
+    lock_worker_queue(wq);
+#endif
+    if(rete_worker_is_working(worker))
+      age = get_worker_step(worker);
+    else 
+      age = get_timestamp_rete_worker_queue(wq);
+#ifdef HAVE_PTHREAD
+    unlock_worker_queue(wq);
+#endif
+  }
+#ifdef HAVE_PTHREAD
+    unlock_queue_single(rq);
+#endif
+}
+
 
 /**
    Called from proof_writer.c via prover.c
@@ -445,7 +504,7 @@ void print_state_single_rule_queues(rete_state_single* s, FILE* f){
 **/
 
 bool axiom_may_have_new_instance_single(rule_queue_state rqs, size_t axiom_no){
-  return ! is_empty_axiom_rule_queue_single_state(rqs.single, axiom_no);
+  return axiom_may_have_new_instance_single_state(rqs.single, axiom_no);
 }
 
 
@@ -465,7 +524,7 @@ rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, size_t axiom_no
 
 
 unsigned int rule_queue_possible_age_single(rule_queue_state rqs, size_t axiom_no){
-  return rule_queue_single_age(rqs.single->rule_queues[axiom_no]);
+  return rule_queue_possible_age_single_state(rqs.single, axiom_no);
 }
 
 

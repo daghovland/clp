@@ -55,23 +55,23 @@ void broadcast_worker_queue(rete_worker_queue* rq){
 #endif
 
 size_t get_worker_queue_size_t(size_t size_queue){
-  return sizeof(rete_worker_queue) + size_queue * sizeof(worker_queue_elem);
+  return size_queue * sizeof(worker_queue_elem);
 }
 
-void resize_worker_queue(rete_worker_queue** rq){
-  *rq = realloc_tester(*rq, get_worker_queue_size_t((*rq)->size_queue));
+void resize_worker_queue(rete_worker_queue* rq){
+  rq->queue = realloc_tester(rq->queue, get_worker_queue_size_t(rq->size_queue));
 }
 
-void check_worker_queue_too_large(rete_worker_queue** rq){
-  while((*rq)->end < (*rq)->size_queue / 2 && (*rq)->size_queue > 20){
-    (*rq)->size_queue /= 2;
+void check_worker_queue_too_large(rete_worker_queue* rq){
+  while(rq->end < rq->size_queue / 2 && rq->size_queue > 20){
+    rq->size_queue /= 2;
     resize_worker_queue(rq);
   }
 }
 
-void check_worker_queue_too_small(rete_worker_queue** rq){
-  if((*rq)->end + 1 >= (*rq)->size_queue){
-    (*rq)->size_queue *= 2;
+void check_worker_queue_too_small(rete_worker_queue* rq){
+  if(rq->end + 1 >= rq->size_queue){
+    rq->size_queue *= 2;
     resize_worker_queue(rq);
   }
 }
@@ -84,14 +84,15 @@ void check_worker_queue_too_small(rete_worker_queue** rq){
  **/
 rete_worker_queue* init_rete_worker_queue(void){
   unsigned int i;
-  size_t size_queue = 10;
-  rete_worker_queue* rq = malloc_tester(get_worker_queue_size_t(size_queue));
+  rete_worker_queue* rq = malloc_tester(sizeof(rete_worker_queue));
+  rq->size_queue = WORKER_QUEUE_INIT_SIZE;
+  rq->queue = calloc_tester(rq->size_queue, sizeof(worker_queue_elem));
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t mutex_attr;
 #endif
   rq->first = 0;
   rq->end = 0;
-  rq->size_queue = size_queue;
+
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutexattr_init(&mutex_attr), "rete_worker_queue.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
@@ -149,22 +150,25 @@ void assign_worker_queue_elem(rete_worker_queue* rq, unsigned int pos, const ato
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-void push_rete_worker_queue(rete_worker_queue ** rq, const atom* fact, const rete_node * alpha, unsigned int step){
+void push_rete_worker_queue(rete_worker_queue * rq, const atom* fact, const rete_node * alpha, unsigned int step){
   unsigned int pos;
 #ifdef HAVE_PTHREAD
-  lock_worker_queue(*rq);
+  lock_worker_queue(rq);
 #endif
   check_worker_queue_too_small(rq);
-  pos = (*rq)->end;
-  (*rq)->end ++;
-  assign_worker_queue_elem(*rq, pos, fact, alpha, step);
+  pos = rq->end;
+  rq->end ++;
+  assign_worker_queue_elem(rq, pos, fact, alpha, step);
 #ifdef HAVE_PTHREAD
-  signal_worker_queue(*rq);
-  unlock_worker_queue(*rq);
+  signal_worker_queue(rq);
+  unlock_worker_queue(rq);
 #endif
 }
 
-
+unsigned int get_timestamp_rete_worker_queue(rete_worker_queue* rq){
+  assert(!rete_worker_queue_is_empty(rq));
+  return rq->queue[rq->first].step;
+}
 
 bool rete_worker_queue_is_empty(rete_worker_queue* rq){
   return rq->first == rq->end;
@@ -176,8 +180,7 @@ bool rete_worker_queue_is_empty(rete_worker_queue* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-void  pop_rete_worker_queue(rete_worker_queue** rqp, const atom** fact, const rete_node** alpha, unsigned int* step){
-  rete_worker_queue* rq = *rqp;
+void  pop_rete_worker_queue(rete_worker_queue* rq, const atom** fact, const rete_node** alpha, unsigned int* step){
   worker_queue_elem* el = get_worker_queue_elem(rq, rq->first);
   *fact = el->fact;
   *alpha = el->alpha;
@@ -205,7 +208,7 @@ rete_worker_queue_backup backup_rete_worker_queue(rete_worker_queue* rq){
 rete_worker_queue* restore_rete_worker_queue(rete_worker_queue* rq, rete_worker_queue_backup* backup){
   rq->first = backup->first;
   rq->end = backup->end;
-  check_worker_queue_too_large(&rq);
+  check_worker_queue_too_large(rq);
   return rq;
 }
 

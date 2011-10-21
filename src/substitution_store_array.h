@@ -31,12 +31,12 @@
 
 typedef struct substitution_store_array_t {
   unsigned int n_stores;
-  substitution_store stores[];
+  substitution_store * stores;
 } substitution_store_array;
 
 typedef struct substitution_store_array_backup_t {
   substitution_store_array* stores;
-  substitution_store_backup backups[];
+  substitution_store_backup * backups;
 } substitution_store_array_backup;
 
 

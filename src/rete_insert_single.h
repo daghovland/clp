@@ -34,7 +34,7 @@
 bool insert_rete_alpha_fact_single(const rete_net* net,
 				   substitution_store_array * node_caches, 
 				   substitution_store_mt * tmp_subs,
-				   rule_queue_single ** rule_queues,
+				   rule_queue_single * rule_queue,
 				   const rete_node* node, 
 				   const atom* fact, 
 				   unsigned int step, 

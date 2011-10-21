@@ -27,6 +27,7 @@
 #include "pthread.h"
 #endif
 
+#define RULE_QUEUE_INIT_SIZE 10
 /**
    The queue of rule instances to be treated
    Called "conflict set" by Forgy
@@ -44,13 +45,13 @@ typedef struct rule_queue_single_t {
   pthread_mutex_t queue_mutex;
   pthread_cond_t queue_cond;
 #endif
+  char * queue;
   size_t size_queue;
   size_t first;
   size_t end;
   unsigned int previous_appl;
   unsigned int n_appl;
   substitution_size_info ssi;
-  char queue[];
 } rule_queue_single;
 
 
@@ -64,10 +65,17 @@ typedef struct rule_queue_single_backup_t {
 rule_queue_single* initialize_queue_single(substitution_size_info);
 void destroy_rule_queue_single(rule_queue_single*);
 
-rule_instance* push_rule_instance_single(rule_queue_single**, const axiom*, const substitution*, unsigned int, bool);
-rule_instance* pop_rule_queue_single(rule_queue_single**, unsigned int);
+rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool);
+rule_instance* pop_rule_queue_single(rule_queue_single*, unsigned int);
 rule_instance* peek_rule_queue_single(rule_queue_single*);
 rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
+
+
+void wait_queue_single(rule_queue_single*);
+void signal_queue_single(rule_queue_single*);
+void lock_queue_single(rule_queue_single*);
+void unlock_queue_single(rule_queue_single*);
+
 
 unsigned int rule_queue_single_age(rule_queue_single*);
 unsigned int rule_queue_single_previous_application(rule_queue_single*);

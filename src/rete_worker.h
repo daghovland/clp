@@ -42,25 +42,28 @@
    in rete_insert_single.c
 
    The pointers must be double, because both the queues are realloced as a whole (and therefore invalidated.)
+
+   work and output are pointers to single elements (not arrays)
 **/
 
 typedef struct rete_worker_t {
   pthread_t tid;
-  bool working;
-  bool stop_worker;
   substitution_store_array * node_subs;
   substitution_store_mt * tmp_subs;
   const rete_net* net;
-  rete_worker_queue ** work;
-  rule_queue_single ** output;
+  unsigned int step;
+  rete_worker_queue * work;
+  rule_queue_single * output;
+  bool working;
+  bool stop_worker;
 } rete_worker;
 
-rete_worker* init_rete_worker(const rete_net*, substitution_store_mt *, substitution_store_array *, rule_queue_single **, rete_worker_queue **);
+rete_worker* init_rete_worker(const rete_net*, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
 void destroy_rete_worker(rete_worker*);
 void restart_rete_worker(rete_worker*);
 void pause_rete_worker(rete_worker*);
 void continue_rete_worker(rete_worker*);
 bool rete_worker_is_working(rete_worker*);
-
+unsigned int get_worker_step(rete_worker*);
 #endif
 #endif
