@@ -37,8 +37,8 @@ void unlock_worker_queue(rete_worker_queue* rq){
   pt_err(pthread_mutex_unlock(& rq->queue_mutex), "rete_worker_queue.c: unlock_worker_queue: mutex_unlock");
 }
 
-void wait_worker_queue(rete_worker_queue* rq){
-  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rete_worker_queue.c: wait_worker_queue: cond wait");
+void wait_worker_queue(rete_worker_queue* wq){
+  pt_err(pthread_cond_wait(& wq->queue_cond, & wq->queue_mutex), "rete_worker_queue.c: wait_worker_queue: cond wait");
 }
 
 

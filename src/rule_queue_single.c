@@ -44,7 +44,12 @@ void wait_queue_single(rule_queue_single* rq){
 }
 
 void signal_queue_single(rule_queue_single* rq){
-  pt_err(pthread_cond_signal(& rq->queue_cond), "rule_queue_single.c: signal_queue_single: cond_signal");
+  pt_err(pthread_cond_signal(& rq->queue_cond), "rule_queue_single.c: signal_queue_single: ");
+}
+
+
+void broadcast_queue_single(rule_queue_single* rq){
+  pt_err(pthread_cond_broadcast(& rq->queue_cond), "rule_queue_single.c: broadcast_queue_single:");
 }
 #endif
 
@@ -191,7 +196,7 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   assign_rule_queue_instance(rq, pos, rule, sub, step);
   assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
-  signal_queue_single(rq);
+  broadcast_queue_single(rq);
   unlock_queue_single(rq);
 #endif
   return get_rule_instance_single(rq, pos);
