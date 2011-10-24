@@ -49,11 +49,11 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
   state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
   for(i = 0; i < net->th->n_axioms; i++){
-    state->rule_queues[i] = initialize_queue_single(ssi);
+    state->rule_queues[i] = initialize_queue_single(ssi, i);
     state->worker_queues[i] = init_rete_worker_queue();
     state->workers[i] = init_rete_worker(state->net, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i]);
   }
-  state->history = initialize_queue_single(ssi);
+  state->history = initialize_queue_single(ssi, 0);
   if(state->net->has_factset){
     state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
     state->new_facts_iters = calloc_tester(net->th->n_predicates, sizeof(fact_store_iter));
@@ -75,9 +75,10 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
 rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
-  for(i = 0; i < state->net->th->n_axioms; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++){
+    fprintf(stdout, "Pausing worker on axiom #%u.\n", i);
     pause_rete_worker(state->workers[i]);
-
+  }
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
@@ -341,9 +342,13 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   lock_queue_single(rq);
 #endif
   while( axiom_may_have_new_instance_single_state(state, axiom_no)){
+    fprintf(stdout, "Axiom %u may have new instance.\n", axiom_no);
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
       wait_queue_single(rq);
-    if(!rule_queue_single_is_empty(rq)){
+    if(rule_queue_single_is_empty(rq)){
+      retval = false;
+      break;
+    } else {
       rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq);
@@ -354,11 +359,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
       lock_queue_single(rq);
 #endif
       pop_axiom_rule_queue_single_state(state, axiom_no);
-    } else {
-      // This should only happen if the prover is interrupted in some way
-      assert(false);
-      return false;
-    }      
+    }
   }
 #ifdef HAVE_PTHREAD
   unlock_queue_single(rq);
@@ -471,7 +472,7 @@ unsigned int rule_queue_possible_age_single_state(rete_state_single* state, size
 #ifdef HAVE_PTHREAD
     lock_worker_queue(wq);
 #endif
-    if(rete_worker_is_working(worker))
+    if(rete_worker_is_working(worker) || rete_worker_queue_is_empty(wq))
       age = get_worker_step(worker);
     else 
       age = get_timestamp_rete_worker_queue(wq);

@@ -40,15 +40,19 @@ void unlock_queue_single(rule_queue_single* rq){
 }
 
 void wait_queue_single(rule_queue_single* rq){
+  fprintf(stdout, "Waiting on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: wait_queue_single: cond_wait");
+  fprintf(stdout, "Woke up on rule queue %u.\n", rq->axiom_no);
 }
 
 void signal_queue_single(rule_queue_single* rq){
+  fprintf(stdout, "Signal sent on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_signal(& rq->queue_cond), "rule_queue_single.c: signal_queue_single: ");
 }
 
 
 void broadcast_queue_single(rule_queue_single* rq){
+  fprintf(stdout, "Broadcasting on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_broadcast(& rq->queue_cond), "rule_queue_single.c: broadcast_queue_single:");
 }
 #endif
@@ -80,8 +84,10 @@ void check_rq_too_small(rule_queue_single* rq){
    all facts from the theory
 
    Also allocates memory for the qeue
+
+   The axiom_no is only for debugging purposes
  **/
-rule_queue_single* initialize_queue_single(substitution_size_info ssi){
+rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no){
   unsigned int i;
   rule_queue_single* rq = malloc_tester(sizeof(rule_queue_single));
   rq->size_queue = RULE_QUEUE_INIT_SIZE;
@@ -94,6 +100,7 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi){
   rq->end = 0;
   rq->previous_appl = 0;
   rq->n_appl = 0;
+  rq->axiom_no = axiom_no;
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
@@ -195,8 +202,9 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   rq->end ++;
   assign_rule_queue_instance(rq, pos, rule, sub, step);
   assert(test_rule_queue_single(rq));
+  fprintf(stdout, "Pushed rule instance on queue for axiom #%i.\n", rule->axiom_no);
 #ifdef HAVE_PTHREAD
-  broadcast_queue_single(rq);
+  signal_queue_single(rq);
   unlock_queue_single(rq);
 #endif
   return get_rule_instance_single(rq, pos);

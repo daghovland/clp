@@ -36,11 +36,11 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
   worker->working = false;
   while(rete_worker_queue_is_empty(worker->work) && !worker->stop_worker)
     wait_worker_queue(worker->work);
-  if(!worker->stop_worker){
-    worker->working = true;
-    pop_rete_worker_queue(worker->work, fact, alpha, step);
-  }
-  worker->step = step;
+  if(worker->stop_worker)
+    return;
+  worker->working = true;
+  pop_rete_worker_queue(worker->work, fact, alpha, step);
+  worker->step = *step;
   unlock_worker_queue(worker->work);
 }
 
@@ -66,6 +66,9 @@ void * queue_worker_routine(void* arg){
       break;
     init_substitution(tmp_sub, worker->net->th, step);
     insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
+    lock_queue_single(worker->output);
+    signal_queue_single(worker->output);
+    unlock_queue_single(worker->output);
   }
   return NULL;
 }
@@ -104,8 +107,12 @@ rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_s
 void stop_rete_worker(rete_worker* worker){
   void* t_retval;
   worker->stop_worker = true;
+
+  lock_worker_queue(worker->work);
   broadcast_worker_queue(worker->work);
-  pt_err( pthread_join(worker->tid, &t_retval),  "rete_worker_queue.c: destroy_rete_worker: thread cancel");  
+  unlock_worker_queue(worker->work);
+
+  pthread_join(worker->tid, &t_retval);
 }
 
 /**
@@ -113,11 +120,9 @@ void stop_rete_worker(rete_worker* worker){
    and before restoring a backup
 **/
 void pause_rete_worker(rete_worker* rq){
-  lock_worker_queue(rq->work);
   stop_rete_worker(rq);
   if(rq->working)
     unpop_rete_worker_queue(rq->work);
-  lock_worker_queue(rq->work);
 }
 
 /**

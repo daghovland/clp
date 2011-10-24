@@ -102,24 +102,36 @@ rule_instance* normal_next_instance(rule_queue_state state
 #endif
     if(may_have(state, axiom_no)){
       unsigned int rule_previously_applied = previous_application(state, i);
+      if( (rule->type == goal || rule->type == fact)){
+	if (has_new_instance(state, axiom_no))
+	  return pop_axiom(state, axiom_no);
+	else {
+	  axiom_weights[axiom_no] = max_weight;
+	  continue;
+	}
+      }
       axiom_weights[axiom_no] = 
 	(possible_age(state, axiom_no) + rule_previously_applied) 
 	* rule->lhs->n_args 
 	* (1 + rand() / RAND_DIV);
       
-      may_have_next_rule = true;
-      
-      if( (rule->type == goal || rule->type == fact) && has_new_instance(state, axiom_no))
-	return pop_axiom(state, axiom_no);
-      
-      if(!rule->is_existential && has_new_instance(state, axiom_no)){
-	has_definite = true;
-	definite_rule = axiom_no;
-	if(rule->rhs->n_args == 1){
-	  has_definite_non_splitting = true;
-	  definite_non_splitting_rule = axiom_no;
+           
+      if(!rule->is_existential){
+	if(has_new_instance(state, axiom_no)){
+	  may_have_next_rule = true;
+	  has_definite = true;
+	  definite_rule = axiom_no;
+	  if(rule->rhs->n_args == 1){
+	    has_definite_non_splitting = true;
+	    definite_non_splitting_rule = axiom_no;
+	    return pop_axiom(state, definite_non_splitting_rule);
+	  }
+	} else {
+	  axiom_weights[axiom_no] = max_weight;
+	  continue;
 	}
       } else { // not definite rule
+	may_have_next_rule = true;
 	if(rule->rhs->n_args == 1){
 	  has_non_splitting = true;
 	  non_splitting_rule = axiom_no;

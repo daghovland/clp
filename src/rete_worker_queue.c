@@ -49,6 +49,7 @@ void signal_worker_queue(rete_worker_queue* rq){
 
 
 void broadcast_worker_queue(rete_worker_queue* rq){
+  fprintf(stdout, "Broadcasting on worker queue.\n");
   pt_err(pthread_cond_broadcast(& rq->queue_cond), "rete_worker_queue.c: broadcast_worker_queue: cond wait");
 }
 
@@ -219,9 +220,6 @@ rete_worker_queue* restore_rete_worker_queue(rete_worker_queue* rq, rete_worker_
 **/
 void print_rete_worker_queue(rete_worker_queue* rq, FILE* f){
   unsigned int i, j;
-#ifdef HAVE_PTHREAD
-  lock_worker_queue(rq);
-#endif
   fprintf(f, "queue with %zi entries: \n", get_rete_worker_queue_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
     worker_queue_elem* el = get_worker_queue_elem(rq, i);
@@ -230,8 +228,5 @@ void print_rete_worker_queue(rete_worker_queue* rq, FILE* f){
     print_rete_node(el->alpha, f);    
     fprintf(f, "\n");
   }
-#ifdef HAVE_PTHREAD
-  unlock_worker_queue(rq);
-#endif
 }
     

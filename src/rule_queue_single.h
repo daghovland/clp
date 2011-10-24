@@ -49,6 +49,7 @@ typedef struct rule_queue_single_t {
   size_t size_queue;
   size_t first;
   size_t end;
+  unsigned int axiom_no;
   unsigned int previous_appl;
   unsigned int n_appl;
   substitution_size_info ssi;
@@ -62,7 +63,7 @@ typedef struct rule_queue_single_backup_t {
   unsigned int n_appl;
 } rule_queue_single_backup;
 
-rule_queue_single* initialize_queue_single(substitution_size_info);
+rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int);
 void destroy_rule_queue_single(rule_queue_single*);
 
 rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool);
