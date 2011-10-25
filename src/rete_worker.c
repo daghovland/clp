@@ -60,17 +60,23 @@ void * queue_worker_routine(void* arg){
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
   //pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "queue.c: queue_worker_routine: set cancel type");
   while(!worker->stop_worker){
+    lock_worker_queue(worker->work);
+    while(worker->pause_worker && !worker->stop_worker)
+      wait_worker_queue(worker->work);
+    unlock_worker_queue(worker->work);
+    if(worker->stop_worker)
+      break;
     worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
     if(worker->stop_worker)
       break;
     init_substitution(tmp_sub, worker->net->th, step);
     insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
-    if(worker->stop_worker)
-      break;
-    worker->working = false;
-    lock_queue_single(worker->output);
-    signal_queue_single(worker->output);
-    unlock_queue_single(worker->output);
+    if(!worker->stop_worker && !worker->pause_worker){
+      worker->working = false;
+      lock_queue_single(worker->output);
+      signal_queue_single(worker->output);
+      unlock_queue_single(worker->output);
+    }
   }
   return NULL;
 }
@@ -112,8 +118,6 @@ void stop_rete_worker(rete_worker* worker){
 
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
-  if(worker->working)
-    unpop_rete_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
 
   pthread_join(worker->tid, &t_retval);
@@ -124,10 +128,10 @@ void stop_rete_worker(rete_worker* worker){
    and before restoring a backup
 **/
 void pause_rete_worker(rete_worker* worker){
+  worker->pause_worker = true;
   lock_worker_queue(worker->work);
-  lock_queue_single(worker->output);
-  if(worker->working)
-    unpop_rete_worker_queue(worker->work);
+  signal_worker_queue(worker->work);
+  unlock_worker_queue(worker->work);
 }
 
 /**
@@ -143,8 +147,10 @@ void restart_rete_worker(rete_worker* rq){
    Called after backing up the queues
 **/
 void continue_rete_worker(rete_worker* worker){
+  worker->pause_worker = false;
+  lock_worker_queue(worker->work);
+  signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
-  unlock_queue_single(worker->output);
 }
 
 

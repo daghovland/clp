@@ -56,6 +56,7 @@ typedef struct rete_worker_t {
   rule_queue_single * output;
   bool working;
   bool stop_worker;
+  bool pause_worker;
 } rete_worker;
 
 rete_worker* init_rete_worker(const rete_net*, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
