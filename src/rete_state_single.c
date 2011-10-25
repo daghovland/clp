@@ -75,10 +75,8 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
 rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
-  for(i = 0; i < state->net->th->n_axioms; i++){
-    fprintf(stdout, "Pausing worker on axiom #%u.\n", i);
-    pause_rete_worker(state->workers[i]);
-  }
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    stop_rete_worker(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
@@ -93,7 +91,7 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   }
   backup.state = state;
   for(i = 0; i < state->net->th->n_axioms; i++)
-    continue_rete_worker(state->workers[i]);
+    restart_rete_worker(state->workers[i]);
   return backup;
 }
 
@@ -123,7 +121,7 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
   unsigned int i;
   rete_state_single* state = backup->state;
   for(i = 0; i < state->net->th->n_axioms; i++)
-    pause_rete_worker(state->workers[i]);
+    stop_rete_worker(state->workers[i]);
   state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++)
@@ -342,7 +340,6 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   lock_queue_single(rq);
 #endif
   while( axiom_may_have_new_instance_single_state(state, axiom_no)){
-    fprintf(stdout, "Axiom %u may have new instance.\n", axiom_no);
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
       wait_queue_single(rq);
     if(rule_queue_single_is_empty(rq)){

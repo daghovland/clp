@@ -49,7 +49,6 @@ void signal_worker_queue(rete_worker_queue* rq){
 
 
 void broadcast_worker_queue(rete_worker_queue* rq){
-  fprintf(stdout, "Broadcasting on worker queue.\n");
   pt_err(pthread_cond_broadcast(& rq->queue_cond), "rete_worker_queue.c: broadcast_worker_queue: cond wait");
 }
 

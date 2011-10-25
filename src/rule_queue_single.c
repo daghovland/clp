@@ -40,19 +40,15 @@ void unlock_queue_single(rule_queue_single* rq){
 }
 
 void wait_queue_single(rule_queue_single* rq){
-  fprintf(stdout, "Waiting on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: wait_queue_single: cond_wait");
-  fprintf(stdout, "Woke up on rule queue %u.\n", rq->axiom_no);
 }
 
 void signal_queue_single(rule_queue_single* rq){
-  fprintf(stdout, "Signal sent on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_signal(& rq->queue_cond), "rule_queue_single.c: signal_queue_single: ");
 }
 
 
 void broadcast_queue_single(rule_queue_single* rq){
-  fprintf(stdout, "Broadcasting on rule queue %u.\n", rq->axiom_no);
   pt_err(pthread_cond_broadcast(& rq->queue_cond), "rule_queue_single.c: broadcast_queue_single:");
 }
 #endif
@@ -202,7 +198,6 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   rq->end ++;
   assign_rule_queue_instance(rq, pos, rule, sub, step);
   assert(test_rule_queue_single(rq));
-  fprintf(stdout, "Pushed rule instance on queue for axiom #%i.\n", rule->axiom_no);
 #ifdef HAVE_PTHREAD
   signal_queue_single(rq);
   unlock_queue_single(rq);

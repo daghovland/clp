@@ -33,14 +33,13 @@
 **/
 void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, const rete_node ** alpha, unsigned int * step){
   lock_worker_queue(worker->work);
-  worker->working = false;
   while(rete_worker_queue_is_empty(worker->work) && !worker->stop_worker)
     wait_worker_queue(worker->work);
-  if(worker->stop_worker)
-    return;
-  worker->working = true;
-  pop_rete_worker_queue(worker->work, fact, alpha, step);
-  worker->step = *step;
+  if(!worker->stop_worker){
+    worker->working = true;
+    pop_rete_worker_queue(worker->work, fact, alpha, step);
+    worker->step = *step;
+  }
   unlock_worker_queue(worker->work);
 }
 
@@ -66,6 +65,7 @@ void * queue_worker_routine(void* arg){
       break;
     init_substitution(tmp_sub, worker->net->th, step);
     insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
+    worker->working = false;
     lock_queue_single(worker->output);
     signal_queue_single(worker->output);
     unlock_queue_single(worker->output);
@@ -110,6 +110,8 @@ void stop_rete_worker(rete_worker* worker){
 
   lock_worker_queue(worker->work);
   broadcast_worker_queue(worker->work);
+  if(worker->working)
+    unpop_rete_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
 
   pthread_join(worker->tid, &t_retval);
@@ -119,10 +121,11 @@ void stop_rete_worker(rete_worker* worker){
    Called before backing up the queues, 
    and before restoring a backup
 **/
-void pause_rete_worker(rete_worker* rq){
-  stop_rete_worker(rq);
-  if(rq->working)
-    unpop_rete_worker_queue(rq->work);
+void pause_rete_worker(rete_worker* worker){
+  lock_worker_queue(worker->work);
+  lock_queue_single(worker->output);
+  if(worker->working)
+    unpop_rete_worker_queue(worker->work);
 }
 
 /**
@@ -137,8 +140,9 @@ void restart_rete_worker(rete_worker* rq){
 /**
    Called after backing up the queues
 **/
-void continue_rete_worker(rete_worker* rq){
-  restart_rete_worker(rq);
+void continue_rete_worker(rete_worker* worker){
+  unlock_worker_queue(worker->work);
+  unlock_queue_single(worker->output);
 }
 
 
