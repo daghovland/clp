@@ -25,6 +25,7 @@
 #include "rete_state_single.h"
 #include "rete_worker_queue.h"
 #include "rete_worker.h"
+#include "substitution.h"
 #include "theory.h"
 #include "rete.h"
 #include <string.h>
@@ -189,11 +190,27 @@ unsigned int axiom_queue_previous_application_single_state(rete_state_single* st
   return rule_queue_single_previous_application(state->rule_queues[axiom_no]);
 }
 
+/**
+   This function instantiates "pop_axiom" in strategy.c
 
-rule_instance* pop_axiom_rule_queue_single_state(rete_state_single* state, size_t axiom_no){
-  return pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
+   Transfers a rule instance from the rule queue to the history. 
+   This must be done while the rule queue is locked, since otherwise 
+   the worker may push an instance and realloc the queue with the instance in it.
+**/
+rule_instance* transfer_from_rule_queue_to_history(rete_state_single* state, size_t axiom_no){
+  rule_instance *ri, *next;
+  rule_queue_single* rq = state->rule_queues[axiom_no];
+#ifdef HAVE_PTHREAD
+  lock_queue_single(rq);
+#endif
+  ri = pop_rule_queue_single(rq, get_state_step_no_single(state));
+  next = insert_rule_instance_history_single(state, ri);
+#ifdef HAVE_PTHREAD
+  unlock_queue_single(rq);
+#endif
+  assert(test_rule_instance(next));
+  return next;
 }
-
 
 void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
   rete_state_single* state = rqs.single;
@@ -280,11 +297,12 @@ bool disjunction_true_in_fact_store(rete_state_single* state, const disjunction*
    (But not before)
 **/
 rule_instance* insert_rule_instance_history_single(rete_state_single* state, const rule_instance* ri){
-  unsigned int step =  get_state_step_no_single(state);
+  unsigned int step =  get_state_step_no_single(state) + 1;
   while(get_rule_queue_single_size(state->history) < step) {
-    fprintf(stdout, "Pushing dummy rule instance on history for step %i\n", step);
+    fprintf(stderr, "Pushing dummy rule instance on history for step %i\n", step);
     push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
   }
+  assert(test_rule_instance(ri));
   return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
 }
 
@@ -355,7 +373,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
 #ifdef HAVE_PTHREAD
       lock_queue_single(rq);
 #endif
-      pop_axiom_rule_queue_single_state(state, axiom_no);
+      pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
     }
   }
 #ifdef HAVE_PTHREAD
@@ -517,7 +535,7 @@ unsigned int axiom_queue_previous_application_single(rule_queue_state rqs, size_
 
 
 rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, size_t axiom_no){
-  return pop_axiom_rule_queue_single_state(rqs.single, axiom_no);
+  return transfer_from_rule_queue_to_history(rqs.single, axiom_no);
 }
 
 

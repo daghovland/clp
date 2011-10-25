@@ -69,7 +69,6 @@ substitution* get_next_sub_list(sub_list_iter*);
 
 void free_substitution(substitution*);
 void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);
-void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info);
 const term* find_substitution(const substitution*, const variable*);
 bool add_substitution(substitution*, variable*, const term*);
 void insert_substitution_value(substitution*, variable*, const term*);

@@ -41,7 +41,7 @@
 
 extern bool debug, verbose;
 
-bool foundproof;
+bool foundproof, reached_max;
 
 
 
@@ -119,6 +119,7 @@ bool return_found_model_mt(rete_state_single* state){
 bool return_reached_max_steps_mt(rete_state_single* state, const rule_instance* ri){
   printf("Reached %i proof steps, higher than given maximum\n", get_state_step_single(state));
   foundproof = false;
+  reached_max = true;
   return false;
 }
 
@@ -136,12 +137,12 @@ bool run_prover_single(rete_state_single* state){
       rule_instance* next;
       bool incval;
       next = choose_next_instance_single(state);
+      assert(test_rule_instance(next));
       if(next == NULL)
 	return return_found_model_mt(state);
       incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
-      next = insert_rule_instance_history_single(state, next);            
       ts = get_state_step_single(state);
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	check_used_rule_instances_coq_single(next, state, ts, ts);
@@ -250,7 +251,8 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;
-  bool foundproof = true;
+  foundproof = true;
+  reached_max = false;
 
   srand(1000);
   
@@ -274,14 +276,14 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   
   run_prover_single(state);
 
-  if(foundproof && rete->coq){
+  if(foundproof && rete->coq && !reached_max){
     //write_single_coq_proof(state);
     end_proof_coq_writer(rete->th);
   }
   retval = get_state_step_single(state);
   delete_rete_state_single(state);
   
-  if(foundproof)
+  if(foundproof && !reached_max)
     return retval;
   else
     return 0;

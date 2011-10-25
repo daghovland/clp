@@ -130,6 +130,8 @@ void delete_rete_net(rete_net*);
 
 // In prover.c
 unsigned int prover(const rete_net*, bool);
+// In prover_single.c
+unsigned int prover_single(const rete_net*, bool);
 
 
 bool test_rete_net(const rete_net*);

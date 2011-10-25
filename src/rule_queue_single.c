@@ -24,6 +24,7 @@
 #include "rule_queue_single.h"
 #include "rule_queue_state.h"
 #include "rule_instance.h"
+#include "substitution.h"
 #include "error_handling.h"
 
 

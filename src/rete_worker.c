@@ -59,12 +59,14 @@ void * queue_worker_routine(void* arg){
   rete_worker * worker = arg;
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
   //pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "queue.c: queue_worker_routine: set cancel type");
-  while(true){
+  while(!worker->stop_worker){
     worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
     if(worker->stop_worker)
       break;
     init_substitution(tmp_sub, worker->net->th, step);
     insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
+    if(worker->stop_worker)
+      break;
     worker->working = false;
     lock_queue_single(worker->output);
     signal_queue_single(worker->output);
@@ -109,7 +111,7 @@ void stop_rete_worker(rete_worker* worker){
   worker->stop_worker = true;
 
   lock_worker_queue(worker->work);
-  broadcast_worker_queue(worker->work);
+  signal_worker_queue(worker->work);
   if(worker->working)
     unpop_rete_worker_queue(worker->work);
   unlock_worker_queue(worker->work);

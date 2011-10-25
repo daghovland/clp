@@ -220,14 +220,19 @@ rule_instance* choose_next_instance(rule_queue_state state
 				    , unsigned int (*previous_application)(rule_queue_state, size_t)
 				    )
 {
+  rule_instance* ri;
   switch(strat){
   case clpl_strategy:
-    return clpl_next_instance(state, net, has_new_instance, pop_axiom);
+    ri = clpl_next_instance(state, net, has_new_instance, pop_axiom);
+    break;
   case normal_strategy:
-    return normal_next_instance(state, net, step_no, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
+    ri = normal_next_instance(state, net, step_no, is_empty, peek_axiom, has_new_instance, possible_age, may_have, pop_axiom, add_to_queue, previous_application);
+    break;
   default:
     fprintf(stderr, "Unknown strategy %i\n", strat);
     exit(EXIT_FAILURE);
   }
+  assert(test_rule_instance(ri));
+  return ri;
 }
 

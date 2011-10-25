@@ -32,6 +32,8 @@
    Inserting a substitution into a beta node in a rete network
    The substitution sub is changed, but not freed
    The calling function must not use the values in sub, and must free sub after the call returns
+
+   exit_matcher usually points to the component stop_worker of a rete_worker_thread
 **/
 void insert_rete_beta_sub_single(const rete_net* net,
 				 substitution_store_array * node_caches, 
@@ -92,7 +94,8 @@ void insert_rete_beta_sub_single(const rete_net* net,
 #if false
     case beta_not:
       if(parent == node->left_parent){
-	if(insert_substitution_single(node_caches, 
+	if(
+	   insert_substitution_single(node_caches, 
 				      node->val.beta.b_store_no, 
 				      sub, node->free_vars
 				      ))
@@ -131,6 +134,8 @@ void insert_rete_beta_sub_single(const rete_net* net,
    Called from insert_rete_alpha_fact on selectors and alpha nodes
    
    The substitution is changed, but not deleted, the calling function must deallocate it and not depend on the contents after calling
+
+   exit_matcher usually points to the component stop_worker of a rete_worker_thread
 **/
 void insert_rete_alpha_fact_children_single(const rete_net* net,
 					    substitution_store_array * node_caches, 
@@ -158,6 +163,8 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
 
    propagate is true when call originates from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate
+
+   exit_matcher usually points to the component stop_worker of a rete_worker_thread
 **/
 bool insert_rete_alpha_fact_single(const rete_net* net,
 				   substitution_store_array * node_caches, 
