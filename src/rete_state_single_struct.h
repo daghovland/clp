@@ -28,6 +28,7 @@
 #include "fact_store.h"
 #include "substitution_store_array.h"
 #include "rete_worker.h"
+#include "proof_branch.h"
 
 /**
    This version of a rete state is intended for a prover without or-parallellism, but
@@ -38,6 +39,8 @@
    new_facts_iters is used to keep track of what are the new facts at each step
 **/
 typedef struct rete_state_single_t {
+  unsigned int n_branches;
+  proof_branch * branches;
   substitution_store_array * node_subs;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
