@@ -63,6 +63,8 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
       state->new_facts_iters[i] = get_fact_store_iter(&state->factsets[i]);
     }
   }
+  state->root_branch = create_root_proof_branch();
+  state->current_proof_branch = state->root_branch;
   state->finished = false;
   state->step = 0;
   return state;
@@ -78,14 +80,15 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   unsigned int i;
   for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    wait_for_worker_to_pause(state->workers[i]);
-  backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
+  backup.current_proof_branch = state->current_proof_branch;
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
     backup.new_facts_backups = calloc(state->net->th->n_predicates, sizeof(fact_store_iter));
     copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   }
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    wait_for_worker_to_pause(state->workers[i]);
+  backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
   backup.worker_backups = calloc_tester(state->net->th->n_axioms, sizeof(rete_worker_queue_backup));
   for(i = 0; i < state->net->th->n_axioms; i++){
@@ -98,6 +101,12 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   return backup;
 }
 
+/**
+   Called when treating disjunction in prover_single
+**/
+void enter_proof_disjunct(rete_state_single* state){
+  state->current_proof_branch = create_child_branch(state->current_proof_branch, state->net->th);
+}
 
 /**
    Returns the current step number of the proving process
@@ -124,19 +133,22 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
   unsigned int i;
   rete_state_single* state = backup->state;
   for(i = 0; i < state->net->th->n_axioms; i++)
-    stop_rete_worker(state->workers[i]);
-  state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
+    pause_rete_worker(state->workers[i]);
+  state->current_proof_branch = backup->current_proof_branch;
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++)
       restore_fact_store(& state->factsets[i], backup->factset_backups[i]);
     copy_fact_iter_array(state->new_facts_iters, backup->new_facts_backups, state->net->th->n_predicates);
   }
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    wait_for_worker_to_pause(state->workers[i]);
+  state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
   for(i = 0; i < backup->state->net->th->n_axioms; i++){
     backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
     backup->state->worker_queues[i] = restore_rete_worker_queue(backup->state->worker_queues[i], & backup->worker_backups[i]);
   }
   for(i = 0; i < state->net->th->n_axioms; i++)
-    restart_rete_worker(state->workers[i]);
+    continue_rete_worker(state->workers[i]);
   return backup->state;
 }
 
@@ -163,7 +175,7 @@ void delete_rete_state_single(rete_state_single* state){
   destroy_substitution_store_mt(& state->tmp_subs);
   free(state->rule_queues);
   destroy_constants(& state->constants);
-
+  delete_proof_branch_tree(state->root_branch);
   
   free(state);
 }
@@ -320,9 +332,10 @@ rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int
    At the moment, all rule instances are unique in eqch branch (they are copied when popped from the queue)
    So we know that changing the "used_in_proof" here is ok.
 **/
-void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, unsigned int historic_ts, unsigned int current_ts){
+void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, proof_branch* branch, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
   substitution_size_info ssi = state->net->th->sub_size_info;
+  assert(branch->end_step >= historic_ts && branch->start_step <= historic_ts);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
     //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
@@ -331,12 +344,18 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
       int premiss_no = get_next_timestamps_iter(&iter);
       if(premiss_no > 0){
 	rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no);
-	check_used_rule_instances_coq_single(premiss_ri, state, premiss_no, current_ts);
+	proof_branch* br = branch;
+	assert(br->end_step >= premiss_no);
+	while(br->start_step > premiss_no)
+	  br = br->parent;
+	assert(br->end_step >= premiss_no && br->start_step <= premiss_no);
+	check_used_rule_instances_coq_single(premiss_ri, state, br, premiss_no, current_ts);
       }
     }
     destroy_timestamps_iter(&iter);
-    //    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
-    //      push_ri_stack(historic_state->elim_stack, ri, historic_ts, current_ts);
+    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential){
+      push_ri_stack(branch->elim_stack, ri, historic_ts, current_ts);
+    }
   }
 }
 

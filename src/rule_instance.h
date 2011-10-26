@@ -25,6 +25,9 @@
 #include "substitution_size_info.h"
 #include "axiom.h"
 
+/**
+   branch is only used by the instances in the "history"
+**/
 typedef struct rule_instance_t {
   unsigned int timestamp;
   const axiom * rule;

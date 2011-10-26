@@ -145,11 +145,13 @@ bool run_prover_single(rete_state_single* state){
 	return return_reached_max_steps_mt(state, next);
       ts = get_state_step_single(state);
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
-	check_used_rule_instances_coq_single(next, state, ts, ts);
+	end_proof_branch(state->current_proof_branch, ts, 0);
+	check_used_rule_instances_coq_single(next, state, state->current_proof_branch, ts, ts);
 	write_prover_node_single(state, next);
 	return true;
       } else {	// not goal rule
 	if(next->rule->rhs->n_args > 1){
+	  end_proof_branch(state->current_proof_branch, ts, next->rule->rhs->n_args);
 	  write_prover_node_single(state, next);
 	  bool rv = start_rete_disjunction_coq_single(state, next, ts);
 	  return rv;
@@ -169,19 +171,23 @@ bool run_prover_single(rete_state_single* state){
 
    If net->treat_all_disjuncts is false, the first branch has already been run by start_rete_disjunction_coq_single below.
 
-   Note that the rule instance pointer next may be invalidated during this run
+   Note that the rule instance pointer next may be invalidated during every branch, 
+   this is why the next and sub is reinstantiated at every loop iteration
 **/
 bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step){
   unsigned int i;
   const axiom* rule = next->rule;
   unsigned int n_branches = rule->rhs->n_args;
-  substitution *sub = copy_substitution(&next->sub, &state->tmp_subs, state->net->th->sub_size_info);
   rete_state_backup backup = backup_rete_state(state);
   for(i = 0; i < n_branches; i++){
     bool rv;
+    substitution* sub;
     if(i > 0)
       state = restore_rete_state(&backup);
+    enter_proof_disjunct(state);
     conjunction *con = rule->rhs->args[i];
+    sub = & ((get_historic_rule_instance(state, step))->sub);
+    assert(test_substitution(sub));
     insert_rete_net_conjunction_single(state, con, sub);
     rv = run_prover_single(state);
     if(!rv)
@@ -191,57 +197,67 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
       break;
     }
   }
-  free_substitution(sub);
   destroy_rete_backup(&backup);
 
   return true;
 }
+/**
+   Auxiliary for write_single_coq_prof
+   Instantiates "get_history" in proof_writer
+**/
+rule_instance* get_history_single(unsigned int no, rule_queue_state rqs){
+  return get_historic_rule_instance(rqs.single, no);
+}
 
-#if SINGLE_WRITES_PROOF
 /**
    Writes the coq proof after the prover is done.
    Used by the multithreaded version
 **/
-void write_single_coq_proof(rete_state_single* state){
+void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   FILE* coq_fp = get_coq_fdes();
-  unsigned int n_branches = state->end_of_branch->rule->rhs->n_args;
-  unsigned int step = get_current_state_step_no(state);
+  unsigned int step = branch->end_step;
+  rule_instance* end_ri = get_historic_rule_instance(state, step);
+  const axiom* rule = end_ri->rule;
+  unsigned int n_branches = branch->n_children;
   unsigned int step_ri, pusher;
-  init_rev_stack(state->elim_stack);
-  fprintf(coq_fp, "(* Treating branch %s *)\n", state->proof_branch_id);
-  assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
-  while(!is_empty_rev_ri_stack(state->elim_stack)){
-    rule_instance* ri = pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher);
-    write_elim_usage_proof(state, ri, step_ri);
+  rule_queue_state rqs;
+  rqs.single = state;
+  assert( n_branches == 0 || n_branches == rule->rhs->n_args);
+  init_rev_stack(branch->elim_stack);
+  fprintf(coq_fp, "(* Treating branch %s *)\n", branch->name);
+  assert(is_empty_ri_stack(branch->elim_stack) || ! is_empty_rev_ri_stack(branch->elim_stack));
+  while(!is_empty_rev_ri_stack(branch->elim_stack)){
+    rule_instance* ri = pop_rev_ri_stack(branch->elim_stack, &step_ri, &pusher);
+    write_elim_usage_proof(state->net, ri, step_ri);
   }
-  if(state->end_of_branch->rule->type == goal && n_branches <= 1){
+  if(rule->type == goal && n_branches <= 1){
     fprintf(coq_fp, "(* Reached leaf at step %i *)\n", step);
-    write_goal_proof(state->end_of_branch, state, step, history);
+    write_goal_proof(end_ri, state->net, step, get_history_single, rqs);
     fprintf(coq_fp, "(* Finished goal proof of leaf at step %i *)\n", step);
 
   } else {
     unsigned int i;
     assert(n_branches > 1);
-    write_elim_usage_proof(state, state->end_of_branch, step);
+    write_elim_usage_proof(state->net, end_ri, step);
     for(i = 0; i < n_branches; i++){
-      assert(state != state->branches[i]);
+      assert(branch != branch->children[i]);
       if(i > 0)
-	write_disj_proof_start(state->end_of_branch, step, i);
-      write_mt_coq_proof(state->branches[i]);
+	write_disj_proof_start(end_ri, step, i);
+      write_single_coq_proof(state, branch->children[i]);
     }
     fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
-    write_premiss_proof(state->end_of_branch, step, history);
+    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs);
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
-  while(!is_empty_ri_stack(state->elim_stack)){
-    rule_instance* ri = pop_ri_stack(state->elim_stack, &step_ri, &pusher);
+  while(!is_empty_ri_stack(branch->elim_stack)){
+    rule_instance* ri = pop_ri_stack(branch->elim_stack, &step_ri, &pusher);
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
-    write_premiss_proof(ri, step_ri, history);
+    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
   }
-  fprintf(coq_fp, "(* Finished with branch %s *)\n", state->proof_branch_id);
+  fprintf(coq_fp, "(* Finished with branch %s *)\n", branch->name);
 }
-#endif
+
 /**
    The main prover function 
 **/
@@ -277,7 +293,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   run_prover_single(state);
 
   if(foundproof && rete->coq && !reached_max){
-    //write_single_coq_proof(state);
+    write_single_coq_proof(state, state->root_branch);
     end_proof_coq_writer(rete->th);
   }
   retval = get_state_step_single(state);

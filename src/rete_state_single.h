@@ -37,8 +37,9 @@ rete_state_backup backup_rete_state(rete_state_single*);
 void destroy_rete_backup(rete_state_backup*);
 rete_state_single* restore_rete_state(rete_state_backup*);
 
-void check_used_rule_instances_coq_single(rule_instance*, rete_state_single*, unsigned int, unsigned int);
+void check_used_rule_instances_coq_single(rule_instance*, rete_state_single*, proof_branch*, unsigned int, unsigned int);
 rule_instance* get_historic_rule_instance(rete_state_single*, unsigned int);
+void enter_proof_disjunct(rete_state_single*);
 
 void insert_state_factset_single(rete_state_single*, const atom*);
 

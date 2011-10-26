@@ -39,8 +39,8 @@
    new_facts_iters is used to keep track of what are the new facts at each step
 **/
 typedef struct rete_state_single_t {
-  unsigned int n_branches;
-  proof_branch * branches;
+  proof_branch * current_proof_branch;
+  proof_branch * root_branch;
   substitution_store_array * node_subs;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
@@ -62,6 +62,7 @@ typedef struct rete_state_single_t {
    Stores information needed for restoring the rete state at a disjunction/splitting point
 **/
 typedef struct rete_state_backup_t {
+  proof_branch * current_proof_branch;
   rule_queue_single_backup * rq_backups;
   substitution_store_array_backup * node_sub_backups;
   rete_worker_queue_backup * worker_backups;
