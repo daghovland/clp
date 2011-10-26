@@ -46,6 +46,8 @@
    work and output are pointers to single elements (not arrays)
 **/
 
+enum worker_state { working, waiting, has_popped };
+
 typedef struct rete_worker_t {
   pthread_t tid;
   substitution_store_array * node_subs;
@@ -55,8 +57,9 @@ typedef struct rete_worker_t {
   rete_worker_queue * work;
   rule_queue_single * output;
   bool working;
-  bool stop_worker;
-  bool pause_worker;
+  enum worker_state state;
+  bool pause_signalled;
+  bool stop_signalled;
 } rete_worker;
 
 rete_worker* init_rete_worker(const rete_net*, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
@@ -66,5 +69,6 @@ void pause_rete_worker(rete_worker*);
 void continue_rete_worker(rete_worker*);
 bool rete_worker_is_working(rete_worker*);
 unsigned int get_worker_step(rete_worker*);
+void wait_for_worker_to_pause(rete_worker*);
 #endif
 #endif

@@ -77,7 +77,9 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
   for(i = 0; i < state->net->th->n_axioms; i++)
-    stop_rete_worker(state->workers[i]);
+    pause_rete_worker(state->workers[i]);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    wait_for_worker_to_pause(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
@@ -92,7 +94,7 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   }
   backup.state = state;
   for(i = 0; i < state->net->th->n_axioms; i++)
-    restart_rete_worker(state->workers[i]);
+    continue_rete_worker(state->workers[i]);
   return backup;
 }
 

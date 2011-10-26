@@ -137,9 +137,9 @@ bool run_prover_single(rete_state_single* state){
       rule_instance* next;
       bool incval;
       next = choose_next_instance_single(state);
-      assert(test_rule_instance(next));
       if(next == NULL)
 	return return_found_model_mt(state);
+      assert(test_rule_instance(next));
       incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);

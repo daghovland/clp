@@ -26,6 +26,17 @@
 
 #ifdef HAVE_PTHREAD
 
+bool worker_pause(rete_worker* worker){
+  return worker->pause_signalled && !worker->stop_signalled;
+}
+
+bool worker_wait_for_pop(rete_worker*  worker){
+  return rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled;
+}
+
+bool worker_should_pop(rete_worker* worker){
+  return !rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled;
+}
 
 /**
    Called from rete_worker.
@@ -33,11 +44,11 @@
 **/
 void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, const rete_node ** alpha, unsigned int * step){
   lock_worker_queue(worker->work);
-  while(rete_worker_queue_is_empty(worker->work) && !worker->stop_worker)
+  while(worker_wait_for_pop(worker))
     wait_worker_queue(worker->work);
-  if(!worker->stop_worker){
-    worker->working = true;
+  if(worker_should_pop(worker)){
     pop_rete_worker_queue(worker->work, fact, alpha, step);
+    worker->state = has_popped;
     worker->step = *step;
   }
   unlock_worker_queue(worker->work);
@@ -50,6 +61,13 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
 
    This is set to asynchornous canceling, since the data it changes is 
    not used after cancelation. 
+
+   The main loop runs for the whole runtime of the prover (stop_signalled arrives
+   at the very end.)
+   The first internal loop runs when the worker is paused, during treatment of disjunctions.
+
+   The signalling in the end of the loop is either to signal the prover that a new rule instance is arriving, 
+   or that it is again waiting, such that the backup process in the disjunction treatment can continue.
 **/
 void * queue_worker_routine(void* arg){
   int oldtype;
@@ -58,24 +76,27 @@ void * queue_worker_routine(void* arg){
   unsigned int step;
   rete_worker * worker = arg;
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
-  //pt_err(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype), "queue.c: queue_worker_routine: set cancel type");
-  while(!worker->stop_worker){
+  while(!worker->stop_signalled){
     lock_worker_queue(worker->work);
-    while(worker->pause_worker && !worker->stop_worker)
+    while(worker_pause(worker))
       wait_worker_queue(worker->work);
     unlock_worker_queue(worker->work);
-    if(worker->stop_worker)
+    if(worker->stop_signalled)
       break;
     worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
-    if(worker->stop_worker)
-      break;
-    init_substitution(tmp_sub, worker->net->th, step);
-    insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
-    if(!worker->stop_worker && !worker->pause_worker){
-      worker->working = false;
-      lock_queue_single(worker->output);
-      signal_queue_single(worker->output);
-      unlock_queue_single(worker->output);
+    if(worker->state == has_popped){
+      init_substitution(tmp_sub, worker->net->th, step);
+      insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
+      worker->state = waiting;
+      if(!worker->pause_signalled && !worker->stop_signalled){
+	lock_queue_single(worker->output);
+	signal_queue_single(worker->output);
+	unlock_queue_single(worker->output);
+      } else {
+	lock_worker_queue(worker->work);
+	signal_worker_queue(worker->work);
+	unlock_worker_queue(worker->work);
+      }
     }
   }
   return NULL;
@@ -102,8 +123,9 @@ rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_s
   rete_worker * worker = (rete_worker *) malloc_tester(sizeof(rete_worker));
   worker->work = work;
   worker->output = output;
-  worker->working = false;
-  worker->stop_worker = false;
+  worker->state = waiting;
+  worker->stop_signalled = false;
+  worker->pause_signalled = false;
   worker->net = net;
   worker->tmp_subs = tmp_subs;
   worker->node_subs = node_subs;
@@ -111,11 +133,14 @@ rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_s
   return worker;
 }
 
-
+/**
+   This is the only function that writes to the
+   componend stop_signalled
+   Called from rete_state_single when destroying the state
+**/
 void stop_rete_worker(rete_worker* worker){
   void* t_retval;
-  worker->stop_worker = true;
-
+  worker->stop_signalled = true;
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
@@ -128,7 +153,7 @@ void stop_rete_worker(rete_worker* worker){
    and before restoring a backup
 **/
 void pause_rete_worker(rete_worker* worker){
-  worker->pause_worker = true;
+  worker->pause_signalled = true;
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
@@ -138,8 +163,7 @@ void pause_rete_worker(rete_worker* worker){
    Called after restoring a backup
 **/
 void restart_rete_worker(rete_worker* rq){
-  rq->stop_worker = false;
-  rq->working = false;
+  rq->stop_signalled = false;
   start_worker_thread(rq);
 }
 
@@ -147,7 +171,7 @@ void restart_rete_worker(rete_worker* rq){
    Called after backing up the queues
 **/
 void continue_rete_worker(rete_worker* worker){
-  worker->pause_worker = false;
+  worker->pause_signalled = false;
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
@@ -163,7 +187,19 @@ void destroy_rete_worker(rete_worker* rq){
 }
 
 bool rete_worker_is_working(rete_worker* rq){
-  return rq->working;
+  return rq->state != waiting;
+}
+
+/**
+   Should be called after pause_worker, waits until the 
+   worker has returned from the matching/insertion and 
+   is again paused
+**/
+void wait_for_worker_to_pause(rete_worker* worker){
+  lock_worker_queue(worker->work);
+  while(worker->state != waiting)
+    wait_worker_queue(worker->work);
+  unlock_worker_queue(worker->work);
 }
 
 unsigned int get_worker_step(rete_worker* rq){
