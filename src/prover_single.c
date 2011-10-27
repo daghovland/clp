@@ -193,7 +193,6 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     if(!rv)
       return false;
     if(!(get_historic_rule_instance(state, step))->used_in_proof){
-      fprintf(stdout, "Eliminating other branches of step %i\n", step);
       state = restore_rete_state(&backup);
       prune_proof(state->current_proof_branch, i);
       break;

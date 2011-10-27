@@ -64,6 +64,8 @@ axiom* create_fact(disjunction *rhs, theory* th){
   unsigned int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = fact;
+  ret_val->name = NULL;
+  ret_val->has_name = false;
   ret_val->lhs = create_empty_conjunction(th);
   ret_val->rhs = rhs;
   ret_val->exist_vars = init_freevars();
