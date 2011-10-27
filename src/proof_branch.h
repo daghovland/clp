@@ -46,5 +46,5 @@ proof_branch* create_root_proof_branch(void);
 void delete_proof_branch_tree(proof_branch*);
 void end_proof_branch(proof_branch*, unsigned int, unsigned int);
 proof_branch* create_child_branch(proof_branch*, const theory*);
-void prune_branch(proof_branch* parent, proof_branch* child);
+void prune_proof(proof_branch* parent, unsigned int);
 #endif

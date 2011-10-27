@@ -90,35 +90,25 @@ proof_branch* create_child_branch(proof_branch* br, const theory* th){
   return child;
 }
 
-
 /** 
     Called when prover_single sees that a disjunction 
     was unnecessary
 **/
-void prune_branch(proof_branch* parent, proof_branch* child){
+void prune_proof(proof_branch* parent, unsigned int child_no){
   unsigned int i;
-#ifndef NDEBUG
-  bool found_child = false;
-#endif
+  proof_branch* child = parent->children[child_no];
   assert(child->parent == parent);
+  assert(child_no < parent->n_children);
   for(i = 0; i < parent->n_children; i++){
-    if(parent->children[i] != NULL){
-      if(parent->children[i] == child){
-#ifndef NDEBUG
-	found_child = true;
-#endif
-      } else 
-	delete_proof_branch_tree(parent->children[i]);
-    }
+    if(i != child_no)
+      delete_proof_branch_tree(parent->children[i]);
   }
-  assert(found_child);
   free(parent->children);
   add_ri_stack(parent->elim_stack, child->elim_stack);
   parent->end_step = child->end_step;
   parent->n_children = child->n_children;
   parent->children = child->children;
-  //delete_proof_branch(child);
-  free(child);
+  delete_proof_branch(child);
 }
   
 
