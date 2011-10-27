@@ -140,12 +140,17 @@ rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_s
 **/
 void stop_rete_worker(rete_worker* worker){
   void* t_retval;
-  worker->stop_signalled = true;
-  lock_worker_queue(worker->work);
-  signal_worker_queue(worker->work);
-  unlock_worker_queue(worker->work);
-
-  pthread_join(worker->tid, &t_retval);
+  int join_rv;
+  if(!worker->stop_signalled){
+    worker->stop_signalled = true;
+    lock_worker_queue(worker->work);
+    signal_worker_queue(worker->work);
+    unlock_worker_queue(worker->work);
+    
+    join_rv = pthread_join(worker->tid, &t_retval);
+    if(join_rv != 0)
+      perror("rete_worker.c: stop_rete_worker: Error when joining with worker thread:"); 
+  }
 }
 
 /**

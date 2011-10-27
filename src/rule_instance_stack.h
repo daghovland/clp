@@ -21,20 +21,21 @@
 #ifndef __INCLUDED_RULE_INSTANCE_STACK_H
 #define __INCLUDED_RULE_INSTANCE_STACK_H
 
-#include "substitution.h"
-#include "rule_queue.h"
+#include "common.h"
 
 /**
    Used in prover.c by the coq output to keep track 
    of the existential and disjunctive rules that have been eliminated, 
    but not yet proved
+
+   The rule instances are referred to by their step in the history
    
    Is a fifo / stack in array implementation
    
 **/
 typedef struct rule_instance_stack_t {
   size_t size_stack;
-  rule_instance ** stack;
+  unsigned int * stack;
   unsigned int * step_nos;
   unsigned int * pusher_step_nos;
   unsigned int n_stack;
@@ -45,9 +46,9 @@ typedef struct rule_instance_stack_t {
 
 rule_instance_stack* initialize_ri_stack(void);
 void init_rev_stack(rule_instance_stack*);
-void push_ri_stack(rule_instance_stack*, rule_instance*, unsigned int, unsigned int);
-rule_instance* pop_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
-rule_instance* pop_rev_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
+void push_ri_stack(rule_instance_stack*, unsigned int, unsigned int, unsigned int);
+unsigned int pop_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
+unsigned int pop_rev_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
 void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src);
 bool is_empty_ri_stack(rule_instance_stack*);
 bool is_empty_rev_ri_stack(rule_instance_stack*);

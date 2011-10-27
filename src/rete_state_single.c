@@ -179,6 +179,17 @@ void delete_rete_state_single(rete_state_single* state){
   
   free(state);
 }
+
+
+/**
+   Called after the prover is done. Stops all the worker threads, 
+   such that the rule queues are not invalidated.
+**/
+void stop_rete_state_single(rete_state_single* state){
+  unsigned int i;
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    stop_rete_worker(state->workers[i]);
+}
   
 unsigned int get_state_step_single(const rete_state_single* state){
   return state->step;
@@ -354,7 +365,7 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
     }
     destroy_timestamps_iter(&iter);
     if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential){
-      push_ri_stack(branch->elim_stack, ri, historic_ts, current_ts);
+      push_ri_stack(branch->elim_stack, historic_ts, historic_ts, current_ts);
     }
   }
 }

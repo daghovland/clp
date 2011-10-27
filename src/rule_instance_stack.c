@@ -21,13 +21,12 @@
 
 #include "common.h"
 #include "rete.h"
-#include "rule_queue.h"
 #include "rule_instance_stack.h"
 
 rule_instance_stack* initialize_ri_stack(void){
   rule_instance_stack* ris = malloc_tester(sizeof(rule_instance_stack));
   ris->size_stack = 5;
-  ris->stack = calloc(ris->size_stack, sizeof(rule_instance*));
+  ris->stack = calloc(ris->size_stack, sizeof(unsigned int));
   ris->step_nos = calloc(ris->size_stack, sizeof(unsigned int));
   ris->pusher_step_nos = calloc(ris->size_stack, sizeof(unsigned int));
   ris->n_stack = 0;
@@ -38,7 +37,7 @@ rule_instance_stack* initialize_ri_stack(void){
 void increase_ri_stack_size(rule_instance_stack* ris, unsigned int min_size){
   while(min_size >= ris->size_stack){
     ris->size_stack *= 2;
-    ris->stack = realloc_tester(ris->stack, sizeof(rule_instance*) * ris->size_stack);
+    ris->stack = realloc_tester(ris->stack, sizeof(unsigned int) * ris->size_stack);
     ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
     ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(unsigned int) * ris->size_stack);
   }
@@ -46,17 +45,17 @@ void increase_ri_stack_size(rule_instance_stack* ris, unsigned int min_size){
 
 void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src){
   increase_ri_stack_size(dest, dest->n_stack + src->n_stack + 1);
-  memcpy(dest->stack + dest->n_stack, src->stack, src->n_stack * sizeof(rule_instance*));
+  memcpy(dest->stack + dest->n_stack, src->stack, src->n_stack * sizeof(unsigned int));
   memcpy(dest->step_nos + dest->n_stack, src->step_nos, src->n_stack * sizeof(unsigned int));
   memcpy(dest->pusher_step_nos + dest->n_stack, src->pusher_step_nos, src->n_stack * sizeof(unsigned int));
   dest->n_stack += src->n_stack;
 }
     
 
-void push_ri_stack(rule_instance_stack* ris, rule_instance* ri, unsigned int step_no, unsigned int pusher){
+void push_ri_stack(rule_instance_stack* ris, unsigned int ri, unsigned int step_no, unsigned int pusher){
   while(ris->n_stack >= ris->size_stack - 1){
     ris->size_stack *= 2;
-    ris->stack = realloc_tester(ris->stack, sizeof(rule_instance*) * ris->size_stack);
+    ris->stack = realloc_tester(ris->stack, sizeof(unsigned int) * ris->size_stack);
     ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
     ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(unsigned int) * ris->size_stack);
   }
@@ -74,7 +73,7 @@ bool next_ri_is_after(rule_instance_stack* ris, unsigned int limit){
   return (ris->n_stack > 0 && ris->step_nos[ris->n_stack - 1] > limit);
 }
 
-rule_instance* pop_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int *pusher){
+unsigned int pop_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int *pusher){
   assert(ris->n_stack > 0);
   -- ris->n_stack;
   *step_no = ris->step_nos[ris->n_stack];
@@ -91,8 +90,8 @@ void init_rev_stack(rule_instance_stack* ri){
   ri->n_2_stack = 0;
 }
 
-rule_instance* pop_rev_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int* pusher){
-  rule_instance* ri;
+unsigned int pop_rev_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int* pusher){
+  unsigned int ri;
   assert(ris->n_2_stack < ris->n_stack);
   *step_no = ris->step_nos[ris->n_2_stack];
   *pusher = ris->pusher_step_nos[ris->n_2_stack];

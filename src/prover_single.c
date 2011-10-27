@@ -227,7 +227,7 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   fprintf(coq_fp, "(* Treating branch %s *)\n", branch->name);
   assert(is_empty_ri_stack(branch->elim_stack) || ! is_empty_rev_ri_stack(branch->elim_stack));
   while(!is_empty_rev_ri_stack(branch->elim_stack)){
-    rule_instance* ri = pop_rev_ri_stack(branch->elim_stack, &step_ri, &pusher);
+    rule_instance* ri = get_historic_rule_instance(state, pop_rev_ri_stack(branch->elim_stack, &step_ri, &pusher));
     write_elim_usage_proof(state->net, ri, step_ri);
   }
   if(rule->type == goal && n_branches <= 1){
@@ -250,7 +250,7 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
   while(!is_empty_ri_stack(branch->elim_stack)){
-    rule_instance* ri = pop_ri_stack(branch->elim_stack, &step_ri, &pusher);
+    rule_instance* ri = get_historic_rule_instance(state, pop_ri_stack(branch->elim_stack, &step_ri, &pusher));
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
     write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
@@ -269,9 +269,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   atom * true_atom;
   foundproof = true;
   reached_max = false;
-
   srand(1000);
-  
   for(i = 0; i < rete->th->n_axioms; i++){
     if(rete->th->axioms[i]->type == fact){
       has_fact = true;
@@ -282,16 +280,13 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     printf("The theory has no facts, and is therefore never contradictory.\n");
     return 0;
   }
-  
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
     insert_state_factset_single(state, true_atom);
-
   if(!state->net->factset_lhs || state->net->use_beta_not)
     insert_state_rete_net_fact(state, true_atom);
-  
   run_prover_single(state);
-
+  stop_rete_state_single(state);
   if(foundproof && rete->coq && !reached_max){
     write_single_coq_proof(state, state->root_branch);
     end_proof_coq_writer(rete->th);

@@ -130,7 +130,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
     }
     destroy_timestamps_iter(&iter);
     if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
-      push_ri_stack(historic_state->elim_stack, ri, historic_ts, current_ts);
+      push_ri_stack(historic_state->elim_stack, historic_ts, historic_ts, current_ts);
   }
 }
 
@@ -603,7 +603,7 @@ void write_mt_coq_proof(rete_net_state* state){
   fprintf(coq_fp, "(* Treating branch %s *)\n", state->proof_branch_id);
   assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
   while(!is_empty_rev_ri_stack(state->elim_stack)){
-    rule_instance* ri = pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher);
+    rule_instance* ri = history[pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher)]->ri;
     write_elim_usage_proof(state->net, ri, step_ri);
   }
   if(state->end_of_branch->rule->type == goal && n_branches <= 1){
@@ -626,7 +626,7 @@ void write_mt_coq_proof(rete_net_state* state){
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
   while(!is_empty_ri_stack(state->elim_stack)){
-    rule_instance* ri = pop_ri_stack(state->elim_stack, &step_ri, &pusher);
+    rule_instance* ri = history[pop_ri_stack(state->elim_stack, &step_ri, &pusher)]->ri;
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
     write_premiss_proof(ri, step_ri, state->net, get_history_state, rqs);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
