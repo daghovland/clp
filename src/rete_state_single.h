@@ -44,7 +44,7 @@ void enter_proof_disjunct(rete_state_single*);
 
 void insert_state_factset_single(rete_state_single*, const atom*);
 
-unsigned int get_state_step_single(const rete_state_single*);
+unsigned int get_state_step_no_single(const rete_state_single*);
 bool inc_proof_step_counter_single(rete_state_single*);
 
 sub_store_iter get_state_sub_store_iter(rete_state_single*, unsigned int);

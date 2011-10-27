@@ -45,7 +45,8 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
   state->constants = init_constants(net->th->vars->n_vars);
-  state->step = 0;
+  state->cur_step = 0;
+  state->total_steps = 0;
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
   state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
   state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
@@ -66,7 +67,6 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->root_branch = create_root_proof_branch();
   state->current_proof_branch = state->root_branch;
   state->finished = false;
-  state->step = 0;
   return state;
 }
 
@@ -81,11 +81,13 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
   backup.current_proof_branch = state->current_proof_branch;
+  backup.cur_step = state->cur_step;
   if(state->net->has_factset){
     backup.factset_backups = backup_fact_store_array(state->factsets, state->net->th->n_predicates);
     backup.new_facts_backups = calloc(state->net->th->n_predicates, sizeof(fact_store_iter));
     copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   }
+  backup.state = state;
   for(i = 0; i < state->net->th->n_axioms; i++)
     wait_for_worker_to_pause(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
@@ -95,7 +97,6 @@ rete_state_backup backup_rete_state(rete_state_single* state){
     backup.rq_backups[i] = backup_rule_queue_single(state->rule_queues[i]);
     backup.worker_backups[i] = backup_rete_worker_queue(state->worker_queues[i]);
   }
-  backup.state = state;
   for(i = 0; i < state->net->th->n_axioms; i++)
     continue_rete_worker(state->workers[i]);
   return backup;
@@ -111,8 +112,8 @@ void enter_proof_disjunct(rete_state_single* state){
 /**
    Returns the current step number of the proving process
 **/
-unsigned int get_state_step_no_single(rete_state_single* state){
-  return state->step;
+unsigned int get_state_step_no_single(const rete_state_single* state){
+  return state->cur_step;
 }
 
 /**
@@ -135,6 +136,7 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
   for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
   state->current_proof_branch = backup->current_proof_branch;
+  state->cur_step = backup->cur_step;
   if(state->net->has_factset){
     for(i = 0; i < state->net->th->n_predicates; i++)
       restore_fact_store(& state->factsets[i], backup->factset_backups[i]);
@@ -191,14 +193,13 @@ void stop_rete_state_single(rete_state_single* state){
     stop_rete_worker(state->workers[i]);
 }
   
-unsigned int get_state_step_single(const rete_state_single* state){
-  return state->step;
-}
-
-
+/**
+   This function is at the moment not threadsafe
+**/
 bool inc_proof_step_counter_single(rete_state_single* state){
-  state->step ++;
-  return(state->net->maxsteps == 0 || state->step < state->net->maxsteps);
+  state->total_steps ++;
+  state->cur_step = state->total_steps;
+  return(state->net->maxsteps == 0 || state->total_steps < state->net->maxsteps);
 }
 
 sub_store_iter get_state_sub_store_iter(rete_state_single* state, unsigned int node_no){
@@ -597,7 +598,7 @@ rule_instance* choose_next_instance_single(rete_state_single* state)
   return choose_next_instance(rqs
 			      , state->net
 			      , state->net->strat
-			      , get_state_step_single(state)
+			      , get_state_step_no_single(state)
 			      , is_empty_axiom_rule_queue_single
 			      , peek_axiom_rule_queue_single
 			      , axiom_has_new_instance_single

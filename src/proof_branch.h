@@ -37,8 +37,9 @@ typedef struct proof_branch_t {
   rule_instance_stack* elim_stack;
   unsigned int end_step;
   struct proof_branch_t * parent;
-  unsigned int n_children;
   struct proof_branch_t ** children;
+  unsigned int n_children;
+  unsigned int size_children;
 } proof_branch;
 
 proof_branch* create_root_proof_branch(void);

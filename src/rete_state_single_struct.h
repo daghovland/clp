@@ -54,7 +54,8 @@ typedef struct rete_state_single_t {
   constants constants;
   bool verbose;
   bool finished;
-  unsigned int step;
+  unsigned int cur_step;
+  unsigned int total_steps;
 } rete_state_single;
 
 
@@ -63,6 +64,7 @@ typedef struct rete_state_single_t {
 **/
 typedef struct rete_state_backup_t {
   proof_branch * current_proof_branch;
+  unsigned int cur_step;
   rule_queue_single_backup * rq_backups;
   substitution_store_array_backup * node_sub_backups;
   rete_worker_queue_backup * worker_backups;

@@ -32,6 +32,7 @@ proof_branch* create_root_proof_branch(void){
   br->name = "";
   br->start_step = 0;
   br->n_children = 0;
+  br->size_children = 0;
   br->parent == NULL;
   br->elim_stack = initialize_ri_stack();
   return br;
@@ -63,8 +64,9 @@ void delete_proof_branch_tree(proof_branch* br){
 **/
 void end_proof_branch(proof_branch* br, unsigned int step, unsigned int n_children){
   br->end_step = step;
-  if(n_children > 0)
-    br->children = calloc_tester(n_children, sizeof(proof_branch*));
+  br->size_children = n_children;
+  if(br->size_children > 0)
+    br->children = calloc_tester(br->size_children, sizeof(proof_branch*));
 
 }
 
@@ -76,10 +78,11 @@ void end_proof_branch(proof_branch* br, unsigned int step, unsigned int n_childr
 **/
 proof_branch* create_child_branch(proof_branch* br, const theory* th){
   proof_branch* child = malloc_tester(sizeof(proof_branch));
+  assert(br->n_children < br->size_children);
   br->children[br->n_children] = child;
   child->start_step = br->end_step;
   child->n_children = 0;
-  child->name = malloc(strlen(br->name) + 20);
+  child->name = malloc_tester(strlen(br->name) + 20);
   sprintf(child->name, "%s_%i", br->name, br->n_children);
   child->elim_stack = initialize_ri_stack();
   child->parent = br;
@@ -94,16 +97,28 @@ proof_branch* create_child_branch(proof_branch* br, const theory* th){
 **/
 void prune_branch(proof_branch* parent, proof_branch* child){
   unsigned int i;
+#ifndef NDEBUG
+  bool found_child = false;
+#endif
   assert(child->parent == parent);
   for(i = 0; i < parent->n_children; i++){
-    if(parent->children[i] != NULL && parent->children[i] != child)
-      delete_proof_branch_tree(parent->children[i]);
+    if(parent->children[i] != NULL){
+      if(parent->children[i] == child){
+#ifndef NDEBUG
+	found_child = true;
+#endif
+      } else 
+	delete_proof_branch_tree(parent->children[i]);
+    }
   }
+  assert(found_child);
+  free(parent->children);
   add_ri_stack(parent->elim_stack, child->elim_stack);
   parent->end_step = child->end_step;
   parent->n_children = child->n_children;
   parent->children = child->children;
-  delete_proof_branch(child);
+  //delete_proof_branch(child);
+  free(child);
 }
   
 

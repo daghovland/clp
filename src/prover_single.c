@@ -91,7 +91,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     if(!state->net->factset_lhs || state->net->use_beta_not)
-      insert_state_rete_net_fact(state, ground, get_state_step_single(state));
+      insert_state_rete_net_fact(state, ground, get_state_step_no_single(state));
     if(state->net->has_factset)
       insert_state_factset_single(state, ground);
     else 
@@ -117,7 +117,7 @@ bool return_found_model_mt(rete_state_single* state){
    commandline option -m|--max=LIMIT
 **/
 bool return_reached_max_steps_mt(rete_state_single* state, const rule_instance* ri){
-  printf("Reached %i proof steps, higher than given maximum\n", get_state_step_single(state));
+  printf("Reached %i proof steps, higher than given maximum\n", get_state_step_no_single(state));
   foundproof = false;
   reached_max = true;
   return false;
@@ -143,7 +143,7 @@ bool run_prover_single(rete_state_single* state){
       incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
-      ts = get_state_step_single(state);
+      ts = get_state_step_no_single(state);
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	end_proof_branch(state->current_proof_branch, ts, 0);
 	check_used_rule_instances_coq_single(next, state, state->current_proof_branch, ts, ts);
@@ -193,8 +193,11 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     if(!rv)
       return false;
     if(!(get_historic_rule_instance(state, step))->used_in_proof){
-      //      fprintf(stdout, "Could eliminate other branches of step %i\n", step);
-      break;
+      fprintf(stdout, "Eliminating other branches of step %i\n", step);
+      proof_branch* child = state->current_proof_branch;
+      state = restore_rete_state(&backup);
+      // prune_branch(state->current_proof_branch, child);
+      // break;
     }
   }
   destroy_rete_backup(&backup);
@@ -291,7 +294,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     write_single_coq_proof(state, state->root_branch);
     end_proof_coq_writer(rete->th);
   }
-  retval = get_state_step_single(state);
+  retval = get_state_step_no_single(state);
   delete_rete_state_single(state);
   
   if(foundproof && !reached_max)
