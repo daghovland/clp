@@ -229,10 +229,17 @@ void write_disj_proof_start(const rule_instance* ri, int ts, int branch){
     fp_err( fprintf(coq_fp, "elim H_%i_%i.\n", ts, branch), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
   }
   if(ri->rule->rhs->args[branch]->is_existential){
-    fp_err( fprintf(coq_fp, "intro H_%i_tmp.\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    freevars_iter iter = get_freevars_iter(ri->rule->rhs->args[branch]->bound_vars);
+    unsigned int var_no = 0;
     fp_err( fprintf(coq_fp, "(* Introducing existential variables from branch %i of step %i*)\n", branch, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    fp_err( fprintf(coq_fp, "elim H_%i_tmp.\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    write_exist_vars_intro(ri->rule->rhs->args[branch]->bound_vars, & ri->sub);
+    while(var_no++, has_next_freevars_iter(&iter)){
+      variable* var = next_freevars_iter(&iter);
+      fp_err( fprintf(coq_fp, "intro H_%i_tmp_%i.\n", ts, var_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      fp_err( fprintf(coq_fp, "elim H_%i_tmp_%i.\n", ts, var_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      fp_err( fprintf(coq_fp, "intro "), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      print_coq_term(get_sub_value(& ri->sub, var->var_no), coq_fp);
+      fp_err( fprintf(coq_fp, ".\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    }
     fp_err( fprintf(coq_fp, "intro H_%i.\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
   } else 
   fp_err( fprintf(coq_fp, "intro H_%i.\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
@@ -270,7 +277,7 @@ void write_elim_usage_proof(const rete_net* net, rule_instance* ri, int ts){
    Called from run_prover when seeing a goal rule instance
 **/
 void write_goal_proof_step(const rule_instance* ri, const rete_net* net, int ts, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs){  
-  if(ri->rule->type == fact && ri->rule->rhs->n_args <= 1){
+  if(ri->rule->type == fact && ri->rule->rhs->n_args <= 1 && !ri->rule->is_existential){
     const axiom* a = ri->rule;
     fp_err( fprintf(coq_fp, "(* Using fact #%i*)\n", ri->rule->axiom_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     fp_err( fprintf(coq_fp, "apply %s.\n", ri->rule->name), "proof_writer.c: write_proof_node: Could not write to coq proof file.");

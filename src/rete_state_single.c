@@ -117,6 +117,14 @@ unsigned int get_state_step_no_single(const rete_state_single* state){
 }
 
 /**
+   Returns the total number of steps done. Called at the end of prover method
+**/
+unsigned int get_state_total_steps(const rete_state_single* state){
+  return state->total_steps;
+}
+
+
+/**
    All substructures of the backup are freed, but not
    the backup itself, since this is assumed to be static in prover_single.c
 **/
@@ -341,34 +349,35 @@ rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int
    Checks what rule instances were used
    Called from run_prover_rete_coq_mt
 
-   At the moment, all rule instances are unique in eqch branch (they are copied when popped from the queue)
+   At the moment, all rule instances are unique in each branch (they are copied when popped from the queue)
    So we know that changing the "used_in_proof" here is ok.
 **/
 void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, proof_branch* branch, unsigned int historic_ts, unsigned int current_ts){
   unsigned int i;
   substitution_size_info ssi = state->net->th->sub_size_info;
   assert(branch->end_step >= historic_ts && branch->start_step <= historic_ts);
-  if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
-    timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
-    //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
-    ri->used_in_proof = true;
-    while(has_next_timestamps_iter(&iter)){
-      int premiss_no = get_next_timestamps_iter(&iter);
-      if(premiss_no > 0){
-	rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no);
-	proof_branch* br = branch;
-	assert(br->end_step >= premiss_no);
-	while(br->start_step > premiss_no)
-	  br = br->parent;
-	assert(br->end_step >= premiss_no && br->start_step <= premiss_no);
-	check_used_rule_instances_coq_single(premiss_ri, state, br, premiss_no, current_ts);
+  if(!ri->used_in_proof){
+    ri->used_in_proof = true; 
+    if(ri->rule->type != fact || ri->rule->rhs->n_args > 1){
+      timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
+      //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
+       while(has_next_timestamps_iter(&iter)){
+	int premiss_no = get_next_timestamps_iter(&iter);
+	if(premiss_no > 0){
+	  rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no);
+	  proof_branch* br = branch;
+	  assert(br->end_step >= premiss_no);
+	  while(br->start_step > premiss_no)
+	    br = br->parent;
+	  assert(br->end_step >= premiss_no && br->start_step <= premiss_no);
+	  check_used_rule_instances_coq_single(premiss_ri, state, br, premiss_no, current_ts);
+	}
       }
-    }
-    destroy_timestamps_iter(&iter);
-    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential){
+      destroy_timestamps_iter(&iter);
+    } // end if disjunction or not fact or 
+    if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential)
       push_ri_stack(branch->elim_stack, historic_ts, historic_ts, current_ts);
-    }
-  }
+  } // end if !ri->used in proof
 }
 
 
