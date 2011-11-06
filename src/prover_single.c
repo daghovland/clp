@@ -292,7 +292,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     write_single_coq_proof(state, state->root_branch);
     end_proof_coq_writer(rete->th);
   }
-  retval = get_state_step_no_single(state);
+  retval = get_state_total_steps(state);
   delete_rete_state_single(state);
   
   if(foundproof && !reached_max)
