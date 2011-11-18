@@ -38,6 +38,9 @@ typedef struct theory_t {
   const axiom** axioms;
   unsigned int n_axioms;
   size_t size_axioms;
+  conjunction ** init_model;
+  unsigned int n_init_model;
+  size_t size_init_model;
   freevars* vars;
   char* name;
   bool has_name;

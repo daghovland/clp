@@ -50,10 +50,14 @@
    sub_mutexes is of length n_subs. There is a mutex for each of the substitution list structures, since
    these must be protected when they are iterated. This is because the thread-safe version of sub_list_iter
    has too high overhead (3x run-time)
+
+   n_rules is the number of rules entered into the rete net. 
+   This is set in create_rete_net in theory.c, usually to the number of axioms that are not facts.
 **/
 typedef struct rete_net_t {
   unsigned int n_subs;
   unsigned int n_selectors;
+  unsigned int n_rules;
   const theory* th;
   bool existdom;
   bool lazy;

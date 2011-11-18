@@ -293,19 +293,23 @@ void write_goal_proof_step(const rule_instance* ri, const rete_net* net, int ts,
 
 
 void write_premiss_proof(const rule_instance* ri, int ts, const rete_net* net, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs){
-  unsigned int i;
+  unsigned int i = 0;
   timestamps_iter iter = get_sub_timestamps_iter(&ri->sub);
   assert(get_sub_n_timestamps(&ri->sub) == ri->rule->lhs->n_args);
   while(has_next_timestamps_iter(&iter)){
     int premiss_no = get_next_timestamps_iter(&iter);
-    if(premiss_no > 0){
+    i++;
+    if(has_next_timestamps_iter(&iter)){
+      fp_err( fprintf(coq_fp, "split.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    }
+    if(premiss_no == 0){
+      fp_err( fprintf(coq_fp, "assumption.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    } else {
       rule_instance* premiss = get_history(premiss_no, rqs);
       const axiom* a = premiss->rule;
       //if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[i]->pred->is_domain)){
-      fp_err( fprintf(coq_fp, "(* Proving conjunct #%i of step %i *)\n", premiss_no, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-      if(has_next_timestamps_iter(&iter)){
-	fp_err( fprintf(coq_fp, "split.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-      }
+      fp_err( fprintf(coq_fp, "(* Proving conjunct %i of step %i *)\n", i, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      
       write_goal_proof_step(premiss, net, premiss_no, get_history, rqs);
     }
   } // end while

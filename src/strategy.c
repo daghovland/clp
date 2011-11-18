@@ -75,7 +75,7 @@ rule_instance* normal_next_instance(rule_queue_state state
 
     
  
-  for(i = 0; i < th->n_axioms; i++){
+  for(i = 0; i < net->n_rules; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);

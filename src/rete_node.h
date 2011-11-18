@@ -94,7 +94,7 @@ struct rete_node_t {
   bool in_positive_lhs_part;
   size_t size_children;
   const struct rete_node_t* left_parent;
-  unsigned int axiom_no;
+  unsigned int rule_no;
 };
 
 typedef struct rete_node_t rete_node;

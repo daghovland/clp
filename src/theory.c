@@ -47,6 +47,10 @@ theory* create_theory(void){
   ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(axiom*));
   ret_val->n_axioms =  0;
 
+  ret_val->size_init_model = 100;
+  ret_val->init_model = calloc_tester(ret_val->size_axioms, sizeof(conjunction*));
+  ret_val->n_init_model =  0;
+
   ret_val->size_func_names = 100;
   ret_val->func_names = calloc_tester(ret_val->size_func_names, sizeof(char*));
   ret_val->n_func_names =  0;
@@ -68,8 +72,21 @@ theory* create_theory(void){
   return ret_val;
 }
 
+void extend_init_model(theory* th, conjunction* fact){
+  th->n_init_model++;
+  if(th->n_init_model >= th->size_init_model){
+    th->size_init_model *= 2;
+    th->init_model = realloc_tester(th->init_model, th->size_init_model * sizeof(axiom*));
+  }
+  th->init_model[th->n_init_model-1] = fact;
+}
+
 void extend_theory(theory *th, axiom *ax){
   unsigned int i;
+  if(ax->type == fact && ax->rhs->n_args == 1){
+    extend_init_model(th, ax->rhs->args[0]);
+    return;
+  }
   ax->axiom_no = th->n_axioms;
   
   assert(!th->finalized);
@@ -161,8 +178,13 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps, lazy, coq);
   assert(th->finalized);
-  for(i = 0; i < th->n_axioms; i++)
-    create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
+  net->n_rules = 0;
+  for(i = 0; i < th->n_axioms; i++){
+    const axiom* ax = th->axioms[i];
+    assert(!(ax->type == fact && ax->rhs->n_args == 1));
+    create_rete_axiom_node(net, th->axioms[i], net->n_rules, use_beta_not);
+    net->n_rules++;
+  }
   net->th = th;
   net->existdom = existdom;
   net->strat = strat;
@@ -217,6 +239,16 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   print_coq_constants(th, stream);
   fprintf(stream, "\n");
   
+  for(i = 0; i < th->n_init_model; i++){
+    conjunction *con = th->init_model[i];
+    assert(con->n_args > 0);
+    for(j = 0; j < con->n_args; j++){
+      fprintf(stream, "Hypothesis init_model_%i_%i : ", i, j);
+      print_coq_atom(th->init_model[i]->args[j], stream);
+      fprintf(stream, ".\n");
+    }
+  }
+
   for(i = 0; i < th->n_axioms; i++)
     print_coq_axiom(th->axioms[i], stream);
   

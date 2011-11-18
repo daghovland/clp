@@ -22,9 +22,12 @@
 #include "common.h"
 #include "rete_worker.h"
 #include "rete_insert_single.h"
-
+#include <errno.h>
+#include <sys/resource.h>
 
 #ifdef HAVE_PTHREAD
+#include <pthread.h>
+
 
 bool worker_pause(rete_worker* worker){
   return worker->pause_signalled && !worker->stop_signalled;
@@ -109,8 +112,22 @@ void * queue_worker_routine(void* arg){
 **/
 void start_worker_thread(rete_worker* worker){
   pthread_attr_t attr;
+  int errval;
+  bool num_tries = 0;
   pt_err(pthread_attr_init(&attr), "rete_worker.c: start_worker_thread: attr init");
-  pt_err(pthread_create(& worker->tid, &attr, queue_worker_routine, worker), "rete_worker.c:init_rete_worker: thread create");
+  errval = pthread_create(& worker->tid, &attr, queue_worker_routine, worker);
+  if(errval != 0){
+    fprintf(stderr,"rete_worker.c: start_worker_thread: %s\n", sys_errlist[errval]);
+    if(errval == EAGAIN){
+      struct timeval tv;
+      fd_set rdfs;
+      struct rlimit rlim;
+      fprintf(stderr, "Insufficient resources to run all the threads in the rete network. Try increasing the limits on number of processes or on the virtual memory.\n");
+      show_limit(RLIMIT_NPROC, stdout, "Process");
+      show_limit(RLIMIT_STACK, stdout, "Stack");
+    }
+  }
+  pt_err(errval, "rete_worker.c: start_worker_thread: create thread");
   pt_err(pthread_attr_destroy(&attr), "rete_worker.c: start_worker_thread: attr init");
 }
 /**
@@ -119,7 +136,7 @@ void start_worker_thread(rete_worker* worker){
 
    Also allocates memory for the qeue
  **/
-rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work){
+rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work){
   rete_worker * worker = (rete_worker *) malloc_tester(sizeof(rete_worker));
   worker->work = work;
   worker->output = output;
@@ -129,6 +146,7 @@ rete_worker* init_rete_worker(const rete_net* net, substitution_store_mt * tmp_s
   worker->net = net;
   worker->tmp_subs = tmp_subs;
   worker->node_subs = node_subs;
+  worker->axiom_no = axiom_no;
   start_worker_thread(worker);
   return worker;
 }

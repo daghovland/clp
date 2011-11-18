@@ -334,11 +334,20 @@ void print_atom(const atom *at, FILE* stream, void (*print_term_list)(const term
   fprintf(stream, "%s", at->pred->name);
   print_term_list(at->args, stream);
 }
+
+/**
+   Prints the term. Integer constants are prefixed with num_ because of a problem with integers in coq
+**/
 void print_term(const term *t, FILE* stream, void (*print_term_list)(const term_list*, FILE*)){
   if(t->type == variable_term)
     fprintf(stream, "%s", t->var->name);
-  else
-    fprintf(stream, "%s", t->name);
+  else {
+    char first = t->name[0];
+    if(first - '0' >= 0 && first - '0' <= 9)
+      fprintf(stream, "num_%s", t->name);
+    else
+      fprintf(stream, "%s", t->name);
+  }
   print_term_list(t->args, stream);
 }
 

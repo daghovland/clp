@@ -25,3 +25,4 @@
 void* malloc_tester(size_t);
 void* realloc_tester(void*, size_t);
 void* calloc_tester(size_t, size_t);
+void show_limit(int, FILE*, const char*);

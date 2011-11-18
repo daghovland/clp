@@ -106,8 +106,13 @@ void print_coq_constants(const theory* th, FILE* stream){
   unsigned int i;
   if(th->n_constants > 0){
     fprintf(stream, "Variables ");
-    for(i = 0; i < th->n_constants; i++)
-      fprintf(stream, "%s ", th->constants[i]);
+    for(i = 0; i < th->n_constants; i++){
+      char first = th->constants[i][0];
+      if(first - '0' >= 0 && first - '0' <= 9)
+	fprintf(stream, "num_%s ", th->constants[i]);
+      else
+	fprintf(stream, "%s ", th->constants[i]);
+    }
     fprintf(stream, ": %s.\n", DOMAIN_SET_NAME);
   }
 }

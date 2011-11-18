@@ -205,7 +205,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
       insert_rete_alpha_fact_children(state, node, fact, sub, false);
 #ifdef LAZY_RETE
     } else {
-      insert_in_sub_alpha_queue(& (state->sub_alpha_queues[node->axiom_no]), fact, sub, node);
+      insert_in_sub_alpha_queue(& (state->sub_alpha_queues[node->rule_no]), fact, sub, node);
     }
 #endif
     break;

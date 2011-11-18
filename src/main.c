@@ -34,6 +34,11 @@
 // For timer functions
 #include <signal.h>
 #include <time.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /**
    The boolean lazy leads to the opposite value for propagate in the 
@@ -137,6 +142,33 @@ void start_wallclock_timer(unsigned long int maxtimer){
     start_timer(maxtimer, CLOCK_REALTIME);
 }
 
+/**
+   This increases the number of threads that can run
+**/
+void set_stack_size(){
+  struct rlimit rlim;
+  pid_t child_id;
+  int status;
+  if(getrlimit(RLIMIT_STACK, &rlim) != 0)
+    perror("main.c: set_stack_size");
+  rlim.rlim_cur = 5;
+  rlim.rlim_max = 5;
+  if(setrlimit(RLIMIT_STACK, &rlim) != 0)
+    perror("main.c:set_stack_size");
+  child_id = fork();
+  if(child_id != 0){
+    printf("Parent waiting.\n");
+    waitpid(child_id, &status, 0);
+    printf("Parent exiting.\n");
+    if(WIFEXITED(status))
+      exit(WEXITSTATUS(status));
+    else
+      exit(EXIT_FAILURE);
+  }
+  printf("Child continuing.\n");
+}
+  
+
 int file_prover(FILE* f, const char* prefix){
   theory* th;
   rete_net* net;
@@ -182,6 +214,7 @@ int file_prover(FILE* f, const char* prefix){
   
 
   steps = prover_single(net, multithreaded);
+  //steps = prover(net, multithreaded);
   if(steps > 0){
     printf("Found a proof after %i steps that the theory has no model\n", steps);
     retval = EXIT_SUCCESS;
@@ -266,7 +299,9 @@ int main(int argc, char *argv[]){
   input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
-
+  
+  set_stack_size();
+  
   while( ( argval = getopt_long(argc, argv, shortargs, &longargs[0], &longindex )) != -1){
     switch(argval){
       unsigned long int maxtimer;

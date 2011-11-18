@@ -56,13 +56,14 @@ typedef struct rete_worker_t {
   unsigned int step;
   rete_worker_queue * work;
   rule_queue_single * output;
+  unsigned int axiom_no;
   bool working;
   enum worker_state state;
   bool pause_signalled;
   bool stop_signalled;
 } rete_worker;
 
-rete_worker* init_rete_worker(const rete_net*, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
+rete_worker* init_rete_worker(const rete_net*, unsigned int, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
 void destroy_rete_worker(rete_worker*);
 void restart_rete_worker(rete_worker*);
 void pause_rete_worker(rete_worker*);

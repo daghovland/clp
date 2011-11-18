@@ -672,7 +672,11 @@ unsigned int prover(const rete_net* rete, bool multithread){
 
 
   srand(1000);
-  
+  for(i = 0; i < rete->th->n_init_model; i++){
+    has_fact = true;
+    substitution* sub = create_empty_substitution(rete->th, state->global_subst_mem);
+    insert_rete_net_conjunction(state, rete->th->init_model[i], sub);
+  }
   has_fact = false;
   for(i = 0; i < rete->th->n_axioms; i++){
     if(rete->th->axioms[i]->type == fact){

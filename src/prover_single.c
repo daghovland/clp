@@ -271,21 +271,31 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   foundproof = true;
   reached_max = false;
   srand(1000);
-  for(i = 0; i < rete->th->n_axioms; i++){
-    if(rete->th->axioms[i]->type == fact){
-      has_fact = true;
-      break;
-    }
+  for(i = 0; i < rete->th->n_init_model; i++){
+    has_fact = true;
+    substitution* sub = create_empty_substitution(rete->th, & state->tmp_subs);
+    insert_rete_net_conjunction_single(state, rete->th->init_model[i], sub);
   }
-  if(!has_fact){
-    printf("The theory has no facts, and is therefore never contradictory.\n");
-    return 0;
+  if(rete->th->n_init_model == 0){
+    for(i = 0; i < rete->th->n_axioms; i++){
+      const axiom * ax = rete->th->axioms[i];
+      if(ax->type == fact){
+	has_fact = true;
+	break;
+      }
+    }
+    if(!has_fact){
+      printf("The theory has no facts, and is therefore never contradictory.\n");
+      return 0;
+    }
   }
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
     insert_state_factset_single(state, true_atom);
+#if false
   if(!state->net->factset_lhs || state->net->use_beta_not)
     insert_state_rete_net_fact(state, true_atom);
+#endif
   run_prover_single(state);
   stop_rete_state_single(state);
   if(foundproof && rete->coq && !reached_max){
