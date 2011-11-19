@@ -292,10 +292,8 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
     insert_state_factset_single(state, true_atom);
-#if false
   if(!state->net->factset_lhs || state->net->use_beta_not)
     insert_state_rete_net_fact(state, true_atom);
-#endif
   run_prover_single(state);
   stop_rete_state_single(state);
   if(foundproof && rete->coq && !reached_max){

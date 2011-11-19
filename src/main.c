@@ -143,7 +143,11 @@ void start_wallclock_timer(unsigned long int maxtimer){
 }
 
 /**
-   This increases the number of threads that can run
+   This is supposed to increase the number of threads that can run
+
+   But it does not work. I mean, it sets the limit, and when read, the limit occurs,
+   but it does not increase the number of threads. This can only be done with 
+   ulimit -Ss on the commandline. Therefore the function call is commented out.
 **/
 void set_stack_size(){
   struct rlimit rlim;
@@ -157,15 +161,12 @@ void set_stack_size(){
     perror("main.c:set_stack_size");
   child_id = fork();
   if(child_id != 0){
-    printf("Parent waiting.\n");
     waitpid(child_id, &status, 0);
-    printf("Parent exiting.\n");
     if(WIFEXITED(status))
       exit(WEXITSTATUS(status));
     else
       exit(EXIT_FAILURE);
   }
-  printf("Child continuing.\n");
 }
   
 
@@ -300,7 +301,9 @@ int main(int argc, char *argv[]){
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
   
+#ifdef SET_STACK_SIZE
   set_stack_size();
+#endif
   
   while( ( argval = getopt_long(argc, argv, shortargs, &longargs[0], &longindex )) != -1){
     switch(argval){

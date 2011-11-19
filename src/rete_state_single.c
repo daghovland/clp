@@ -333,7 +333,9 @@ bool disjunction_true_in_fact_store(rete_state_single* state, const disjunction*
 rule_instance* insert_rule_instance_history_single(rete_state_single* state, const rule_instance* ri){
   unsigned int step =  get_state_step_no_single(state) + 1;
   while(get_rule_queue_single_size(state->history) < step) {
+#ifndef NDEBUG
     fprintf(stderr, "Pushing dummy rule instance on history for step %i\n", step);
+#endif
     push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
   }
   assert(test_rule_instance(ri));
