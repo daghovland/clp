@@ -40,8 +40,6 @@ void destroy_fact_store(fact_store* store){
 }
 
 unsigned int alloc_store_fact(fact_store* store){
-  char* new_ptr;
-  unsigned int new_i = store->n_facts;
   store->n_facts ++;
   if(store->n_facts >= store->max_n_facts){
     store->max_n_facts *= 2;

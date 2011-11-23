@@ -289,8 +289,6 @@ bool test_rete_net(const rete_net* net){
 /**
    Printing out a rete network
 **/
-void print_rete_node(const rete_node*, FILE*, unsigned int);
-
 void print_selector(const rete_node* sel, FILE* stream){
   assert(sel->type == selector);
   fprintf(stream, "%s(%zi): %i occurrences", sel->val.selector->name, sel->val.selector->arity, sel->n_children);

@@ -142,6 +142,8 @@ void print_rete_net(const rete_net*, FILE* );
 void print_dot_rete_net(const rete_net*, FILE* );
 void print_state_new_facts(rete_net_state*, FILE*);
 void print_rete_node_type(const rete_node*, FILE*);
+void print_rete_node(const rete_node*, FILE*, unsigned int);
+
 
 // In rule_queue.c and sub_alpha_queue_c
 

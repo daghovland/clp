@@ -27,6 +27,21 @@
 #include "rete.h"
 #include "rete_insert_single.h"
 #include "substitution.h"
+#include "timestamps.h"
+
+bool test_timestamps(const axiom* rule, const substitution* sub){
+  unsigned int i = 0;
+  timestamps_iter iter = get_timestamps_iter(& sub->sub_ts);
+  while(has_next_timestamps_iter(&iter)){
+    assert(i < rule->lhs->n_args);
+    signed int ts = get_next_timestamps_iter(&iter);
+    const term* val = get_sub_value(sub,i);
+    ++i;
+  }
+  destroy_timestamps_iter(&iter);
+  return true;
+}
+
 
 /**
    Inserting a substitution into a beta node in a rete network
@@ -50,6 +65,8 @@ void insert_rete_beta_sub_single(const rete_net* net,
 
   assert(parent == node->left_parent || parent == node->val.beta.right_parent);
   assert(test_substitution(sub));
+  
+  assert(node->rule_no < net->th->n_axioms && test_timestamps(net->th->axioms[node->rule_no], sub));
   
   if(node->type == rule){
     assert(node->n_children == 0);
@@ -175,7 +192,6 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   unsigned int step, 
 				   substitution* sub)
 {
-  unsigned int i;
   const term *arg;
   sub_store_iter iter;
   substitution_size_info ssi = net->th->sub_size_info;

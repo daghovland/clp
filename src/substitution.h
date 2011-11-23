@@ -66,6 +66,7 @@ int compare_sub_timestamps(const substitution*, const substitution*);
 sub_list_iter* get_sub_list_iter(substitution_list*);
 bool has_next_sub_list(const sub_list_iter*);
 substitution* get_next_sub_list(sub_list_iter*);
+void free_sub_list_iter(sub_list_iter*);
 
 void free_substitution(substitution*);
 void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);

@@ -33,7 +33,7 @@ proof_branch* create_root_proof_branch(void){
   br->start_step = 0;
   br->n_children = 0;
   br->size_children = 0;
-  br->parent == NULL;
+  br->parent = NULL;
   br->elim_stack = initialize_ri_stack();
   return br;
 }

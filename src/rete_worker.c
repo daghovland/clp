@@ -24,7 +24,7 @@
 #include "rete_insert_single.h"
 #include <errno.h>
 #include <sys/resource.h>
-
+#include "error_handling.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 
@@ -73,7 +73,6 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
    or that it is again waiting, such that the backup process in the disjunction treatment can continue.
 **/
 void * queue_worker_routine(void* arg){
-  int oldtype;
   const rete_node* alpha;
   const atom* fact;
   unsigned int step;
@@ -113,16 +112,14 @@ void * queue_worker_routine(void* arg){
 void start_worker_thread(rete_worker* worker){
   pthread_attr_t attr;
   int errval;
-  bool num_tries = 0;
+  size_t stacksize = 100000;
   pt_err(pthread_attr_init(&attr), "rete_worker.c: start_worker_thread: attr init");
+  pthread_attr_setstacksize(&attr, stacksize); 
   errval = pthread_create(& worker->tid, &attr, queue_worker_routine, worker);
   if(errval != 0){
     fprintf(stderr,"rete_worker.c: start_worker_thread: %s\n", sys_errlist[errval]);
     if(errval == EAGAIN){
-      struct timeval tv;
-      fd_set rdfs;
-      struct rlimit rlim;
-      fprintf(stderr, "Insufficient resources to run all the threads in the rete network. Try increasing the limits on number of processes or on the virtual memory.\n");
+      fprintf(stderr, "Insufficient resources to run all the threads in the rete network. Try increasing the limits on number of processes or on the virtual memory. You can also try limiting the stack memory, by running ulimit -Ss <limit>\n");
       show_limit(RLIMIT_NPROC, stdout, "Process");
       show_limit(RLIMIT_STACK, stdout, "Stack");
     }

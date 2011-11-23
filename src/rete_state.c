@@ -290,7 +290,6 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state,
 				       substitution** sub){
   fact_set * fs;
   size_t pred_no;
-  int rq;
   if(arg_no >= axm->lhs->n_args)
     return !disjunction_true_in_fact_set(state, axm->rhs, *sub);
   pred_no = axm->lhs->args[arg_no]->pred->pred_no;

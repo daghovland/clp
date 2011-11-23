@@ -19,7 +19,7 @@ clpl_parser.h: clpl_parser.y
 clpl_parser.c: clpl_parser.h
 
 clp_LDADD = -ll -lfl -lm -lrt 
-AM_CFLAGS=-Wall 
+AM_CFLAGS=-Wall -O0
 AM_LDFLAGS = -L. ${PTHREAD_LIBS}
 #These flags (especially NDEBUG) are important for performance, and turned on here by default
 clp_CFLAGS=-DNDEBUG ${PTHREAD_CFLAGS} 

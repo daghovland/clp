@@ -28,6 +28,7 @@
 #include "theory.h"
 #include "substitution.h"
 #include "substitution_store_mt.h"
+#include "substitution_size_info.h"
 
 // Defined in main.c
 extern bool use_substitution_store;
@@ -103,7 +104,6 @@ void init_empty_substitution(substitution* sub, const theory* t){
    in axiom_false_in_fact_set in rete_state.c
 **/
 substitution* create_empty_substitution(const theory* t, substitution_store_mt* store){
-  unsigned int i;
   substitution* ret_val = get_substitution_memory(t->sub_size_info, store);
   init_empty_substitution(ret_val, t);
   return ret_val;
@@ -153,7 +153,6 @@ void copy_substitution_struct(substitution* dest, const substitution* orig, subs
 **/
 substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi){
   substitution* copy;
-  int* new_timestamps;
   
   if(use_substitution_store)
     copy = get_substitution_store_mt(store, ssi);
@@ -380,7 +379,6 @@ bool union_substitutions_struct_one_ts(substitution* dest, const substitution* s
    new substitution
 **/
 substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
-  unsigned int i, new_size;
   substitution *retval;
 
   assert(test_substitution(sub1));
@@ -413,7 +411,6 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
    Assumes dest is already allocated
 **/
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi){
-  unsigned int i, new_size;
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi))
     return false;
   add_timestamps(& dest->sub_ts, & sub2->sub_ts);
@@ -429,7 +426,6 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
 **/
 substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
   
-  unsigned int i, new_size;
   substitution *retval;
 
   if(use_substitution_store)
@@ -529,7 +525,7 @@ substitution* get_next_sub_list(sub_list_iter* i){
   return retval;
 }
 
-free_sub_list_iter(sub_list_iter* i){
+void free_sub_list_iter(sub_list_iter* i){
   free(i);
 }
 
@@ -618,7 +614,6 @@ void print_substitution(const substitution* sub, FILE* f){
 
 void print_coq_substitution(const substitution* sub, const freevars* vars, FILE* f){
   size_t i;
-  size_t j = 0;
   for(i = 0; i < vars->n_vars; i++){
     fprintf(f, " ");
     print_coq_term(get_sub_value(sub, vars->vars[i]->var_no),f);

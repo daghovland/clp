@@ -161,7 +161,9 @@ freevars* free_axiom_variables(const axiom* axm, freevars* vars){
    For testing of the axiom basic functionality and sanity
 **/
 bool test_axiom(const axiom* a, size_t no){
+#ifndef NDEBUG
   bool found_exist = false;
+#endif
   unsigned int i;
   freevars* fv;
   fv = init_freevars();
@@ -187,7 +189,9 @@ bool test_axiom(const axiom* a, size_t no){
   for(i = 0; i < a->rhs->n_args; i++){
     if(a->rhs->args[i]->bound_vars->n_vars > 0){
       assert(empty_intersection(fv, a->rhs->args[i]->bound_vars));
+#ifndef NDEBUG
       found_exist = true;
+#endif
     }
   }
   assert(found_exist == a->is_existential);  
@@ -246,6 +250,7 @@ void print_geolog_axiom(const axiom* a, FILE* stream){
 
 void print_coq_axiom(const axiom* a, FILE* stream){
   unsigned int i;
+  assert(a->has_name);
   fprintf(stream, "Hypothesis %s : ", a->name);
   freevars* f = a->lhs->free_vars;
   if(f->n_vars > 0){

@@ -20,7 +20,7 @@
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
 #include "rule_instance.h"
-
+#include "substitution.h"
 
 void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi){
   copy_substitution_struct(& dest->sub, & orig->sub, ssi);

@@ -83,7 +83,6 @@ void check_worker_queue_too_small(rete_worker_queue* rq){
    Also allocates memory for the qeue
  **/
 rete_worker_queue* init_rete_worker_queue(void){
-  unsigned int i;
   rete_worker_queue* rq = malloc_tester(sizeof(rete_worker_queue));
   rq->size_queue = WORKER_QUEUE_INIT_SIZE;
   rq->queue = calloc_tester(rq->size_queue, sizeof(worker_queue_elem));
@@ -224,7 +223,7 @@ void print_rete_worker_queue(rete_worker_queue* rq, FILE* f){
     worker_queue_elem* el = get_worker_queue_elem(rq, i);
     fprintf(f, "\t%i: ", j);
     print_fol_atom(el->fact, f);
-    print_rete_node(el->alpha, f);    
+    print_rete_node(el->alpha, f,0);    
     fprintf(f, "\n");
   }
 }

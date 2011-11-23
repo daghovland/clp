@@ -180,7 +180,9 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   assert(th->finalized);
   net->n_rules = 0;
   for(i = 0; i < th->n_axioms; i++){
+#ifndef NDEBUG
     const axiom* ax = th->axioms[i];
+#endif
     assert(!(ax->type == fact && ax->rhs->n_args == 1));
     create_rete_axiom_node(net, th->axioms[i], net->n_rules, use_beta_not);
     net->n_rules++;

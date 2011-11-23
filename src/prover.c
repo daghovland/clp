@@ -31,6 +31,7 @@
 #include "instantiate.h"
 #include "rete.h"
 #include "rete_state.h"
+#include "error_handling.h"
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -111,7 +112,6 @@ void write_prover_node_old(rete_net_state* state, rule_instance* next){
    So we know that changing the "used_in_proof" here is ok.
 **/
 void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, unsigned int historic_ts, unsigned int current_ts){
-  unsigned int i;
   substitution_size_info ssi = historic_state->net->th->sub_size_info;
   assert(ri == history[historic_ts]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
@@ -140,14 +140,15 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
    Used by check_used_rule_instances and coq proof output
 **/
 void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
-  rete_net* net = (rete_net*) s->net;
   unsigned int step = get_current_state_step_no(s);
 #ifdef HAVE_PTHREAD
   if(step >= size_history -  1){
     pt_err(pthread_mutex_lock(history_mutex), "Could not get lock on history array.\n");
 #endif
     while(step >= size_history - 1){
+#ifndef NDEBUG
       unsigned int i;
+#endif
       size_history *= 2;
       history = realloc_tester(history, size_history * sizeof(rule_instance*));
 #ifndef NDEBUG
@@ -170,7 +171,7 @@ void insert_rule_instance_history(rete_net_state* s, rule_instance* ri){
 void insert_rete_net_conjunction(rete_net_state* state, 
 				 conjunction* con, 
 				 substitution* sub){
-  unsigned int i, j;
+  unsigned int i;
   assert(test_conjunction(con));
   assert(test_substitution(sub));
 
@@ -244,7 +245,9 @@ bool return_reached_max_steps(rete_net_state* state, rule_instance* ri){
 void check_state_finished(rete_net_state* state){
   rete_net_state* parent = (rete_net_state*) state->parent;
   unsigned int n_branches;
+#ifndef NDEBUG
   bool found_self = false;
+#endif
   unsigned int i;
   if (state->parent == NULL){
     assert(state->start_step_no == 0);
@@ -258,7 +261,9 @@ void check_state_finished(rete_net_state* state){
     if(state == parent->branches[i]){
       if(i==0)
 	return;
+#ifndef NDEBUG
       found_self = true;
+#endif
     }
   }
   assert(found_self);
@@ -276,7 +281,7 @@ void check_state_finished(rete_net_state* state){
 
 bool run_prover_rete_coq_mt(rete_net_state* state){
     while(true){
-      unsigned int i, ts;
+      unsigned int ts;
       
       rule_instance* next = choose_next_instance_state(state);
       if(next == NULL)
@@ -420,7 +425,7 @@ bool thread_runner_single_step(void){
   unsigned int step;
   bool rp_val;
   bool has_popped = false;
-  unsigned int i, retcode;
+  unsigned int retcode;
 
 #ifdef HAVE_PTHREAD
   pthread_mutex_lock(disj_ri_stack_mutex);
@@ -478,11 +483,6 @@ bool thread_runner_single_step(void){
    One instance of this function is run in each thread
 **/
 void * thread_runner(void * arg){
-  int tid;
-  if(arg == NULL)
-    tid = 0;
-  else
-    tid = * (int *) arg;
 #ifdef HAVE_PTHREAD
   pthread_mutex_lock(disj_ri_stack_mutex);
 #endif
@@ -546,10 +546,7 @@ void thread_manager(int n_threads){
 **/
 bool start_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next){
   const axiom* rule;
-  unsigned int i;
   unsigned int step;
-  bool retval;
-  rete_net_state* copy_state;
   bool rp_val;
 
   rule = next->rule;
@@ -643,14 +640,13 @@ void write_mt_coq_proof(rete_net_state* state){
    Returns 0 if no proof found, otherwise, the number of steps
 **/
 unsigned int prover(const rete_net* rete, bool multithread){
-  unsigned int i, j, retval;
+  unsigned int i, retval;
   atom* true_atom;
   bool has_fact;
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t p_attr;
 #endif
   rete_net_state* state = create_rete_state(rete, verbose);
-  const theory* th = rete->th;
 
 #ifdef HAVE_PTHREAD
   num_threads = 10;

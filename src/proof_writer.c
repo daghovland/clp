@@ -58,7 +58,7 @@ FILE* get_coq_fdes(){
 
 void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
   if(proof){ 
-    char *dotfilename, *command;
+    char *dotfilename;
     dotfilename = malloc_tester(strlen(filenameprefix) + 6);
     sprintf(dotfilename, "%s.dot", filenameprefix);
 #ifdef HAVE_PTHREAD
@@ -99,8 +99,7 @@ void init_proof_dot_writer(const char* filenameprefix, const rete_net* net){
 }
 
 void init_proof_coq_writer(const rete_net* net){
-  char *coqfileprefix, * coqfilename, * period_pos;
-  unsigned int i;
+  char * coqfilename;
   coqfilename = malloc_tester(strlen(net->th->name) + 3);
   
   coqfilename = strcpy(coqfilename, net->th->name);
@@ -130,7 +129,6 @@ void write_proof_node(unsigned int step_no
   FILE *fp2;
   char fname2[100];
 #endif
-  unsigned int i;
 
   if(proof){
 #ifdef HAVE_PTHREAD

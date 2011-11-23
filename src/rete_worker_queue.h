@@ -74,6 +74,7 @@ void lock_worker_queue(rete_worker_queue*);
 void unlock_worker_queue(rete_worker_queue*);
 void signal_worker_queue(rete_worker_queue*);
 void broadcast_worker_queue(rete_worker_queue*);
+void wait_worker_queue(rete_worker_queue*);
 #endif
 
 rete_worker_queue_backup backup_rete_worker_queue(rete_worker_queue*);

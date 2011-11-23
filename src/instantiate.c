@@ -47,7 +47,6 @@ bool test_is_conj_instantiation(const conjunction* a, const substitution* sub){
    Instantiating an atom with a substitution
 **/
 const term* instantiate_term(const term* orig, const substitution* sub){
-  unsigned int i;
   const term* t;
   switch(orig->type){
   case constant_term: 
@@ -219,9 +218,9 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
     break;
   default:
     fprintf(stderr, "Unknown term type %i occurred\n", t->type);
-    assert(false);
+    exit(EXIT_FAILURE);
   }
-  assert(false);
+  exit(EXIT_FAILURE);
 }
 
 bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub){

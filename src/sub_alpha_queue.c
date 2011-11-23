@@ -26,6 +26,7 @@
 #include "theory.h"
 #include "substitution.h"
 #include "sub_alpha_queue.h"
+#include "rete_state.h"
 
 sub_alpha_queue init_sub_alpha_queue(void){
   sub_alpha_queue queue;

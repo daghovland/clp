@@ -64,7 +64,7 @@ unsigned long int get_ui_arg_opt(char * tailptr){
   errno = 0;
   unsigned long int retval  = strtoul(optarg, &tailptr, 0);
   if(tailptr[0] != '\0' || errno != 0){
-    perror("Error with argument to option \"max\". Must be a positive integer stating maximum number of steps in the proof.\n");
+    perror("Error with argument to option. Must be a positive integer stating maximum number of steps in the proof.\n");
     exit(EXIT_FAILURE);
   }
   return retval;
@@ -142,41 +142,12 @@ void start_wallclock_timer(unsigned long int maxtimer){
     start_timer(maxtimer, CLOCK_REALTIME);
 }
 
-/**
-   This is supposed to increase the number of threads that can run
-
-   But it does not work. I mean, it sets the limit, and when read, the limit occurs,
-   but it does not increase the number of threads. This can only be done with 
-   ulimit -Ss on the commandline. Therefore the function call is commented out.
-**/
-void set_stack_size(){
-  struct rlimit rlim;
-  pid_t child_id;
-  int status;
-  if(getrlimit(RLIMIT_STACK, &rlim) != 0)
-    perror("main.c: set_stack_size");
-  rlim.rlim_cur = 5;
-  rlim.rlim_max = 5;
-  if(setrlimit(RLIMIT_STACK, &rlim) != 0)
-    perror("main.c:set_stack_size");
-  child_id = fork();
-  if(child_id != 0){
-    waitpid(child_id, &status, 0);
-    if(WIFEXITED(status))
-      exit(WEXITSTATUS(status));
-    else
-      exit(EXIT_FAILURE);
-  }
-}
-  
-
 int file_prover(FILE* f, const char* prefix){
   theory* th;
   rete_net* net;
   FILE *fp;
   int retval;
   unsigned int steps;
-  void * mem_break = sbrk(0);
   switch(input_format){
   case clpl_input:
     th = clpl_parser(f);
@@ -275,10 +246,6 @@ void print_version(){
 }
 
 int main(int argc, char *argv[]){
-  theory* th;
-  rete_net* net;
-  FILE* fp;
-  int curopt;
   int retval = EXIT_FAILURE;
   const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"rhs-beta", no_argument, NULL, 'r'}, {"cputimer", required_argument, NULL, 'T'}, {"wallclocktimer", required_argument, NULL, 'w'}, {"print_model", no_argument, NULL, 'o'}, {"substitution_store", no_argument, NULL, 's'}, {"all-disjuncts", no_argument, NULL, 'a'}, {0,0,0,0}};
   char shortargs[] = "w:vfVphgdoacCsaT:GeqMrm:";
@@ -300,10 +267,6 @@ int main(int argc, char *argv[]){
   input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
-  
-#ifdef SET_STACK_SIZE
-  set_stack_size();
-#endif
   
   while( ( argval = getopt_long(argc, argv, shortargs, &longargs[0], &longindex )) != -1){
     switch(argval){

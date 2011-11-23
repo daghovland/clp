@@ -72,13 +72,11 @@ void delete_rule_queue_before(rule_queue* rq, rule_queue* orig){
    Testing sanity of rule queue. Sort of unit testing. Returns true if queue is sane
 **/
 bool test_rule_queue(const rule_queue* rq, const rete_net_state* state){
-  rule_instance* ri;  
   unsigned int i, timestamp = 0;
   if(rq == NULL || rq->queue == NULL){
     fprintf(stderr, "NULL queue\n");
     return false;
   }
-  ri = rq->queue[rq->size_queue-1];
   if (rq->end != (rq->first + rq->n_queue) % rq->size_queue){
     fprintf(stderr, "Error in rule queue size vs. start/end information\n");
     return false;

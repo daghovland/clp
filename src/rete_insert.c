@@ -55,12 +55,12 @@ void detract_rete_beta_sub(rete_net_state* state,
 
   while(has_next_sub_list(iter)){
     substitution* sub2 = get_next_sub_list(iter);
-    if(subs_equal_intersection(sub, sub2))
+    if(subs_equal_intersection(sub, sub2)){
       if(node->type == beta_not)
 	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2, & state->local_subst_mem, state->net->th->sub_size_info));
-      else {
+      else 
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
-      }
+    }
   } // end   while(has_next_sub_list(iter)){
   free_state_sub_list_iter(state, sub_no, iter);
 }
