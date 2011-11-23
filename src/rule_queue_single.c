@@ -85,7 +85,6 @@ void check_rq_too_small(rule_queue_single* rq){
    The axiom_no is only for debugging purposes
  **/
 rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no){
-  unsigned int i;
   rule_queue_single* rq = malloc_tester(sizeof(rule_queue_single));
   rq->size_queue = RULE_QUEUE_INIT_SIZE;
   rq->queue = malloc_tester(get_rq_size_t(rq->size_queue, ssi));

@@ -42,8 +42,6 @@ static FILE* coq_fp = NULL;
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dot_file_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t history_array_lock = PTHREAD_MUTEX_INITIALIZER;
-
 #endif
 
 static bool file_open, coq_file_open;
@@ -251,15 +249,12 @@ void write_elim_usage_proof(const rete_net* net, rule_instance* ri, int ts){
   if(net->coq){
     // Elimination of disjunction and existential variables is done on the way down.
     if(ri->rule->rhs->n_args > 1){
-      unsigned int i;
-
       fp_err( fprintf(coq_fp, "(* Disjunctive split at step %i*)\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       fp_err( fprintf(coq_fp, "elim ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       print_coq_rule_instance(ri, coq_fp);
       fp_err( fprintf(coq_fp, ").\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       write_disj_proof_start(ri, ts, 0);
     } else if(ri->rule->rhs->n_args == 1 && ri->rule->rhs->args[0]->is_existential){
-      unsigned int i;
       // Printing the elim part
       fp_err( fprintf(coq_fp, "(* Introducing existential variables from step %i *)\n", ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       fp_err( fprintf(coq_fp, "elim ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
@@ -276,7 +271,6 @@ void write_elim_usage_proof(const rete_net* net, rule_instance* ri, int ts){
 **/
 void write_goal_proof_step(const rule_instance* ri, const rete_net* net, int ts, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs){  
   if(ri->rule->type == fact && ri->rule->rhs->n_args <= 1 && !ri->rule->is_existential){
-    const axiom* a = ri->rule;
     fp_err( fprintf(coq_fp, "(* Using fact #%i*)\n", ri->rule->axiom_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     fp_err( fprintf(coq_fp, "apply %s.\n", ri->rule->name), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
   } else {
@@ -304,7 +298,6 @@ void write_premiss_proof(const rule_instance* ri, int ts, const rete_net* net, r
       fp_err( fprintf(coq_fp, "assumption.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     } else {
       rule_instance* premiss = get_history(premiss_no, rqs);
-      const axiom* a = premiss->rule;
       //if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[i]->pred->is_domain)){
       fp_err( fprintf(coq_fp, "(* Proving conjunct %i of step %i *)\n", i, ts), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       

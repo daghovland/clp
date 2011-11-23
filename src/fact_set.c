@@ -90,7 +90,7 @@ void print_state_fact_set(fact_set ** fs, FILE* stream, unsigned int n_predicate
 }
 
 
-fact_set* print_fact_set(fact_set* fs, FILE* f){
+void print_fact_set(fact_set* fs, FILE* f){
   while(fs != NULL){
     print_fol_atom(fs->fact, f);
     if(fs->next != NULL)

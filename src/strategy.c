@@ -63,18 +63,12 @@ rule_instance* normal_next_instance(rule_queue_state state
   bool has_definite = false;
   bool has_definite_non_splitting = false;
   bool has_non_splitting = false;
-  bool has_next_rule = false;
   bool may_have_next_rule = false;
   size_t definite_non_splitting_rule, definite_rule, non_splitting_rule;
   size_t lightest_rule = th->n_axioms;
   unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
-
-  rule_instance* retval;
-
-    
- 
   for(i = 0; i < net->n_rules; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;

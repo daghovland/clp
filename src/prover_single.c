@@ -77,7 +77,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
 void insert_rete_net_conjunction_single(rete_state_single* state, 
 					conjunction* con, 
 					substitution* sub){
-  unsigned int i, j;
+  unsigned int i;
   assert(test_conjunction(con));
   assert(test_substitution(sub));
   fresh_exist_constants(con, sub, & state->constants);
@@ -91,7 +91,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     if(!state->net->factset_lhs || state->net->use_beta_not)
-      insert_state_rete_net_fact(state, ground, get_state_step_no_single(state));
+      insert_state_rete_net_fact(state, ground);
     if(state->net->has_factset)
       insert_state_factset_single(state, ground);
     else 
@@ -133,7 +133,7 @@ bool return_reached_max_steps_mt(rete_state_single* state, const rule_instance* 
 
 bool run_prover_single(rete_state_single* state){
     while(true){
-      unsigned int i, ts;
+      unsigned int ts;
       rule_instance* next;
       bool incval;
       next = choose_next_instance_single(state);
@@ -264,7 +264,6 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
 **/
 unsigned int prover_single(const rete_net* rete, bool multithread){
   rete_state_single * state = create_rete_state_single(rete, verbose);
-  const theory* th = rete->th;
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;

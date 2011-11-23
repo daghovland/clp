@@ -53,6 +53,8 @@ fact_store_iter get_state_fact_store_iter(rete_state_single*, unsigned int);
 
 void insert_rete_worker_queue(rete_state_single*, substitution*, const atom*, const rete_node*);
 
+void insert_state_rete_net_fact(rete_state_single* state, const atom* fact);
+
 void print_state_single_rule_queues(rete_state_single*, FILE*);
 void print_state_fact_store(rete_state_single *, FILE*);
 void print_state_new_fact_store(rete_state_single*, FILE*);

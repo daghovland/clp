@@ -181,7 +181,6 @@ bool insert_rete_alpha_fact(rete_net_state* state,
 			    substitution* sub,
 			    bool propagate)
 {
-  unsigned int i;
   const term *arg;
   sub_list_iter* iter;
 

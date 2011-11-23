@@ -65,6 +65,7 @@ typedef struct rete_worker_t {
 
 rete_worker* init_rete_worker(const rete_net*, unsigned int, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
 void destroy_rete_worker(rete_worker*);
+void stop_rete_worker(rete_worker*);
 void restart_rete_worker(rete_worker*);
 void pause_rete_worker(rete_worker*);
 void continue_rete_worker(rete_worker*);

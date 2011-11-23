@@ -43,7 +43,6 @@ void destroy_substitution_store(substitution_store* store){
 }
 
 unsigned int alloc_store_substitution(substitution_store* store){
-  char* new_ptr;
   unsigned int new_i = store->n_subst;
   store->n_subst ++;
   if(store->n_subst >= store->max_n_subst){

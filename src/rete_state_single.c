@@ -355,8 +355,6 @@ rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int
    So we know that changing the "used_in_proof" here is ok.
 **/
 void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, proof_branch* branch, unsigned int historic_ts, unsigned int current_ts){
-  unsigned int i;
-  substitution_size_info ssi = state->net->th->sub_size_info;
   assert(branch->end_step >= historic_ts && branch->start_step <= historic_ts);
   if(!ri->used_in_proof){
     ri->used_in_proof = true; 
@@ -396,7 +394,6 @@ bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t a
 bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   rete_state_single* state = rqs.single;
   rule_queue_single* rq = state->rule_queues[axiom_no];
-  rete_worker_queue* wq = state->worker_queues[axiom_no];
   bool retval = false;
   bool queue_locked = true;
   substitution *tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
@@ -549,8 +546,9 @@ unsigned int rule_queue_possible_age_single_state(rete_state_single* state, size
 #endif
   }
 #ifdef HAVE_PTHREAD
-    unlock_queue_single(rq);
+  unlock_queue_single(rq);
 #endif
+  return age;
 }
 
 

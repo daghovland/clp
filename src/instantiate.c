@@ -60,6 +60,7 @@ const term* instantiate_term(const term* orig, const substitution* sub){
     break;
   default:
     fprintf(stderr, "Unknown term type %i occurred\n", orig->type);
+    exit(EXIT_FAILURE);
     assert(false);
   }
   assert(test_term(t));
