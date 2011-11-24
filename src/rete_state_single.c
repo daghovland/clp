@@ -129,7 +129,7 @@ unsigned int get_state_total_steps(const rete_state_single* state){
    the backup itself, since this is assumed to be static in prover_single.c
 **/
 void destroy_rete_backup(rete_state_backup* backup){
-  destroy_substitution_store_array_backup(backup->node_sub_backups, backup->state->net->n_subs);
+  destroy_substitution_store_array_backup(backup->node_sub_backups);
   if(backup->state->net->has_factset){
     destroy_fact_store_backup_array(backup->factset_backups, backup->state->net->th->n_predicates);
     free(backup->new_facts_backups);
@@ -468,7 +468,6 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
    Factset functions
 **/
 void insert_state_factset_single(rete_state_single* state, const atom* ground){
-  unsigned int step = get_state_step_no_single(state);
   bool already_in_factset = false;
   unsigned int pred_no = ground->pred->pred_no;
   fact_store_iter iter = get_fact_store_iter(& state->factsets[pred_no]);

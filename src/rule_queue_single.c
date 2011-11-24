@@ -163,7 +163,9 @@ bool test_rule_queue_single(rule_queue_single* rq){
   unsigned int i;
   assert(rq->first <= rq->end);
   for(i = rq->first; i < rq->end; i++){
+#ifndef NDEBUG
     rule_instance* ri = get_rule_instance_single(rq, i);
+#endif
     assert(test_rule_instance(ri));
   }
   return true;

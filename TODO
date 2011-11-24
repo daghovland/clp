@@ -1,2 +1,8 @@
 Multiple input theory files is not working because of memory exhaustion.s
 
+24 Nov 11
+
+Check out may_have and has_new_instance. Could they be the cause of
+   the randomization of the strategy?
+
+Fixing the factset treatment in strategy.c, so factset_lhs can work again

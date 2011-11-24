@@ -79,7 +79,6 @@ void add_timestamp(timestamps* ts, unsigned int timestamp){
 **/
 void add_timestamps(timestamps* dest, const timestamps* orig){
   unsigned int i;
-  unsigned int new_size = dest->n_timestamps + orig->n_timestamps;
   for(i = 0; i < orig->n_timestamps; i++)
     dest->timestamps[dest->n_timestamps++] = orig->timestamps[i];
 }

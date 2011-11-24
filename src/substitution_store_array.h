@@ -49,5 +49,5 @@ bool insert_substitution_single(substitution_store_array* stores, unsigned int s
 
 substitution_store_array* restore_substitution_store_array(substitution_store_array_backup*);
 substitution_store_array_backup * backup_substitution_store_array(substitution_store_array*);
-void destroy_substitution_store_backup_array(substitution_store_array_backup*);
+void destroy_substitution_store_array_backup(substitution_store_array_backup*);
 #endif

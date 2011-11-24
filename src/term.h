@@ -64,6 +64,7 @@ term_list* extend_term_list(term_list*, const term*);
 
 bool test_term(const term*);
 bool test_term_list(const term_list*);
+bool test_ground_term_list(const term_list* tl);
 
 void delete_term_list(term_list*);
 void delete_term(term*);

@@ -29,6 +29,11 @@
 #include "substitution.h"
 #include "timestamps.h"
 
+/**
+   Should test that the timestamps actually refer to rules 
+   that introduced the facts nevessary for the instances.
+   TODO: Not finished.
+**/
 bool test_timestamps(const axiom* rule, const substitution* sub){
   unsigned int i = 0;
   timestamps_iter iter = get_timestamps_iter(& sub->sub_ts);
@@ -36,6 +41,10 @@ bool test_timestamps(const axiom* rule, const substitution* sub){
     assert(i < rule->lhs->n_args);
     signed int ts = get_next_timestamps_iter(&iter);
     const term* val = get_sub_value(sub,i);
+    if(val != NULL && !test_term(val))
+      return false;
+    if(ts < 0) 
+      return false;
     ++i;
   }
   destroy_timestamps_iter(&iter);

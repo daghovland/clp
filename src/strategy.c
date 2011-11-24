@@ -62,10 +62,10 @@ rule_instance* normal_next_instance(rule_queue_state state
   const theory* th = net->th;
   bool has_definite = false;
   bool has_definite_non_splitting = false;
-  bool has_non_splitting = false;
   bool may_have_next_rule = false;
-  size_t definite_non_splitting_rule, definite_rule, non_splitting_rule;
-  size_t lightest_rule = th->n_axioms;
+  size_t definite_non_splitting_rule = th->n_axioms;
+  size_t definite_rule = th->n_axioms;
+  size_t lightest_rule = 0;
   unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
@@ -115,6 +115,7 @@ rule_instance* normal_next_instance(rule_queue_state state
 	  may_have_next_rule = true;
 	  has_definite = true;
 	  definite_rule = axiom_no;
+	  lightest_rule = axiom_no;
 	  if(rule->rhs->n_args == 1){
 	    has_definite_non_splitting = true;
 	    definite_non_splitting_rule = axiom_no;
@@ -126,12 +127,8 @@ rule_instance* normal_next_instance(rule_queue_state state
 	}
       } else { // not definite rule
 	may_have_next_rule = true;
-	if(rule->rhs->n_args == 1){
-	  has_non_splitting = true;
-	  non_splitting_rule = axiom_no;
-	  axiom_weights[axiom_no] /= 20;
-	}
-	if(axiom_weights[axiom_no] < min_weight){
+	
+	if(axiom_no == 0 || axiom_weights[axiom_no] < axiom_weights[lightest_rule]){
 	  min_weight = axiom_weights[axiom_no];
 	  lightest_rule = axiom_no;
 	}
@@ -153,8 +150,8 @@ rule_instance* normal_next_instance(rule_queue_state state
     return pop_axiom(state, definite_rule);
 
   while(may_have_next_rule){
-    assert(min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
-    if(may_have_next_rule && has_new_instance(state, lightest_rule))
+    assert(lightest_rule < th->n_axioms && min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
+    if(has_new_instance(state, lightest_rule))
       return pop_axiom(state, lightest_rule);
     axiom_weights[lightest_rule] = max_weight;
     min_weight = max_weight;
