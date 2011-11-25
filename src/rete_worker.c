@@ -51,7 +51,7 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
     wait_worker_queue(worker->work);
   if(worker_should_pop(worker)){
     pop_rete_worker_queue(worker->work, fact, alpha, step);
-    worker->state = has_popped;
+    __sync_lock_test_and_set(&worker->state, has_popped);
     worker->step = *step;
   }
   unlock_worker_queue(worker->work);
@@ -89,7 +89,7 @@ void * queue_worker_routine(void* arg){
     if(worker->state == has_popped){
       init_substitution(tmp_sub, worker->net->th, step);
       insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
-      worker->state = waiting;
+      __sync_lock_test_and_set(& worker->state, waiting);
       if(!worker->pause_signalled && !worker->stop_signalled){
 	lock_queue_single(worker->output);
 	signal_queue_single(worker->output);
@@ -173,7 +173,8 @@ void stop_rete_worker(rete_worker* worker){
    and before restoring a backup
 **/
 void pause_rete_worker(rete_worker* worker){
-  worker->pause_signalled = true;
+  bool already_paused = __sync_lock_test_and_set(&worker->pause_signalled, true);
+  assert(!already_paused);
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);
@@ -191,7 +192,8 @@ void restart_rete_worker(rete_worker* rq){
    Called after backing up the queues
 **/
 void continue_rete_worker(rete_worker* worker){
-  worker->pause_signalled = false;
+  bool was_paused = __sync_lock_test_and_set(&worker->pause_signalled, false);
+  assert(was_paused);
   lock_worker_queue(worker->work);
   signal_worker_queue(worker->work);
   unlock_worker_queue(worker->work);

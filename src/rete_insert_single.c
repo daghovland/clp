@@ -191,6 +191,9 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
    true propagate overrides the value of node->propagate
 
    exit_matcher usually points to the component stop_worker of a rete_worker_thread
+
+   fact is not changed. It is assumed that the factset will contain this, and it is destroyed
+   at the end of the prover.
 **/
 bool insert_rete_alpha_fact_single(const rete_net* net,
 				   substitution_store_array * node_caches, 

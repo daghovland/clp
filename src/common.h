@@ -19,9 +19,24 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
+#ifndef __INCLUDED_COMMON_H
+#define __INCLUDED_COMMON_H
+
+
 /* This is included by all source files in the project */
 
 #define _GNU_SOURCE
+
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
 
 /**
    The name used in the coq proof writer for the set domain
@@ -32,8 +47,7 @@
    
    Remember to also uncomment yydebug = 1 in the parser function
 **/
-#define YYDEBUG 1
-#include <stdio.h>
+//#define YYDEBUG 1
 
 /**
    Set the maximum number of steps in a proof
@@ -77,20 +91,30 @@
 **/
 //#define __DEBUG_RETE_PTHREAD
 
-#ifndef __INCLUDED_COMMON_H
-#define __INCLUDED_COMMON_H
 
-#if HAVE_CONFIG_H
-# include <config.h>
+/**
+   These are gcc builtins to help avoid buffer overflow, or at least
+   give better error messages
+**/
+#ifdef __GNUC__
+#undef memcpy
+#define bos0(dest) __builtin_object_size (dest, 0)
+#define memcpy(dest, src, n)				\
+  __builtin___memcpy_chk (dest, src, n, bos0 (dest))
+#undef strcpy
+#define strcpy(dest, src)				\
+  __builtin___strcpy_chk (dest, src, bos0 (dest))
+#undef strncpy
+#define strncpy(dest, src, n)				\
+  __builtin___strncpy_chk (dest, src, n, bos0 (dest))
+#undef sprintf
+#define sprintf(str, fmt, vars...)			\
+  __builtin___sprintf_chk (str, 0, bos0(str), fmt, vars )
+#undef snprintf
+#define snprintf(str, n, fmt, vars...)				\
+  __builtin___snprintf_chk (str, n, 0, bos0(str), fmt, vars )
 #endif
 
-
-
 #include "malloc.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
 
 #endif

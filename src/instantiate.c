@@ -71,18 +71,18 @@ const term* instantiate_term(const term* orig, const substitution* sub){
    Deletes a term instantiated by the function above
    called from the similar function for term lists below
 **/
-void delete_instantiated_term(const term* orig, term* copy){
+void delete_instantiated_term(term* copy){
   switch(copy->type){
   case constant_term:
     break;
   case variable_term:
     break;
   case function_term:
-    delete_instantiated_term_list(orig->args, (term_list*) copy->args);
+    delete_instantiated_term_list((term_list*) copy->args);
     free(copy);
     break;
   default:
-    fprintf(stderr, "Unknown term type %i occurred\n", orig->type);
+    fprintf(stderr, "Unknown term type %i occurred\n",copy->type);
     assert(false);
   }
 }
@@ -103,12 +103,12 @@ const term_list* instantiate_term_list(const term_list* orig,
    Deletes a term list instantiated by the function above
    called from the similar function for atoms below
 **/
-void delete_instantiated_term_list(const term_list* orig, term_list* copy){
+void delete_instantiated_term_list(term_list* copy){
   unsigned int i;
   if(copy->args != NULL){
     for(i = 0; i < copy->n_args; i++){
       if(copy->args[i] != NULL)
-	delete_instantiated_term(orig->args[i], (term*) copy->args[i]);
+	delete_instantiated_term((term*) copy->args[i]);
     }
     free(copy->args);
   }
@@ -144,10 +144,10 @@ atom* instantiate_atom(const atom* orig, const substitution* sub){
    Deletes the atom "copy" instantiated by the function above. 
    Called from prover. 
 **/
-void delete_instantiated_atom(const atom* orig, atom* copy){
+void delete_instantiated_atom(atom* copy){
   if(copy->args->n_args > 0){
     if(copy->args != NULL){
-      delete_instantiated_term_list(orig->args, (term_list*) copy->args);
+      delete_instantiated_term_list((term_list*) copy->args);
     }
     free(copy);
   }

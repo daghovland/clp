@@ -83,6 +83,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
   fresh_exist_constants(con, sub, & state->constants);
   assert(test_is_conj_instantiation(con, sub));
   for(i = 0; i < con->n_args; i++){
+    bool fact_is_new = true;
     atom* ground = instantiate_atom(con->args[i], sub);
     assert(test_ground_atom(ground));
 #ifdef __DEBUG_RETE_STATE
@@ -90,13 +91,12 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     print_fol_atom(ground, stdout);
     printf("\n");
 #endif
-    if(!state->net->factset_lhs || state->net->use_beta_not)
+    if(state->net->has_factset)
+      fact_is_new = insert_state_factset_single(state, ground);
+    if(fact_is_new && (!state->net->factset_lhs || state->net->use_beta_not))
       insert_state_rete_net_fact(state, ground);
-    if(state->net->has_factset){
-      if(!insert_state_factset_single(state, ground))
-	delete_instantiated_atom(con->args[i], ground);
-    } else 
-      delete_instantiated_atom(con->args[i], ground);
+    if(!fact_is_new)
+      delete_instantiated_atom(ground);
   } // end for
 }
 

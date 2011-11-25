@@ -5,4 +5,11 @@ Multiple input theory files is not working because of memory exhaustion.s
 Check out may_have and has_new_instance. Could they be the cause of
    the randomization of the strategy?
 
-Fixing the factset treatment in strategy.c, so factset_lhs can work again
+Fixing the factset treatment in strategy.c, so factset_lhs can work
+   again
+
+25 Nov 11
+There is a leak of the ground atoms created in
+   prover_single.c. Deleting them when the fact_store is deleted does
+   not work, since some of them are already freed, but I cannot see
+   where. Probably in rete_worker_queue or in rete_insert

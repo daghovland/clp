@@ -131,6 +131,7 @@ void destroy_rete_worker_queue(rete_worker_queue* rq){
   pt_err( pthread_cond_destroy(&rq->queue_cond),  "rete_worker_queue.c: destroy_rete_worker_queue: cond destroy");
   
 #endif
+  free(rq->queue);
   free(rq);
 }
 
@@ -170,7 +171,9 @@ unsigned int get_timestamp_rete_worker_queue(rete_worker_queue* rq){
 }
 
 bool rete_worker_queue_is_empty(rete_worker_queue* rq){
-  return rq->first == rq->end;
+  bool is_empty;
+  is_empty = rq->first == rq->end;
+  return is_empty;
 }
 
 /**
@@ -185,7 +188,7 @@ void  pop_rete_worker_queue(rete_worker_queue* rq, const atom** fact, const rete
   *alpha = el->alpha;
   *step = el->step;
   assert(rq->end > rq->first);
-  rq->first++;
+  __sync_add_and_fetch(& rq->first, 1);
 }
 
 /**
@@ -205,8 +208,8 @@ rete_worker_queue_backup backup_rete_worker_queue(rete_worker_queue* rq){
 }
 
 rete_worker_queue* restore_rete_worker_queue(rete_worker_queue* rq, rete_worker_queue_backup* backup){
-  rq->first = backup->first;
-  rq->end = backup->end;
+  __sync_lock_test_and_set(& rq->first, backup->first);
+  __sync_lock_test_and_set(& rq->end, backup->end);
   check_worker_queue_too_large(rq);
   return rq;
 }

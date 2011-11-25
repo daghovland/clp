@@ -140,6 +140,7 @@ void destroy_rule_queue_single(rule_queue_single* rq){
   pt_err( pthread_mutex_destroy(&rq->queue_mutex), "rule_queue_single.c: destroy_rule_queue_single: mutex destroy");
   pt_err( pthread_cond_destroy(&rq->queue_cond),  "rule_queue_single.c: destroy_rule_queue_single: cond destroy");  
 #endif
+  free(rq->queue);
   free(rq);
 }
 
@@ -197,7 +198,7 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   } else
     pos = rq->end;
   assert(test_rule_queue_single(rq));
-  rq->end ++;
+  __sync_add_and_fetch(& rq->end, 1);
   assign_rule_queue_instance(rq, pos, rule, sub, step);
   assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD

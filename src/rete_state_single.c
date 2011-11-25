@@ -150,15 +150,17 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
       restore_fact_store(& state->factsets[i], backup->factset_backups[i]);
     copy_fact_iter_array(state->new_facts_iters, backup->new_facts_backups, state->net->th->n_predicates);
   }
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->n_rules; i++){
     wait_for_worker_to_pause(state->workers[i]);
+  }
   state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
   for(i = 0; i < backup->state->net->n_rules; i++){
     backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
     backup->state->worker_queues[i] = restore_rete_worker_queue(backup->state->worker_queues[i], & backup->worker_backups[i]);
   }
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->n_rules; i++){
     continue_rete_worker(state->workers[i]);
+  }
   return backup->state;
 }
 
@@ -181,9 +183,12 @@ void delete_rete_state_single(rete_state_single* state){
   }
   for(i = 0; i < state->net->n_rules; i++){
     destroy_rule_queue_single(state->rule_queues[i]);
+    destroy_rete_worker_queue(state->worker_queues[i]);
   }
+  destroy_rule_queue_single(state->history);
   destroy_substitution_store_mt(& state->tmp_subs);
   free(state->rule_queues);
+  free(state->worker_queues);
   destroy_constants(& state->constants);
   delete_proof_branch_tree(state->root_branch);
   
@@ -425,8 +430,9 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   }
   
 #ifdef HAVE_PTHREAD
-  if(queue_locked)
+  if(queue_locked){
     unlock_queue_single(rq);
+  }
 #endif
   free_substitution(tmp_sub);
   return retval;

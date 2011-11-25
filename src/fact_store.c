@@ -25,6 +25,7 @@
 **/
 #include "common.h"
 #include "fact_store.h"
+#include "instantiate.h"
 
 
 fact_store init_fact_store(){
@@ -36,6 +37,13 @@ fact_store init_fact_store(){
 }
 
 void destroy_fact_store(fact_store* store){
+#if false
+  fact_store_iter fi = get_fact_store_iter(store);
+  while(has_next_fact_store(&fi)){
+    delete_instantiated_atom((atom*) get_next_fact_store(&fi));
+  }
+  destroy_fact_store_iter(&fi);
+#endif
   free(store->store);
 }
 
