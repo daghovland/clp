@@ -467,7 +467,7 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
 /**
    Factset functions
 **/
-void insert_state_factset_single(rete_state_single* state, const atom* ground){
+bool insert_state_factset_single(rete_state_single* state, const atom* ground){
   bool already_in_factset = false;
   unsigned int pred_no = ground->pred->pred_no;
   fact_store_iter iter = get_fact_store_iter(& state->factsets[pred_no]);
@@ -481,6 +481,7 @@ void insert_state_factset_single(rete_state_single* state, const atom* ground){
   destroy_fact_store_iter(&iter);
   if(!already_in_factset)
     push_fact_store(& state->factsets[pred_no], ground);
+  return !already_in_factset;
 }
 
 /**

@@ -138,8 +138,7 @@ const rule_instance* get_const_rule_instance_single(const rule_queue_single* rq,
 void destroy_rule_queue_single(rule_queue_single* rq){
 #ifdef HAVE_PTHREAD
   pt_err( pthread_mutex_destroy(&rq->queue_mutex), "rule_queue_single.c: destroy_rule_queue_single: mutex destroy");
-  pt_err( pthread_cond_destroy(&rq->queue_cond),  "rule_queue_single.c: destroy_rule_queue_single: cond destroy");
-  
+  pt_err( pthread_cond_destroy(&rq->queue_cond),  "rule_queue_single.c: destroy_rule_queue_single: cond destroy");  
 #endif
   free(rq);
 }
@@ -153,6 +152,7 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const a
   ri->rule = rule;
   copy_substitution_struct(& ri->sub, sub, rq->ssi);
   ri->timestamp = step;
+  ri->used_in_proof = false;
 }
 
 /**

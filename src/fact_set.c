@@ -53,11 +53,18 @@ void split_fact_set(fact_set* f){
 
 /**
    Inserts a fact into the fact set
+
+   Returns true iff the fact is inserted (Not seen before)
 **/
 
-void insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step){
+bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step){
   unsigned int pred_no = a->pred->pred_no;
-  f[pred_no] = insert_in_fact_set(f[pred_no], a, step);
+  fact_set * new_fs = insert_in_fact_set(f[pred_no], a, step);
+  if(new_fs != f[pred_no]){
+    f[pred_no] = new_fs;
+    return true;
+  }
+  return false; 
 }
 
 

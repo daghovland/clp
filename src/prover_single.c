@@ -92,9 +92,10 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 #endif
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_state_rete_net_fact(state, ground);
-    if(state->net->has_factset)
-      insert_state_factset_single(state, ground);
-    else 
+    if(state->net->has_factset){
+      if(!insert_state_factset_single(state, ground))
+	delete_instantiated_atom(con->args[i], ground);
+    } else 
       delete_instantiated_atom(con->args[i], ground);
   } // end for
 }

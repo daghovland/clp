@@ -60,7 +60,8 @@ input_format_type input_format;
 /**
    Extracts an non-negative integer commandline argument option
 **/
-unsigned long int get_ui_arg_opt(char * tailptr){
+unsigned long int get_ui_arg_opt(){
+  char *tailptr;
   errno = 0;
   unsigned long int retval  = strtoul(optarg, &tailptr, 0);
   if(tailptr[0] != '\0' || errno != 0){
@@ -247,11 +248,34 @@ void print_version(){
 
 int main(int argc, char *argv[]){
   int retval = EXIT_FAILURE;
-  const struct option longargs[] = {{"factset", no_argument, NULL, 'f'}, {"version", no_argument, NULL, 'V'}, {"verbose", no_argument, NULL, 'v'}, {"proof", no_argument, NULL, 'p'}, {"help", no_argument, NULL, 'h'}, {"debug", no_argument, NULL, 'g'}, {"factset_lhs", no_argument, NULL, 'f'}, {"text", no_argument, NULL, 't'},{"max", required_argument, NULL, 'm'}, {"depth-first", no_argument, NULL, 'd'}, {"eager", no_argument, NULL, 'e'}, {"multithreaded", no_argument, NULL, 'M'}, {"CL.pl", no_argument, NULL, 'C'}, {"geolog", no_argument, NULL, 'G'}, {"coq", no_argument, NULL, 'q'}, {"factset_rhs", no_argument, NULL, 's'}, {"rhs-beta", no_argument, NULL, 'r'}, {"cputimer", required_argument, NULL, 'T'}, {"wallclocktimer", required_argument, NULL, 'w'}, {"print_model", no_argument, NULL, 'o'}, {"substitution_store", no_argument, NULL, 's'}, {"all-disjuncts", no_argument, NULL, 'a'}, {0,0,0,0}};
+  const struct option longargs[] = {
+    {"factset", no_argument, NULL, 'f'}, 
+    {"version", no_argument, NULL, 'V'}, 
+    {"verbose", no_argument, NULL, 'v'}, 
+    {"proof", no_argument, NULL, 'p'}, 
+    {"help", no_argument, NULL, 'h'}, 
+    {"debug", no_argument, NULL, 'g'}, 
+    {"factset_lhs", no_argument, NULL, 'f'}, 
+    {"text", no_argument, NULL, 't'},
+    {"max", required_argument, NULL, 'm'}, 
+    {"depth-first", no_argument, NULL, 'd'}, 
+    {"eager", no_argument, NULL, 'e'}, 
+    {"multithreaded", no_argument, NULL, 'M'}, 
+    {"CL.pl", no_argument, NULL, 'C'}, 
+    {"geolog", no_argument, NULL, 'G'}, 
+    {"coq", no_argument, NULL, 'q'}, 
+    {"factset_rhs", no_argument, NULL, 's'}, 
+    {"rhs-beta", no_argument, NULL, 'r'}, 
+    {"cputimer", required_argument, NULL, 'T'}, 
+    {"wallclocktimer", required_argument, NULL, 'w'}, 
+    {"print_model", no_argument, NULL, 'o'},
+    {"substitution_store", no_argument, NULL, 's'}, 
+    {"all-disjuncts", no_argument, NULL, 'a'}, 
+    {0,0,0,0}
+  };
   char shortargs[] = "w:vfVphgdoacCsaT:GeqMrm:";
   int longindex;
   char argval;
-  char * tailptr;
   verbose = false;
   proof = false;
   text = false;
@@ -287,14 +311,14 @@ int main(int argc, char *argv[]){
       coq = true;
       break;
     case 'T':
-      maxtimer = get_ui_arg_opt(tailptr);
+      maxtimer = get_ui_arg_opt();
       start_cpu_timer(maxtimer);
       break;
     case 'a':
       all_disjuncts = true;
       break;
     case 'w':
-      maxtimer = get_ui_arg_opt(tailptr);
+      maxtimer = get_ui_arg_opt();
       start_wallclock_timer(maxtimer);
       break;
     case 'f':
@@ -332,7 +356,7 @@ int main(int argc, char *argv[]){
       input_format = geolog_input;
       break;
     case 'm':
-      maxsteps = get_ui_arg_opt(tailptr);
+      maxsteps = get_ui_arg_opt();
       break;
     default:
       fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);

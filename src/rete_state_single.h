@@ -42,7 +42,7 @@ void check_used_rule_instances_coq_single(rule_instance*, rete_state_single*, pr
 rule_instance* get_historic_rule_instance(rete_state_single*, unsigned int);
 void enter_proof_disjunct(rete_state_single*);
 
-void insert_state_factset_single(rete_state_single*, const atom*);
+bool insert_state_factset_single(rete_state_single*, const atom*);
 
 unsigned int get_state_step_no_single(const rete_state_single*);
 unsigned int get_state_total_steps(const rete_state_single*);
