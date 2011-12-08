@@ -184,7 +184,7 @@ const term* find_substitution(const substitution* sub, const variable* key){
 
    Fails if the key occurs with a different value
 **/
-bool _add_substitution_no(substitution* sub, size_t var_no, const term* value){
+bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, const constants* cs){
   const term* orig_val = get_sub_value(sub, var_no);
 
   assert(test_term(value));
@@ -198,13 +198,13 @@ bool _add_substitution_no(substitution* sub, size_t var_no, const term* value){
     return true;
   }
   assert(test_term(orig_val));
-  return equal_terms(value, orig_val);
+  return equal_terms(value, orig_val, cs);
 }
 
 
 
-bool add_substitution(substitution* sub, variable* var, const term* value){
-  return _add_substitution_no(sub, var->var_no, value);
+bool add_substitution(substitution* sub, variable* var, const term* value, const constants* cs){
+  return _add_substitution_no(sub, var->var_no, value, cs);
 }
 
 
@@ -235,7 +235,7 @@ void insert_substitution_value(substitution* sub, variable* var, const term* val
    I cannot remember now what they are used for, and they were not deleted elsewhere
 **/
 
-bool unify_substitution_terms(const term* value, const term* argument, substitution* sub){
+bool unify_substitution_terms(const term* value, const term* argument, substitution* sub, const constants* cs){
   //  freevars* free_arg_vars = init_freevars();
 
   assert(test_substitution(sub));
@@ -246,16 +246,16 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
   switch(argument->type){
   case variable_term: 
     //del_freevars(free_arg_vars);
-    return add_substitution(sub, argument->var, value);
+    return add_substitution(sub, argument->val.var, value, cs);
   case constant_term:
     //del_freevars(free_arg_vars);
-    return (value->type == constant_term && strcmp(value->name, argument->name) == 0);
+    return (value->type == constant_term && equal_constants(value->val.constant, argument->val.constant, cs));
     break;
   case function_term:
     //del_freevars(free_arg_vars);
     return (value->type == function_term 
-	    && value->name == argument->name 
-	    && unify_substitution_term_lists(value->args, argument->args, sub
+	    && value->val.function == argument->val.function 
+	    && unify_substitution_term_lists(value->args, argument->args, sub, cs
 					     ));
     break;
   default:
@@ -266,7 +266,7 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
   return false;
 } 
 
-bool unify_substitution_term_lists(const term_list* value, const term_list* arg, substitution* sub){
+bool unify_substitution_term_lists(const term_list* value, const term_list* arg, substitution* sub, const constants* cs){
   unsigned int i;
 
   assert(test_substitution(sub));
@@ -274,7 +274,7 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
   if(value->n_args != arg->n_args)
     return false;
   for(i = 0; i < arg->n_args; i++){
-    if(! unify_substitution_terms(value->args[i], arg->args[i], sub))
+    if(! unify_substitution_terms(value->args[i], arg->args[i], sub, cs))
       return false;
   }
   return true;
@@ -283,7 +283,7 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
 /**
    Tests whether two substitutions map the intersection of their domains to the same values
 **/
-bool subs_equal_intersection(const substitution* sub1, const substitution* sub2){
+bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, const constants* cs){
   unsigned int i;
 
   assert(test_substitution(sub1));
@@ -293,7 +293,7 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2)
   for(i = 0; i < sub1->allvars->n_vars; i++){
     const term* val1 = get_sub_value(sub1, i);
     const term* val2 = get_sub_value(sub2, i);
-    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2))
+    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs))
 	return false;
   }
   return true;
@@ -337,7 +337,7 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
 
    Called from the different union_substitution... functions below
 **/
-bool union_substitutions_struct_terms(substitution* dest, const substitution* orig){
+bool union_substitutions_struct_terms(substitution* dest, const substitution* orig, const constants* cs){
   unsigned int i;
   for(i = 0; i < dest->allvars->n_vars; i++){
     const term* val1 = get_sub_value(dest, i);
@@ -347,8 +347,8 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
 	dest->n_subs++;
 	set_sub_value(dest, i, val2);
       }
-    } else if(val2 != NULL && !equal_terms(val1, val2)){
-      assert(! subs_equal_intersection(dest, orig));
+    } else if(val2 != NULL && !equal_terms(val1, val2, cs)){
+      assert(! subs_equal_intersection(dest, orig, cs));
       return false;
     }
   }
@@ -364,9 +364,9 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
 
    Assumes dest is already allocated
 **/
-bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi){
+bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, const constants* cs){
   copy_substitution_struct(dest, sub1, ssi);
-  return union_substitutions_struct_terms(dest, sub2);
+  return union_substitutions_struct_terms(dest, sub2, cs);
 }
 
 /**
@@ -378,7 +378,7 @@ bool union_substitutions_struct_one_ts(substitution* dest, const substitution* s
    The timestamps are only those of sub1. sub2 timestamps are not part of the 
    new substitution
 **/
-substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
+substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, const constants* cs){
   substitution *retval;
 
   assert(test_substitution(sub1));
@@ -391,13 +391,13 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
     retval = alloc_heap_substitution(ssi);
   }
   
-  if(!union_substitutions_struct_one_ts(retval, sub1, sub2, ssi)){
+  if(!union_substitutions_struct_one_ts(retval, sub1, sub2, ssi, cs)){
     if(!use_substitution_store)
       free_substitution(retval);
     return NULL;
   }
   
-  assert(subs_equal_intersection(sub1, sub2));
+  assert(subs_equal_intersection(sub1, sub2, cs));
   assert(test_substitution(retval));
   
   return retval;
@@ -410,8 +410,8 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
 
    Assumes dest is already allocated
 **/
-bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi){
-  if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi))
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, const constants* cs){
+  if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs))
     return false;
   add_timestamps(& dest->sub_ts, & sub2->sub_ts);
   assert(get_max_n_timestamps(ssi) > get_sub_n_timestamps(dest));
@@ -424,7 +424,7 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
    If this is not possible, because they map variables in the intersection of the domain to
    different values, then NULL is returned
 **/
-substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi){
+substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, const constants* cs){
   
   substitution *retval;
 
@@ -434,7 +434,7 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
     retval = alloc_heap_substitution(ssi);
   }
 
-  if(!union_substitutions_struct_with_ts(retval, sub1, sub2, ssi)){
+  if(!union_substitutions_struct_with_ts(retval, sub1, sub2, ssi, cs)){
     if(!use_substitution_store)
       free_substitution(retval);
     return NULL;
@@ -445,7 +445,7 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
 /**
    Test whether two substitutions are the same for the set of variables given
 **/
-bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars){
+bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, const constants* cs){
   unsigned int i;
   assert(test_substitution(a));
   assert(test_substitution(b));
@@ -454,7 +454,7 @@ bool equal_substitutions(const substitution* a, const substitution* b, const fre
     const term* t2 = find_substitution(b, vars->vars[i]);
     if( t1 == NULL && t2 == NULL)
       continue;
-    if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2))
+    if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2, cs))
       continue;
     return false;
   }
@@ -541,14 +541,14 @@ void free_sub_list_iter(sub_list_iter* i){
    Note that for rule nodes, the same substitution is put in the rule queue, and
    pointer equality of these substitutions is important for later removal. 
 **/
-bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, const freevars* free_vars){
+bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, const freevars* free_vars, const constants* cs){
   substitution_list* sub_list = state->subs[sub_no];
 
   assert(test_substitution(a));
   assert(state->net->n_subs >= sub_no);
 
   while(sub_list != NULL && sub_list->sub != NULL){
-    if(equal_substitutions(a, sub_list->sub, free_vars))
+    if(equal_substitutions(a, sub_list->sub, free_vars, cs))
       return false;
     sub_list = sub_list->next;
   }
@@ -589,7 +589,7 @@ int compare_sub_timestamps(const substitution* s1, const substitution* s2){
 /**
    Output functions
 **/
-void print_substitution(const substitution* sub, FILE* f){
+void print_substitution(const substitution* sub, const constants* cs, FILE* f){
   size_t i;
   timestamps_iter iter;
   size_t j = 0;
@@ -599,7 +599,7 @@ void print_substitution(const substitution* sub, FILE* f){
       if(get_sub_value(sub, i) != NULL){
 	print_variable(sub->allvars->vars[i],f);
 	fprintf(f, "->");
-	print_fol_term(get_sub_value(sub, i),f);
+	print_fol_term(get_sub_value(sub, i),cs, f);
 	if(j < sub->n_subs-1)
 	  fprintf(f, ",");
 	j++;
@@ -612,20 +612,20 @@ void print_substitution(const substitution* sub, FILE* f){
     fprintf(f, "%u, ", get_next_timestamps_iter(&iter));
 }
 
-void print_coq_substitution(const substitution* sub, const freevars* vars, FILE* f){
+void print_coq_substitution(const substitution* sub, const constants* cs, const freevars* vars, FILE* f){
   size_t i;
   for(i = 0; i < vars->n_vars; i++){
     fprintf(f, " ");
-    print_coq_term(get_sub_value(sub, vars->vars[i]->var_no),f);
+    print_coq_term(get_sub_value(sub, vars->vars[i]->var_no),cs, f);
   }
 }
 
-void print_substitution_list(const substitution_list* sublist, FILE* f){
+void print_substitution_list(const substitution_list* sublist, const constants* cs, FILE* f){
   if(sublist != NULL){
     if(sublist->sub != NULL)
-      print_substitution(sublist->sub, f);
+      print_substitution(sublist->sub, cs, f);
     fprintf(f, ", ");
     if(sublist->next != NULL)
-      print_substitution_list(sublist->next, f);
+      print_substitution_list(sublist->next, cs, f);
   }
 }

@@ -27,23 +27,18 @@
 #define __INCLUDE_CONSTANTS_H
 
 #include "common.h"
+#include "constants_struct.h"
 #include "theory.h"
-#include "fresh_constants.h"
 
-/**
-   Used by the rete state to keep track of the constants
-**/
-typedef struct constants_t {
-  fresh_const_counter fresh;
-  const char** constants;
-  size_t size_constants;
-  unsigned int n_constants;
-} constants;
 
-const char* parser_new_constant(theory*, const char*);
-void print_coq_constants(const theory*,FILE* stream);
+unsigned int parser_new_constant(constants*, const char*);
+void print_coq_constants(const constants*,FILE* stream);
+const term* get_fresh_constant(variable*, constants*);
+const char* get_constant_name(unsigned int, const constants*);
 constants init_constants(size_t);
 void destroy_constants(constants*);
-constants copy_constants(constants*);
-void insert_constant_name(constants* , const char*);
+constants copy_constants(const constants*);
+constants backup_constants(const constants*);
+bool equal_constants(unsigned int, unsigned int, const constants*);
+void union_constants(unsigned int, unsigned int, constants*);
 #endif

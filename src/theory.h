@@ -53,13 +53,11 @@ typedef struct theory_t {
   unsigned int max_lhs_conjuncts;
   unsigned int max_rhs_conjuncts;
   unsigned int max_rhs_disjuncts;
-  size_t n_constants;
-  size_t size_constants;
   substitution_size_info sub_size_info;
 #ifndef NDEBUG
   bool finalized;
 #endif
-  const char** constants;
+  constants constants;
 } theory;
 
 
@@ -69,12 +67,13 @@ void set_theory_name(theory*, const char*);
 bool has_theory_name(const theory*);
 void finalize_theory(theory*);
 
-void print_coq_proof_intro(const theory*, FILE*);
+void print_coq_proof_intro(const theory*, const constants*, FILE*);
 void print_coq_proof_ending(const theory*, FILE*);
 
 /* In atom_and_term.c */
 term* create_variable(const char*, theory*);
 atom* parser_create_atom(const char*, const term_list*, theory*);
+atom* parser_create_equality(const term*, const term*, theory*);
 atom* create_dom_atom(const term*, theory*);
 term* parser_create_constant_term(theory*, const char*);
 atom* create_prop_variable(const char*, theory*);
@@ -90,8 +89,8 @@ axiom* create_fact(disjunction*, theory*);
 bool test_theory(const theory*);
 
 void delete_theory(theory*);
-void print_fol_theory(const theory*, FILE*);
-void print_geolog_theory(const theory*, FILE*);
+void print_fol_theory(const theory*, const constants*, FILE*);
+void print_geolog_theory(const theory*, const constants*, FILE*);
 const predicate* parser_new_predicate(theory*, const char*, size_t);
 
 #endif

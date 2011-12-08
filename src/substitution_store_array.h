@@ -23,7 +23,7 @@
 #define __INCLUDED_SUBSTITUTION_STORE_ARRAY_H
 
 #include "substitution_store.h"
-
+#include "constants_struct.h"
 /**
    Implements a cache of substitutions in a alpha or beta node
 **/
@@ -45,7 +45,7 @@ void destroy_substitution_store_array(substitution_store_array*);
 
 substitution_store * get_substitution_store(substitution_store_array*, unsigned int);
 sub_store_iter get_array_sub_store_iter(substitution_store_array*, unsigned int);
-bool insert_substitution_single(substitution_store_array* stores, unsigned int sub_no, const substitution* a, const freevars* relevant_vars);
+bool insert_substitution_single(substitution_store_array* stores, unsigned int sub_no, const substitution* a, const freevars* relevant_vars, const constants*);
 
 substitution_store_array* restore_substitution_store_array(substitution_store_array_backup*);
 substitution_store_array_backup * backup_substitution_store_array(substitution_store_array*);

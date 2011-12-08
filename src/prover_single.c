@@ -63,7 +63,7 @@ void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
 void write_prover_node_single(rete_state_single* state, const rule_instance* next){
   rule_queue_state rqs;
   rqs.single = state;
-  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
+  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, &state->constants, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
 }
 
 
@@ -230,31 +230,31 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   assert(is_empty_ri_stack(branch->elim_stack) || ! is_empty_rev_ri_stack(branch->elim_stack));
   while(!is_empty_rev_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_rev_ri_stack(branch->elim_stack, &step_ri, &pusher));
-    write_elim_usage_proof(state->net, ri, step_ri);
+    write_elim_usage_proof(state->net, ri, step_ri, &state->constants);
   }
   if(rule->type == goal && n_branches <= 1){
     fprintf(coq_fp, "(* Reached leaf at step %i *)\n", step);
-    write_goal_proof(end_ri, state->net, step, get_history_single, rqs);
+    write_goal_proof(end_ri, state->net, step, get_history_single, rqs, &state->constants);
     fprintf(coq_fp, "(* Finished goal proof of leaf at step %i *)\n", step);
 
   } else {
     unsigned int i;
     assert(n_branches > 1);
-    write_elim_usage_proof(state->net, end_ri, step);
+    write_elim_usage_proof(state->net, end_ri, step, &state->constants);
     for(i = 0; i < n_branches; i++){
       assert(branch != branch->children[i]);
       if(i > 0)
-	write_disj_proof_start(end_ri, step, i);
+	write_disj_proof_start(end_ri, step, i, &state->constants);
       write_single_coq_proof(state, branch->children[i]);
     }
     fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
-    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs);
+    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs, &state->constants);
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
   while(!is_empty_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_ri_stack(branch->elim_stack, &step_ri, &pusher));
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
-    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs);
+    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs, &state->constants);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
   }
   fprintf(coq_fp, "(* Finished with branch %s *)\n", branch->name);
@@ -285,7 +285,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
       }
     }
     if(!has_fact){
-      printf("The theory has no facts, and is therefore never contradictory.\n");
+      printf("The theory has no facts, hence the empty model satisifies it.\n");
       return 0;
     }
   }

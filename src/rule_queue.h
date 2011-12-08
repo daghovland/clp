@@ -22,6 +22,7 @@
 #define __INCLUDED_RULE_QUEUE_H
 
 #include "common.h"
+#include "constants_struct.h"
 #include "substitution.h"
 #include "rule_instance.h"
 #include "substitution_size_info.h"
@@ -62,8 +63,8 @@ void delete_rule_queue_before(rule_queue*, rule_queue*);
 void delete_full_rule_queue(rule_queue*);
 
 
-void print_rule_queue(const rule_queue*, FILE*);
-void print_dot_rule_queue(const rule_queue*, FILE*);
+void print_rule_queue(const rule_queue*, const constants*, FILE*);
+void print_dot_rule_queue(const rule_queue*, const constants*, FILE*);
 
 
 

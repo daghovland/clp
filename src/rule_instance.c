@@ -89,7 +89,6 @@ bool test_rule_instance(const rule_instance* ri){
   assert(test_axiom(ri->rule, ri->rule->axiom_no));
   if(!test_is_instantiation(ri->rule->rhs->free_vars, & (ri->sub))){
     fprintf(stderr, "An incorrect rule instance added to the queue\n");
-    print_rule_instance(ri, stderr);
     return false;
   }
   return true;
@@ -97,24 +96,24 @@ bool test_rule_instance(const rule_instance* ri){
 
 // Output functions
    
-void print_coq_rule_instance(const rule_instance *ri, FILE* f){
+void print_coq_rule_instance(const rule_instance *ri, const constants* cs, FILE* f){
   fprintf(f, "%s", ri->rule->name); 
-  print_coq_substitution(& ri->sub, ri->rule->lhs->free_vars, f);
+  print_coq_substitution(& ri->sub, cs, ri->rule->lhs->free_vars, f);
 }
 
 
-void print_dot_rule_instance(const rule_instance *ri, FILE* f){
+void print_dot_rule_instance(const rule_instance *ri, const constants* cs, FILE* f){
   fprintf(f, " %s (", ri->rule->name); 
-  print_dot_axiom(ri->rule, f);
+  print_dot_axiom(ri->rule, cs, f);
   fprintf(f, ") ");
-  print_substitution(& ri->sub, f);
+  print_substitution(& ri->sub, cs, f);
 }
 
-void print_rule_instance(const rule_instance *ri, FILE* f){
+void print_rule_instance(const rule_instance *ri, const constants* cs, FILE* f){
   fprintf(f, " %s (", ri->rule->name); 
-  print_fol_axiom(ri->rule, f);
+  print_fol_axiom(ri->rule, cs, f);
   fprintf(f, ") ");
-  print_substitution(& ri->sub, f);
+  print_substitution(& ri->sub, cs, f);
   if(ri->rule->is_existential){
     fprintf(f, " - existential: ");
     

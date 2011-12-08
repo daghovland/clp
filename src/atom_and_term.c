@@ -50,6 +50,7 @@ atom* parser_create_atom(const char* name, const term_list * args, theory* th){
   return ret_val;
 }
 
+
 atom* prover_create_atom(const predicate* pred, const term_list * args){
   atom* ret_val =  _common_create_atom(args);
   ret_val->pred = pred;
@@ -89,18 +90,16 @@ rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* v
    term constructors and destructors
 **/
 
-term* _create_term(const char* name, variable* var, enum term_type type, const term_list* args){
+term* _init_term(enum term_type type, const term_list* args){
   term* ret_val = malloc_tester(sizeof(term));
-  assert( ( name != NULL && type != variable_term )
-	  || ( var != NULL && type == variable_term ) );
-  ret_val->name = name;
-  ret_val->var = var;
   ret_val->type = type;
   ret_val->args = args;
   return ret_val;
 }
-term* create_term(const char* name, const term_list *args){
-  return _create_term(name, NULL, function_term, args);
+term* create_function_term(const char* function, const term_list *args){
+  term* t =  _init_term(function_term, args);
+  t->val.function = function;
+  return t;
 }
 
 /**
@@ -112,23 +111,34 @@ term* create_term(const char* name, const term_list *args){
    so we do not need to check this
 **/
 term* parser_create_constant_term(theory* th, const char* name){
-  const char* cname = parser_new_constant(th, name);
-  return _create_term(cname, NULL, constant_term, _create_term_list(0));
+  term* t =  _init_term(constant_term, _create_term_list(0));
+  t->val.constant = parser_new_constant(&th->constants, name);
+  return t;
 }
 
-term* prover_create_constant_term(const char* name){
-  return _create_term(name, NULL, constant_term, _create_term_list(0));
+/**
+   Called from constants.c to get a new term.
+   The number is already ok.
+**/
+term* prover_create_constant_term(unsigned int constant){
+  term* t = _init_term(constant_term, _create_term_list(0));
+  t->val.constant = constant;
+  return t;
 }
 
 term * create_variable(const char* name, theory* th){
   freevars* fv = th->vars;
   variable* var_name = parser_new_variable(&fv, name);
+  term * t =  _init_term(variable_term, _create_term_list(0));
   th->vars = fv;
-  return _create_term(name, var_name, variable_term, _create_term_list(0));
+  t->val.var = var_name;
+  return t;
 }
 
 term* copy_term(const term* t){
-  return _create_term(t->name, t->var, t->type, copy_term_list(t->args));
+  term *c = _init_term(t->type, copy_term_list(t->args));
+  c->val = t->val;
+  return c;
 }
     
 void delete_term(term* t){
@@ -140,13 +150,12 @@ bool test_ground_term(const term* t){
   assert(t != NULL);
   switch(t->type){
   case variable_term:
-    fprintf(stderr, "Variable %s occurred in ground term\n", t->var->name);
+    fprintf(stderr, "Variable %s occurred in ground term\n", t->val.var->name);
     return false;
     break;
   case function_term:
     assert(test_term_list(t->args));
   case constant_term:
-    assert(strlen(t->name) > 0);
     break;
   default:
     assert(false);
@@ -158,12 +167,11 @@ bool test_term(const term* t){
   assert(t != NULL);
   switch(t->type){
   case variable_term:
-    assert(strlen(t->var->name) > 0);
+    assert(strlen(t->val.var->name) > 0);
     break;
   case function_term:
     assert(test_term_list(t->args));
   case constant_term:
-    assert(strlen(t->name) > 0);
     break;
   default:
     assert(false);
@@ -212,6 +220,16 @@ term_list* _create_term_list(size_t size_args){
   ret_val->args = calloc_tester(size_args, sizeof(term*));
   return ret_val;
 }
+
+
+
+atom* parser_create_equality(const term * t1, const term * t2, theory* th){
+  term_list* tl = _create_term_list(2);
+  tl = extend_term_list(tl, t1);
+  tl = extend_term_list(tl, t2);
+  return parser_create_atom("=", tl, th);
+}
+
 
 /**
    term list constructors and destructors
@@ -267,7 +285,7 @@ freevars* free_atom_variables(const atom *at, freevars* vars){
 freevars* free_term_variables(const term *t, freevars* vars){
   if(t->type == variable_term){
     assert(t->args->n_args == 0);
-    return add_freevars(vars, t->var);
+    return add_freevars(vars, t->val.var);
   } else if (t->type == function_term) 
     return free_term_list_variables(t->args, vars);
   return vars;
@@ -276,121 +294,138 @@ freevars* free_term_variables(const term *t, freevars* vars){
    Comparators
    Return 0 for equality
 **/
-bool equal_term_lists(const term_list* t1, const term_list* t2){
+bool equal_term_lists(const term_list* t1, const term_list* t2, const constants* constants){
   unsigned int i;
   bool retval = t1->n_args == t2->n_args;
   if(retval != true)
     return retval;
   for(i = 0; i < t1->n_args; i++){
-   retval = equal_terms(t1->args[i], t2->args[i]);
+    retval = equal_terms(t1->args[i], t2->args[i], constants);
    if(retval != true)
      return retval;
   }
   return true;
 }
 
-bool equal_terms(const term* t1, const term* t2){
-  bool retval;
-  if(t1->type == variable_term)
-    if(t2->type == variable_term)
-      retval = t1->var->var_no == t2->var->var_no;
-    else
-      return false;
-  else
-    if(t2->type == variable_term)
-      return false;
-    else
-      retval = t1->name == t2->name;
-  if(retval == false)
-    return retval;
-  return equal_term_lists(t1->args, t2->args);
+/**
+   Returns true if the two terms are equal modulo equality of constants
+**/
+bool equal_terms(const term* t1, const term* t2, const constants* constants){
+  if(t1->type != t2->type)
+    return false;
+  switch(t1->type){
+  case variable_term:
+    return (t1->val.var->var_no == t2->val.var->var_no);
+    break;
+  case constant_term:
+    return equal_constants(t1->val.constant, t2->val.constant, constants);
+    break;
+  case function_term:
+    return (t1->val.function == t2->val.function && equal_term_lists(t1->args, t2->args, constants));
+    break;
+  default:
+    fprintf(stderr, "Untreated term type in equal_terms in atom_and_term.c.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
-bool equal_atoms(const atom* a1, const atom* a2){
+bool equal_atoms(const atom* a1, const atom* a2, const constants* constants){
   if(a1->pred->pred_no != a2->pred->pred_no)
     return false;
-  return equal_term_lists(a1->args, a2->args);
+  return equal_term_lists(a1->args, a2->args, constants);
 }
 
 
 /**
    Generic printing facilities
 **/
-void print_term_list(const term_list *tl, FILE* stream, char* separator, bool parentheses, void (*print_term)(const term*, FILE*)){
+void print_term_list(const term_list *tl, const constants* cs, FILE* stream, char* separator, bool parentheses, void (*print_term)(const term*, const constants*, FILE*)){
   int i;
   if(tl->n_args > 0){
     if(parentheses)
       fprintf(stream, "(");
     for(i = 0; i+1 < tl->n_args; i++){
-      print_fol_term(tl->args[i], stream);
+      print_fol_term(tl->args[i], cs, stream);
       fprintf(stream, "%s", separator);
     }
-    print_term(tl->args[i], stream);
+    print_term(tl->args[i], cs, stream);
     if(parentheses)
       fprintf(stream, ")");
   }
 }
-void print_atom(const atom *at, FILE* stream, void (*print_term_list)(const term_list*, FILE*)){
+void print_atom(const atom *at, const constants* cs, FILE* stream, void (*print_term_list)(const term_list*, const constants*, FILE*)){
   fprintf(stream, "%s", at->pred->name);
-  print_term_list(at->args, stream);
+  print_term_list(at->args, cs, stream);
 }
 
 /**
    Prints the term. Integer constants are prefixed with num_ because of a problem with integers in coq
 **/
-void print_term(const term *t, FILE* stream, void (*print_term_list)(const term_list*, FILE*)){
-  if(t->type == variable_term)
-    fprintf(stream, "%s", t->var->name);
-  else {
-    char first = t->name[0];
+void print_term(const term *t, const constants* cs, FILE* stream, void (*print_term_list)(const term_list*, const constants*, FILE*)){
+  const char* name;
+  char first; 
+  switch(t->type){
+  case variable_term:
+    fprintf(stream, "%s", t->val.var->name);
+    break;
+  case constant_term:
+    name = get_constant_name(t->val.constant, cs);
+    first = name[0];
     if(first - '0' >= 0 && first - '0' <= 9)
-      fprintf(stream, "num_%s", t->name);
+      fprintf(stream, "num_%s", name);
     else
-      fprintf(stream, "%s", t->name);
+      fprintf(stream, "%s", name);
+    break;
+  case function_term:
+    fprintf(stream, "%s", t->val.function);
+    print_term_list(t->args, cs, stream);
+    break;
+  default:
+    fprintf(stderr, "Untreated term type in atom_and_term.c: print_term.\n");
+    exit(EXIT_FAILURE);
   }
-  print_term_list(t->args, stream);
 }
 
 /**
    Pretty printing standard fol format
 **/
-void print_fol_atom(const atom *at, FILE* stream){
-  print_atom(at, stream, print_fol_term_list);
+void print_fol_atom(const atom *at, const constants* cs, FILE* stream){
+  print_atom(at, cs, stream, print_fol_term_list);
 }
 
-void print_fol_term_list(const term_list *tl, FILE* stream){
-  print_term_list(tl, stream, ",", true, print_fol_term);
+void print_fol_term_list(const term_list *tl, const constants* cs, FILE* stream){
+  print_term_list(tl, cs, stream, ",", true, print_fol_term);
 }
 
-void print_fol_term(const term *t, FILE* s){
-  print_term(t, s, print_fol_term_list);
+void print_fol_term(const term *t, const constants* cs, FILE* s){
+  print_term(t, cs, s, print_fol_term_list);
 }
 /**
    Printing geolog input format
 **/
-void print_geolog_atom(const atom *at, FILE* stream){
-  print_atom(at, stream, print_fol_term_list);
+void print_geolog_atom(const atom *at, const constants* cs, FILE* stream){
+  print_atom(at, cs, stream, print_fol_term_list);
 }
 
-void print_geolog_term_list(const term_list *tl, FILE* stream){
-  print_term_list(tl, stream, ",", true, print_fol_term);
+void print_geolog_term_list(const term_list *tl, const constants* cs, FILE* stream){
+  print_term_list(tl, cs, stream, ",", true, print_fol_term);
 }
 
-void print_geolog_term(const term *t, FILE* s){
-  print_term(t, s, print_fol_term_list);
+void print_geolog_term(const term *t, const constants* cs, FILE* s){
+  print_term(t, cs, s, print_fol_term_list);
 }
 
 /**
    coq output
 **/
-void print_coq_term_list(const term_list *tl, FILE* stream){
-  print_term_list(tl, stream, " ", false, print_coq_term);
+void print_coq_term_list(const term_list *tl, const constants* cs, FILE* stream){
+  print_term_list(tl, cs, stream, " ", false, print_coq_term);
 }
 
-void print_coq_term(const term *t, FILE* stream){
-  print_term(t, stream, print_coq_term_list);
+void print_coq_term(const term *t, const constants* cs, FILE* stream){
+  print_term(t, cs, stream, print_coq_term_list);
 }
-void print_coq_atom(const atom* a, FILE* stream){
+void print_coq_atom(const atom* a, const constants* cs, FILE* stream){
   fprintf(stream, "%s ", a->pred->name);
-  print_coq_term_list(a->args, stream);
+  print_coq_term_list(a->args, cs, stream);
 }

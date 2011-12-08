@@ -57,9 +57,9 @@ void split_fact_set(fact_set* f){
    Returns true iff the fact is inserted (Not seen before)
 **/
 
-bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step){
+bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step, const constants* cs){
   unsigned int pred_no = a->pred->pred_no;
-  fact_set * new_fs = insert_in_fact_set(f[pred_no], a, step);
+  fact_set * new_fs = insert_in_fact_set(f[pred_no], a, step, cs);
   if(new_fs != f[pred_no]){
     f[pred_no] = new_fs;
     return true;
@@ -68,9 +68,9 @@ bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step){
 }
 
 
-fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts){
+fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts, const constants* cs){
   fact_set* new;
-  if(is_in_fact_set(f, a))
+  if(is_in_fact_set(f, a, cs))
     return f;
   new = malloc_tester(sizeof(fact_set));
   new->next = f;
@@ -85,21 +85,21 @@ fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts){
 /**
    Prints all facts currently in the "factset"
 **/
-void print_state_fact_set(fact_set ** fs, FILE* stream, unsigned int n_predicates){
+void print_state_fact_set(fact_set ** fs, const constants* cs, FILE* stream, unsigned int n_predicates){
   unsigned int i;
   fprintf(stream, "{");
 
   for(i = 0; i < n_predicates; i++){
     if(fs[i] != NULL)
-      print_fact_set(fs[i], stream);
+      print_fact_set(fs[i], cs, stream);
   }
   fprintf(stream, "}\n");
 }
 
 
-void print_fact_set(fact_set* fs, FILE* f){
+void print_fact_set(fact_set* fs, const constants* cs,  FILE* f){
   while(fs != NULL){
-    print_fol_atom(fs->fact, f);
+    print_fol_atom(fs->fact, cs, f);
     if(fs->next != NULL)
       fprintf(f, ", ");
     fs = fs->next;
@@ -111,10 +111,10 @@ void print_fact_set(fact_set* fs, FILE* f){
    Used by unit testing to test that an inserted fact is not already in the factset
    Note that facts are per definition ground
 **/
-bool is_in_fact_set(const fact_set* fs, const atom* fact){
+bool is_in_fact_set(const fact_set* fs, const atom* fact, const constants* cs){
   while(fs != NULL){
     assert(fact->pred->pred_no == fs->fact->pred->pred_no);
-    if(equal_atoms(fs->fact, fact))
+    if(equal_atoms(fs->fact, fact, cs))
       return true;
     fs = fs->next;
   }
@@ -126,10 +126,10 @@ bool is_in_fact_set(const fact_set* fs, const atom* fact){
    This is not finished, just skeletons
 **/
 
-bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub){
+bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub, const constants* cs){
   while(fs != NULL){
     assert(a->pred->pred_no == fs->fact->pred->pred_no);
-    if(equal_atoms(fs->fact, a)){
+    if(equal_atoms(fs->fact, a, cs)){
       return true;
     }
     fs = fs->next;

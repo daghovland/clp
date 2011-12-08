@@ -83,5 +83,5 @@ rete_worker_queue* restore_rete_worker_queue(rete_worker_queue*, rete_worker_que
 bool rete_worker_queue_is_empty(rete_worker_queue*);
 unsigned int get_rete_worker_queue_size(const rete_worker_queue*);
 
-void print_rete_worker_queue(rete_worker_queue*, FILE*);
+void print_rete_worker_queue(rete_worker_queue*, const constants*, FILE*);
 #endif

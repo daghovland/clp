@@ -163,7 +163,8 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | TRUE COMMA conjunction { $$ = $3;}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
 ;
-atom:      NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
+atom:      term EQUALS term { $$ = parser_create_equality($1, $3, th);} 
+          | NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
           | NAME {$$ = create_prop_variable($1, th);}
 ;
@@ -173,7 +174,7 @@ terms:         terms COMMA term
                    { $$ = create_term_list($1); }
 ;
 term:              NAME LPAREN terms RPAREN 
-                   { $$ = create_term($1, $3); }
+                   { $$ = create_function_term($1, $3); }
                    | NAME
                    { $$ = parser_create_constant_term(th, $1); }
                    | VARIABLE 

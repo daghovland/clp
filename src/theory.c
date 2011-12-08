@@ -56,9 +56,7 @@ theory* create_theory(void){
   ret_val->n_func_names =  0;
 
 
-  ret_val->size_constants = 100;
-  ret_val->constants = calloc_tester(ret_val->size_constants, sizeof(char*));
-  ret_val->n_constants =  0;
+  ret_val->constants = init_constants(100);
 
   ret_val->vars = init_freevars();
   ret_val->name = NULL;
@@ -227,7 +225,7 @@ bool test_theory(const theory* t){
 /**
    Prints a proof in coq format. Not finished.
 **/
-void print_coq_proof_intro(const theory* th, FILE* stream){
+void print_coq_proof_intro(const theory* th, const constants* cs, FILE* stream){
   unsigned int i, j;
   fprintf(stream, "Section %s.\n\n", th->name);
   fprintf(stream, "Let false := False.\nLet false_ind := False_ind.\n\n");
@@ -238,7 +236,7 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
   for(i = 0; i < th->n_predicates; i++)
     print_coq_predicate(th->predicates[i], stream);
 
-  print_coq_constants(th, stream);
+  print_coq_constants(& th->constants, stream);
   fprintf(stream, "\n");
   
   for(i = 0; i < th->n_init_model; i++){
@@ -246,13 +244,13 @@ void print_coq_proof_intro(const theory* th, FILE* stream){
     assert(con->n_args > 0);
     for(j = 0; j < con->n_args; j++){
       fprintf(stream, "Hypothesis init_model_%i_%i : ", i, j);
-      print_coq_atom(th->init_model[i]->args[j], stream);
+      print_coq_atom(th->init_model[i]->args[j], cs, stream);
       fprintf(stream, ".\n");
     }
   }
 
   for(i = 0; i < th->n_axioms; i++)
-    print_coq_axiom(th->axioms[i], stream);
+    print_coq_axiom(th->axioms[i], cs, stream);
   
   fprintf(stream, "Theorem %s : goal.\n", th->name);
   fprintf(stream, "Proof.\n");
@@ -268,10 +266,10 @@ void print_coq_proof_ending(const theory* th, FILE* stream){
 /**
    Generic pretty printing function
 **/
-void print_theory(const theory * th, FILE* stream, void (*print_axiom)(const axiom*, FILE*) ){
+void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const axiom*, const constants*, FILE*) ){
   int i;
   for(i = 0; i < th->n_axioms; i++){
-    print_axiom(th->axioms[i], stream);
+    print_axiom(th->axioms[i], cs, stream);
     fprintf(stream, "\n");
   }
 }
@@ -279,14 +277,14 @@ void print_theory(const theory * th, FILE* stream, void (*print_axiom)(const axi
 /**
    Print in fol format
 **/
-void print_fol_theory(const theory * th, FILE* stream){
-  print_theory(th, stream, print_fol_axiom);
+void print_fol_theory(const theory * th, const constants* cs, FILE* stream){
+  print_theory(th, cs, stream, print_fol_axiom);
 }
 
 /**
    Print in geolog input format
 **/
-void print_geolog_theory(const theory* th, FILE* stream){
-  print_theory(th, stream, print_geolog_axiom);
+void print_geolog_theory(const theory* th, const constants* cs, FILE* stream){
+  print_theory(th, cs, stream, print_geolog_axiom);
 }
   

@@ -281,7 +281,7 @@ unsigned int rule_queue_single_previous_application(rule_queue_single* rqs){
 /**
    Printing
 **/
-void print_rule_queue_single(rule_queue_single* rq, FILE* f){
+void print_rule_queue_single(rule_queue_single* rq, const constants* cs, FILE* f){
   unsigned int i, j;
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
@@ -289,7 +289,7 @@ void print_rule_queue_single(rule_queue_single* rq, FILE* f){
   fprintf(f, "queue with %zi entries: \n", get_rule_queue_single_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
     fprintf(f, "\t%i: ", j);
-    print_rule_instance(get_const_rule_instance_single(rq, i), f);
+    print_rule_instance(get_const_rule_instance_single(rq, i), cs, f);
     fprintf(f, "\n");
   }
 #ifdef HAVE_PTHREAD

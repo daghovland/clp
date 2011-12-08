@@ -79,5 +79,5 @@ fact_store_backup * backup_fact_store_array(fact_store*, unsigned int);
 void destroy_fact_store_backup_array(fact_store_backup*, unsigned int);
 void copy_fact_iter_array(fact_store_iter*, const fact_store_iter *, unsigned int);
 
-void print_fact_store(fact_store *, FILE*);
+void print_fact_store(fact_store *, const constants*, FILE*);
 #endif

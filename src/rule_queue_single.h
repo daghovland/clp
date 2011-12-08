@@ -87,5 +87,5 @@ rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_sing
 bool rule_queue_single_is_empty(rule_queue_single*);
 unsigned int get_rule_queue_single_size(const rule_queue_single*);
 
-void print_rule_queue_single(rule_queue_single*, FILE*);
+void print_rule_queue_single(rule_queue_single*, const constants*, FILE*);
 #endif

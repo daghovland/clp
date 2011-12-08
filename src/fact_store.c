@@ -152,10 +152,10 @@ void destroy_fact_store_backup_array(fact_store_backup* backups, unsigned int n_
 /**
    Prints all facts currently in the "factset"
 **/
-void print_fact_store(fact_store * store, FILE* f){
+void print_fact_store(fact_store * store, const constants* cs, FILE* f){
   fact_store_iter iter = get_fact_store_iter(store);
   while(has_next_fact_store(&iter)){
-    print_fol_atom(get_next_fact_store(&iter), f);
+    print_fol_atom(get_next_fact_store(&iter), cs, f);
     if(has_next_fact_store(&iter))
       fprintf(f, ", ");
   }

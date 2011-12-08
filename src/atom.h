@@ -43,10 +43,10 @@ freevars* free_atom_variables(const atom*, freevars*);
 bool test_atom(const atom*);
 bool test_ground_atom(const atom*);
 
-void print_fol_atom(const atom*, FILE*);
-void print_coq_atom(const atom*, FILE*);
-void print_geolog_atom(const atom*, FILE*);
+void print_fol_atom(const atom*, const constants*, FILE*);
+void print_coq_atom(const atom*, const constants*, FILE*);
+void print_geolog_atom(const atom*, const constants*, FILE*);
 
-bool equal_atoms(const atom*, const atom*);
+bool equal_atoms(const atom*, const atom*, const constants*);
 
 #endif

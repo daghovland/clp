@@ -53,10 +53,10 @@ const term* instantiate_term(const term* orig, const substitution* sub){
     t = orig;
     break;
   case variable_term:
-    t = find_substitution(sub, orig->var);
+    t = find_substitution(sub, orig->val.var);
     break;
   case function_term: 
-    t =  create_term(orig->name, instantiate_term_list(orig->args, sub));
+    t =  create_function_term(orig->val.function, instantiate_term_list(orig->args, sub));
     break;
   default:
     fprintf(stderr, "Unknown term type %i occurred\n", orig->type);
@@ -157,17 +157,6 @@ void delete_instantiated_atom(atom* copy){
 /**
    The fresh constants
 **/
-const term* get_fresh_constant(variable* var, constants* constants){
-  char* name;
-  const term* t;
-  assert(constants->fresh != NULL);
-  unsigned int const_no = next_fresh_const_no(constants->fresh, var->var_no);
-  name = calloc_tester(sizeof(char), strlen(var->name) + 20);
-  sprintf(name, "%s_%i", var->name, const_no);
-  t = prover_create_constant_term(name);
-  insert_constant_name(constants, name);
-  return t;
-}
 
 
 /**
@@ -191,9 +180,9 @@ void fresh_exist_constants(const conjunction* con, substitution* sub, constants*
 
    If this is not possible, it returns false
 **/
-bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub);
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, const constants*);
 
-bool find_instantiate_sub_term(const term* t, const term* ground, substitution* sub){
+bool find_instantiate_sub_term(const term* t, const term* ground, substitution* sub, const constants* cs){
   const term* val;
   if(t == ground){
     assert(t->type == constant_term);
@@ -202,20 +191,20 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
   switch(t->type){
   case constant_term: 
     return (ground->type == constant_term 
-	    && t->name == ground->name);
+	    && equal_constants(t->val.constant, ground->val.constant, cs));
     break;
   case variable_term:
-    val = find_substitution(sub, t->var);
+    val = find_substitution(sub, t->val.var);
     if (val == NULL){
-      add_substitution(sub, t->var, ground);
+      add_substitution(sub, t->val.var, ground, cs);
       return true;
     }
-    return (val->name == ground->name);
+    return equal_terms(val, ground, cs);
     break;
   case function_term: 
     return (ground->type == function_term 
-	    && t->name == ground->name 
-	    && find_instantiate_sub_termlist(t->args, ground->args, sub));
+	    && t->val.function == ground->val.function
+	    && find_instantiate_sub_termlist(t->args, ground->args, sub, cs));
     break;
   default:
     fprintf(stderr, "Unknown term type %i occurred\n", t->type);
@@ -224,20 +213,20 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
   exit(EXIT_FAILURE);
 }
 
-bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub){
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, const constants* cs){
   unsigned int i;
   assert(tl->n_args == ground->n_args);
   assert(test_ground_term_list(ground));
   for(i = 0; i < tl->n_args; i++){
-    if(!find_instantiate_sub_term(tl->args[i], ground->args[i], sub))
+    if(!find_instantiate_sub_term(tl->args[i], ground->args[i], sub, cs))
       return false;
   }
   return true;
 }
 
 
-bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub){
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, const constants* cs){
   assert(at->pred->pred_no == fact->pred->pred_no && at->args->n_args == fact->args->n_args);
   assert(test_ground_atom(fact));
-  return find_instantiate_sub_termlist(at->args, fact->args, sub);
+  return find_instantiate_sub_termlist(at->args, fact->args, sub, cs);
 }

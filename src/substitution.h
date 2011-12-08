@@ -71,28 +71,25 @@ void free_sub_list_iter(sub_list_iter*);
 void free_substitution(substitution*);
 void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);
 const term* find_substitution(const substitution*, const variable*);
-bool add_substitution(substitution*, variable*, const term*);
+bool add_substitution(substitution*, variable*, const term*, const constants*);
 void insert_substitution_value(substitution*, variable*, const term*);
-bool unify_substitution_terms(const term*, const term*, substitution*);
-bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*);
-bool equal_substitutions(const substitution*, const substitution*, const freevars*);
-bool subs_equal_intersection(const substitution*, const substitution*);
-bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info);
-bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info);
-substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi);
-substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi);
+bool unify_substitution_terms(const term*, const term*, substitution*, const constants*);
+bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*, const constants*);
+bool equal_substitutions(const substitution*, const substitution*, const freevars*, const constants*);
+bool subs_equal_intersection(const substitution*, const substitution*, const constants*);
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, const constants* cs);
+bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, const constants*);
+substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, const constants* cs);
+substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, const constants*);
 void add_sub_timestamp(substitution*, unsigned int, substitution_size_info);
 
 void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);
 
-void print_substitution(const substitution*, FILE*);
-void print_coq_substitution(const substitution*, const freevars*, FILE*);
-void print_substitution_list(const substitution_list*, FILE*);
+void print_substitution(const substitution*, const constants*, FILE*);
+void print_coq_substitution(const substitution*, const constants*, const freevars*, FILE*);
+void print_substitution_list(const substitution_list*, const constants*, FILE*);
 
-
-// In instantiate.c
-bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub);
 
 
 bool test_substitution(const substitution*);

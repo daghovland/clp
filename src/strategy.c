@@ -73,27 +73,6 @@ rule_instance* normal_next_instance(rule_queue_state state
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);
-#if false
-    if(net->factset_lhs){
-      substitution* sub;
-      bool found_new_instance = false;
-      if(rule->type == fact && !is_empty(state, axiom_no))
-	continue;
-      while(!found_new_instance && !is_empty(state, axiom_no)){
-	rule_instance* ri = peek_axiom(state, axiom_no);
-	if(disjunction_true_in_fact_set(factset, net->th->axioms[axiom_no]->rhs, &ri->sub))
-	  ri = pop_axiom(state, axiom_no);
-	else
-	  found_new_instance = true;
-      }
-      if(!found_new_instance){
-	if(false_in_fact_set(factset, axiom_no, & sub))
-	  add_to_queue(rule, sub, state);
-	else
-	  continue;
-      }
-    }
-#endif
     if(may_have(state, axiom_no)){
       unsigned int rule_previously_applied = previous_application(state, i);
       if( (rule->type == goal || rule->type == fact)){

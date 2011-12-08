@@ -138,11 +138,11 @@ bool test_rete_net(const rete_net*);
 bool test_rule_queue(const rule_queue*, const rete_net_state*);
 
 
-void print_rete_net(const rete_net*, FILE* );
-void print_dot_rete_net(const rete_net*, FILE* );
+void print_rete_net(const rete_net*, const constants*, FILE* );
+void print_dot_rete_net(const rete_net*, const constants*, FILE* );
 void print_state_new_facts(rete_net_state*, FILE*);
-void print_rete_node_type(const rete_node*, FILE*);
-void print_rete_node(const rete_node*, FILE*, unsigned int);
+void print_rete_node_type(const rete_node*, const constants*, FILE*);
+void print_rete_node(const rete_node*, const constants*, FILE*, unsigned int);
 
 
 // In rule_queue.c and sub_alpha_queue_c
@@ -166,7 +166,7 @@ const term* find_substitution(const substitution*, const variable*);
 void print_rete_state(const rete_net_state*, FILE*);
 void print_dot_rete_state_net(const rete_net*, const rete_net_state*, FILE*);
 
-bool insert_substitution(rete_net_state*, unsigned int, substitution*, const freevars*);
+bool insert_substitution(rete_net_state*, unsigned int, substitution*, const freevars*, const constants*);
 
 // in rete_state.c
 unsigned int get_current_state_step_no(const rete_net_state*);

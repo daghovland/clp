@@ -40,10 +40,10 @@ bool test_disjunction(const disjunction*);
 
 void delete_disjunction(disjunction*);
 
-void print_fol_disj(const disjunction*, FILE*);
-void print_dot_disj(const disjunction*, FILE*);
-void print_coq_disj(const disjunction*, FILE*);
+void print_fol_disj(const disjunction*, const constants*, FILE*);
+void print_dot_disj(const disjunction*, const constants*, FILE*);
+void print_coq_disj(const disjunction*, const constants*, FILE*);
 
-void print_geolog_disj(const disjunction*, FILE*);
+void print_geolog_disj(const disjunction*, const constants*, FILE*);
 
 #endif

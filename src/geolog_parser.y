@@ -26,6 +26,7 @@
 #include "common.h"
 #include "term.h"
 #include "atom.h"
+#include "constants.h"
 #include "conjunction.h"
 #include "disjunction.h"
 #include "axiom.h"
@@ -133,7 +134,7 @@ terms:         terms COMMA term
                    { $$ = create_term_list($1); }
                    ;
 term:         NAME LPAREN terms RPAREN 
-                   { $$ = create_term($1, $3); }
+                   { $$ = create_function_term($1, $3); }
                    | NAME
                    { $$ = parser_create_constant_term(th, $1); }
                    | INTEGER

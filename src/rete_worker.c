@@ -88,7 +88,7 @@ void * queue_worker_routine(void* arg){
     worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
     if(worker->state == has_popped){
       init_substitution(tmp_sub, worker->net->th, step);
-      insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub);
+      insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub, worker->constants);
       __sync_lock_test_and_set(& worker->state, waiting);
       if(!worker->pause_signalled && !worker->stop_signalled){
 	lock_queue_single(worker->output);
@@ -133,7 +133,7 @@ void start_worker_thread(rete_worker* worker){
 
    Also allocates memory for the qeue
  **/
-rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work){
+rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work, const constants* cs){
   rete_worker * worker = (rete_worker *) malloc_tester(sizeof(rete_worker));
   worker->work = work;
   worker->output = output;
@@ -144,6 +144,7 @@ rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substi
   worker->tmp_subs = tmp_subs;
   worker->node_subs = node_subs;
   worker->axiom_no = axiom_no;
+  worker->constants = cs;
   start_worker_thread(worker);
   return worker;
 }

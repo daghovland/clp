@@ -49,12 +49,12 @@ void split_fact_set(fact_set*);
 
 void delete_fact_set(fact_set*);
 
-bool insert_state_fact_set(fact_set**, const atom*, unsigned int step);
-fact_set* insert_in_fact_set(fact_set*, const atom*, unsigned int);
+bool insert_state_fact_set(fact_set**, const atom*, unsigned int step, const constants*);
+fact_set* insert_in_fact_set(fact_set*, const atom*, unsigned int, const constants*);
 
-void print_state_fact_set(fact_set**, FILE*, unsigned int n_predicates);
-void print_fact_set(fact_set*, FILE*);
-bool is_in_fact_set(const fact_set*, const atom*);
-bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub);
+void print_state_fact_set(fact_set**, const constants*, FILE*, unsigned int n_predicates);
+void print_fact_set(fact_set*, const constants*, FILE*);
+bool is_in_fact_set(const fact_set*, const atom*, const constants*);
+bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub, const constants*);
 unsigned int get_fact_set_timestamp(const fact_set*);
 #endif

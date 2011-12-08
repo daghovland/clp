@@ -289,23 +289,23 @@ bool test_rete_net(const rete_net* net){
 /**
    Printing out a rete network
 **/
-void print_selector(const rete_node* sel, FILE* stream){
+void print_selector(const rete_node* sel, const constants* cs, FILE* stream){
   assert(sel->type == selector);
   fprintf(stream, "%s(%zi): %i occurrences", sel->val.selector->name, sel->val.selector->arity, sel->n_children);
-  print_rete_node(sel, stream,1);
+  print_rete_node(sel, cs, stream,1);
 }
 
-void print_rete_alpha_node(const rete_node* node, FILE* stream){
+void print_rete_alpha_node(const rete_node* node, const constants* cs, FILE* stream){
   assert(node->type == alpha);
   fprintf(stream, ": argument #%i unifies with ", node->val.alpha.argument_no + 1);
-  print_fol_term(node->val.alpha.value, stream);
+  print_fol_term(node->val.alpha.value, cs, stream);
   fprintf(stream, ".");
 }
 
-void print_dot_alpha_node(const rete_node* node, FILE* stream){
+void print_dot_alpha_node(const rete_node* node, const constants* cs, FILE* stream){
   assert(node->type == alpha);
   fprintf(stream, ": argument #%i unifies with", node->val.alpha.argument_no + 1);
-  print_fol_term(node->val.alpha.value, stream);
+  print_fol_term(node->val.alpha.value, cs, stream);
   fprintf(stream, ".");
 }
 
@@ -340,7 +340,7 @@ const char* get_rete_node_type_name(const rete_node* node){
     }
 }
 
-void print_rete_node_type(const rete_node* node, FILE* stream){
+void print_rete_node_type(const rete_node* node, const constants* cs, FILE* stream){
   fprintf(stream, "%s", get_rete_node_type_name(node));
   switch(node->type)
     {
@@ -348,7 +348,7 @@ void print_rete_node_type(const rete_node* node, FILE* stream){
       fprintf(stream, ": %s(%zi)", node->val.selector->name, node->val.selector->arity);
       break;
     case alpha:
-      print_rete_alpha_node(node, stream);
+      print_rete_alpha_node(node, cs, stream);
       break;
     case beta_and:
       break;
@@ -358,7 +358,7 @@ void print_rete_node_type(const rete_node* node, FILE* stream){
       break;
  case rule:
       fprintf(stream, ": ");
-      print_fol_axiom(node->val.rule.axm, stream);
+      print_fol_axiom(node->val.rule.axm, cs, stream);
       break;
     default:
       fprintf(stream, "unknown rete node type: %i", node->type);
@@ -367,12 +367,12 @@ void print_rete_node_type(const rete_node* node, FILE* stream){
   return;
 }
    
-void print_rete_node(const rete_node* node, FILE* stream, unsigned int indent){
+void print_rete_node(const rete_node* node, const constants* cs, FILE* stream, unsigned int indent){
   unsigned int i;
   for(i = 0; i < indent; i++)
     fprintf(stream, "  ");
   if(node->type != selector){
-    print_rete_node_type(node, stream);
+    print_rete_node_type(node, cs, stream);
     if(node->n_children == 1)
       fprintf(stream, " 1 child:");
     else if(node->n_children > 1)
@@ -381,28 +381,28 @@ void print_rete_node(const rete_node* node, FILE* stream, unsigned int indent){
   }
   for(i = 0; i < node->n_children; i++){
     assert(node->children[i]->type != selector);
-    print_rete_node(node->children[i], stream, indent+1);
+    print_rete_node(node->children[i], cs, stream, indent+1);
   }
 }
 
-void print_dot_rete_node(const rete_node* node, FILE* stream){
+void print_dot_rete_node(const rete_node* node, const constants* cs, FILE* stream){
   unsigned int i;
   fprintf(stream, "n%li [label=\"", (unsigned long) node);
   if(node->type == rule)
-    print_dot_axiom(node->val.rule.axm, stream);
+    print_dot_axiom(node->val.rule.axm, cs, stream);
   else
-    print_rete_node_type(node, stream);
+    print_rete_node_type(node, cs, stream);
   fprintf(stream, "\"]\n");
   for(i = 0; i < node->n_children; i++){
     assert(node->children[i]->type != selector);
     fprintf(stream, "n%li -> n%li\n", (unsigned long) node, (unsigned long) node->children[i]);
-    print_dot_rete_node(node->children[i], stream);
+    print_dot_rete_node(node->children[i], cs, stream);
   }
 }
 
 
 
-void print_rete_net(const rete_net* net, FILE* stream){
+void print_rete_net(const rete_net* net, const constants* cs, FILE* stream){
   unsigned int i;
   fprintf(stream,"%zi predicates: ", net->n_selectors);
   for(i = 0; i < net->n_selectors; i++){
@@ -412,15 +412,15 @@ void print_rete_net(const rete_net* net, FILE* stream){
   }
   fprintf(stream, "\n");
   for(i = 0; i < net->n_selectors; i++)
-    print_selector(& net->selectors[i], stream);
+    print_selector(& net->selectors[i], cs, stream);
 }
 
 
-void print_dot_rete_net(const rete_net* net, FILE* stream){
+void print_dot_rete_net(const rete_net* net, const constants* cs, FILE* stream){
   unsigned int i;
   fprintf(stream, "strict digraph RETE {\n");
   for(i = 0; i < net->n_selectors; i++)
-    print_dot_rete_node(& net->selectors[i], stream);
+    print_dot_rete_node(& net->selectors[i], cs, stream);
   fprintf(stream, "}\n");
 }
 

@@ -173,7 +173,7 @@ int file_prover(FILE* f, const char* prefix){
 	perror("file_prover: Could not open \"rete.dot\" for writing\n");
 	exit(EXIT_FAILURE);
       } else {
-	print_dot_rete_net(net, fp);
+	print_dot_rete_net(net, &th->constants, fp);
 	if(fclose(fp) != 0)
 	  perror("file_prover: Could not close \"rete.dot\"\n");
       }

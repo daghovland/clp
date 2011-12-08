@@ -53,6 +53,7 @@ typedef struct rete_worker_t {
   substitution_store_array * node_subs;
   substitution_store_mt * tmp_subs;
   const rete_net* net;
+  const constants* constants;
   unsigned int step;
   rete_worker_queue * work;
   rule_queue_single * output;
@@ -63,7 +64,7 @@ typedef struct rete_worker_t {
   bool stop_signalled;
 } rete_worker;
 
-rete_worker* init_rete_worker(const rete_net*, unsigned int, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *);
+rete_worker* init_rete_worker(const rete_net*, unsigned int, substitution_store_mt *, substitution_store_array *, rule_queue_single *, rete_worker_queue *, const constants*);
 void destroy_rete_worker(rete_worker*);
 void stop_rete_worker(rete_worker*);
 void restart_rete_worker(rete_worker*);

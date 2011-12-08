@@ -403,25 +403,25 @@ void delete_full_rule_queue(rule_queue* rq){
 /**
    Printing
 **/
-void print_rule_queue(const rule_queue* rq, FILE* f){
+void print_rule_queue(const rule_queue* rq, const constants* cs, FILE* f){
   unsigned int i, j;
   fprintf(f, "queue with %zi entries: \n", rq->n_queue);
   assert(rq->end == (rq->first + rq->n_queue) % rq->size_queue);
   j=1;
   for(i = rq->first; i < rq->end; i = (i+1) % rq->size_queue){
     fprintf(f, "\t%i: ", j++);
-    print_rule_instance(rq->queue[i], f);
+    print_rule_instance(rq->queue[i], cs, f);
     fprintf(f, "\n");
   }
 }
     
 
-void print_dot_rule_queue(const rule_queue* rq, FILE* f){
+void print_dot_rule_queue(const rule_queue* rq, const constants* cs, FILE* f){
   unsigned int i;
   fprintf(f, "Rule queue:{ ");
   assert(rq->end == (rq->first + rq->n_queue) % rq->size_queue);
   for(i = rq->first; i < rq->end; i = (i+1) % rq->size_queue){
-    print_dot_rule_instance(rq->queue[i], f);
+    print_dot_rule_instance(rq->queue[i], cs, f);
     fprintf(f, ", ");
   }
   fprintf(f, "}");

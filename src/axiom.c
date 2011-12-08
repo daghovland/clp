@@ -202,32 +202,32 @@ bool test_axiom(const axiom* a, size_t no){
 /**
    Pretty printing in standard fol format
 **/
-void print_fol_axiom(const axiom * ax, FILE* stream){
+void print_fol_axiom(const axiom * ax, const constants* cs, FILE* stream){
   if(ax->type != fact){
-    print_fol_conj(ax->lhs, stream);
+    print_fol_conj(ax->lhs, cs, stream);
     if(ax->lhs->n_args > 0)
       fprintf(stream, " -> ");
   }
   if(ax->type == goal)
     fprintf(stream, "goal");
   else
-    print_fol_disj(ax->rhs, stream);
+    print_fol_disj(ax->rhs, cs, stream);
   fprintf(stream, " ");
 }
 
 /**
    Pretty printing in dot (graphviz) format
 **/
-void print_dot_axiom(const axiom * ax, FILE* stream){
+void print_dot_axiom(const axiom * ax, const constants* cs, FILE* stream){
   if(ax->type != fact){
-    print_dot_conj(ax->lhs, stream);
+    print_dot_conj(ax->lhs, cs, stream);
     if(ax->lhs->n_args > 0)
       fprintf(stream, " ⇒ ");
   }
   if(ax->type == goal)
     fprintf(stream, "goal");
   else
-    print_dot_disj(ax->rhs, stream);
+    print_dot_disj(ax->rhs, cs, stream);
   fprintf(stream, " ");
 }
 
@@ -235,20 +235,20 @@ void print_dot_axiom(const axiom * ax, FILE* stream){
 /**
    Pretty printing in geolog input format
 **/
-void print_geolog_axiom(const axiom* a, FILE* stream){
+void print_geolog_axiom(const axiom* a, const constants* cs, FILE* stream){
   if(a->type == fact)
     fprintf(stream, "true");
   else 
-    print_geolog_conj(a->lhs, stream);
+    print_geolog_conj(a->lhs, cs,  stream);
   fprintf(stream,"=>");
   if(a->type==goal)
     fprintf(stream, "goal");
   else
-    print_geolog_disj(a->rhs, stream);
+    print_geolog_disj(a->rhs, cs, stream);
   fprintf(stream, " .");
 }
 
-void print_coq_axiom(const axiom* a, FILE* stream){
+void print_coq_axiom(const axiom* a, const constants* cs, FILE* stream){
   unsigned int i;
   assert(a->has_name);
   fprintf(stream, "Hypothesis %s : ", a->name);
@@ -260,13 +260,13 @@ void print_coq_axiom(const axiom* a, FILE* stream){
     fprintf(stream, ": %s,\n", DOMAIN_SET_NAME);
   }
   if(a->type != fact){
-    if(print_coq_conj(a->lhs, stream))
+    if(print_coq_conj(a->lhs, cs, stream))
       fprintf(stream, " -> ");
   }
   if(a->rhs->n_args == 0)
     fprintf(stream, "goal");
   else
-    print_coq_disj(a->rhs, stream);
+    print_coq_disj(a->rhs, cs, stream);
   fprintf(stream, ".\n");
 }
       

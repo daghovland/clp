@@ -38,5 +38,6 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   const rete_node* node, 
 				   const atom* fact, 
 				   unsigned int step, 
-				   substitution* sub);
+				   substitution* sub, 
+				   const constants*);
 #endif

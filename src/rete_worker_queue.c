@@ -219,14 +219,14 @@ rete_worker_queue* restore_rete_worker_queue(rete_worker_queue* rq, rete_worker_
 /**
    Printing
 **/
-void print_rete_worker_queue(rete_worker_queue* rq, FILE* f){
+void print_rete_worker_queue(rete_worker_queue* rq, const constants* cs, FILE* f){
   unsigned int i, j;
   fprintf(f, "queue with %zi entries: \n", get_rete_worker_queue_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
     worker_queue_elem* el = get_worker_queue_elem(rq, i);
     fprintf(f, "\t%i: ", j);
-    print_fol_atom(el->fact, f);
-    print_rete_node(el->alpha, f,0);    
+    print_fol_atom(el->fact, cs, f);
+    print_rete_node(el->alpha, cs, f,0);    
     fprintf(f, "\n");
   }
 }

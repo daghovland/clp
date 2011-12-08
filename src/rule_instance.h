@@ -43,8 +43,8 @@ rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_i
 
 bool test_rule_instance(const rule_instance*);
 
-void print_rule_instance(const rule_instance*, FILE*);
-void print_dot_rule_instance(const rule_instance*, FILE*);
-void print_coq_rule_instance(const rule_instance*, FILE*);
+void print_rule_instance(const rule_instance*, const constants*, FILE*);
+void print_dot_rule_instance(const rule_instance*, const constants*, FILE*);
+void print_coq_rule_instance(const rule_instance*, const constants*, FILE*);
 
 #endif

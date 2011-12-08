@@ -210,7 +210,7 @@ freevars* free_conj_variables(const conjunction * con, freevars* vars){
 /** 
     Generic printing function
 **/
-void print_disj(const disjunction *dis, FILE* stream, char* or_sign, char* exist_sign, bool print_bindings, void (*print_conj)(const conjunction*, FILE*)){
+void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char* or_sign, char* exist_sign, bool print_bindings, void (*print_conj)(const conjunction*, const constants*, FILE*)){
   int i, j;
   bool print_parentheses;
   if(dis->n_args > 1 && print_bindings)
@@ -237,7 +237,7 @@ void print_disj(const disjunction *dis, FILE* stream, char* or_sign, char* exist
 	);
     if(print_parentheses)
       fprintf(stream, "(");
-    print_conj(con, stream);
+    print_conj(con, cs, stream);
     if(print_parentheses)
       fprintf(stream, ")");
   }
@@ -246,33 +246,33 @@ void print_disj(const disjunction *dis, FILE* stream, char* or_sign, char* exist
 
 }
 
-void print_conj(const conjunction * con, FILE* stream, char* and_sep, void (*print_atom)(const atom*, FILE*)){
+void print_conj(const conjunction * con, const constants* cs, FILE* stream, char* and_sep, void (*print_atom)(const atom*, const constants*, FILE*)){
   int i;
   for(i = 0; i < con->n_args-1; i++){
-    print_fol_atom(con->args[i], stream);
+    print_fol_atom(con->args[i], cs, stream);
     fprintf(stream, "%s", and_sep);
   }
-  print_atom(con->args[i], stream);
+  print_atom(con->args[i], cs, stream);
   return;
 }
 
 /**
    Pretty-printing functions , print_fol gives standard fol output
 **/
-void print_fol_conj(const conjunction *con, FILE* stream){
-  print_conj(con, stream, "/\\", print_fol_atom);
+void print_fol_conj(const conjunction *con, const constants* cs, FILE* stream){
+  print_conj(con, cs, stream, "/\\", print_fol_atom);
 }
 
-void print_fol_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, " \\/ "," ∃",  true, print_fol_conj);
+void print_fol_disj(const disjunction *dis, const constants* cs, FILE* stream){
+  print_disj(dis, cs, stream, " \\/ "," ∃",  true, print_fol_conj);
 }
 
-void print_dot_conj(const conjunction *con, FILE* stream){
-  print_conj(con, stream, " ∧ ", print_fol_atom);
+void print_dot_conj(const conjunction *con, const constants* cs, FILE* stream){
+  print_conj(con, cs, stream, " ∧ ", print_fol_atom);
 }
 
-void print_dot_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, " ∨ ", " ∃", true, print_dot_conj);
+void print_dot_disj(const disjunction *dis, const constants* cs, FILE* stream){
+  print_disj(dis, cs, stream, " ∨ ", " ∃", true, print_dot_conj);
 }
 
 /**
@@ -280,18 +280,18 @@ void print_dot_disj(const disjunction *dis, FILE* stream){
    Returns true iff there were some non-domain atoms. 
    There is output iff return value is true.
 **/
-bool print_coq_conj(const conjunction* con, FILE* stream){
+bool print_coq_conj(const conjunction* con, const constants* cs, FILE* stream){
   unsigned int i;
   bool has_printed_one = false;
   for(i = 0; i < con->n_args; i++){
     if(has_printed_one)
       fprintf(stream, " /\\ ");
-    print_coq_atom(con->args[i], stream);
+    print_coq_atom(con->args[i], cs, stream);
     has_printed_one = true;
   }
   return has_printed_one;
 }
-void print_coq_disj(const disjunction* dis, FILE* stream){
+void print_coq_disj(const disjunction* dis, const constants* cs, FILE* stream){
   freevars* ev;
   unsigned int i, j;
   for(i = 0; i < dis->n_args; i++){
@@ -303,7 +303,7 @@ void print_coq_disj(const disjunction* dis, FILE* stream){
       for(j = 0; j < ev->n_vars; j++)
 	fprintf(stream, "exists %s, ", ev->vars[j]->name);
     }
-    if(!print_coq_conj(arg, stream))
+    if(!print_coq_conj(arg, cs, stream))
       fprintf(stderr, "con_dis.c: print_coq_disj: Warning: A disjunct in an rhs contained only domain predicates. This might not make sense.\n");
     if(arg->n_args > 0 || arg->is_existential)
       fprintf(stream, ")");
@@ -314,11 +314,11 @@ void print_coq_disj(const disjunction* dis, FILE* stream){
 /**
    Print in geolog input format
 **/
-void print_geolog_disj(const disjunction *dis, FILE* stream){
-  print_disj(dis, stream, ";", " ∃", false, print_geolog_conj);
+void print_geolog_disj(const disjunction *dis, const constants* cs, FILE* stream){
+  print_disj(dis, cs, stream, ";", " ∃", false, print_geolog_conj);
 }
 
-void print_geolog_conj(const conjunction *con, FILE* stream){
-  print_conj(con, stream, ",", print_geolog_atom);
+void print_geolog_conj(const conjunction *con, const constants* cs, FILE* stream){
+  print_conj(con, cs, stream, ",", print_geolog_atom);
 }
   
