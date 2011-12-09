@@ -26,24 +26,26 @@
 #include "constants.h"
 #include "theory.h"
 
-constants init_constants(size_t n_vars){
-  constants new_c;
-  new_c.fresh = init_fresh_const(n_vars);
+constants* init_constants(unsigned int init_size){
+  constants * new_c = malloc_tester(sizeof(constants));
+  new_c->fresh = init_fresh_const(init_size);
 
-  new_c.size_constants = 2;
-  new_c.constants = calloc_tester(new_c.size_constants, sizeof(constant));
-  new_c.n_constants = 0;
+  new_c->size_constants = init_size;
+  new_c->constants = calloc_tester(new_c->size_constants, sizeof(constant));
+  new_c->n_constants = 0;
   return new_c;
 }
 
 void destroy_constants(constants* c){
   free(c->constants);
+  free(c);
 }
 
-constants copy_constants(const constants * orig){
-  constants copy = * orig;
-  copy.constants = calloc_tester(orig->size_constants, sizeof(char*));
-  memcpy(copy.constants, orig->constants, orig->size_constants * sizeof(char*));
+constants* copy_constants(const constants * orig){
+  constants* copy = malloc_tester(sizeof(constants));
+  copy = memcpy(copy, orig, sizeof(constants));
+  copy->constants = calloc_tester(orig->size_constants, sizeof(constant));
+  memcpy(copy->constants, orig->constants, orig->size_constants * sizeof(constant));
   return copy;
 }
 
@@ -131,7 +133,7 @@ bool equal_constants(unsigned int c1, unsigned int c2, const constants* consts){
 /**
    Called from rete_state when in a disjunctive split. 
 **/
-constants backup_constants(const constants* orig){
+constants* backup_constants(const constants* orig){
   return copy_constants(orig);
 }
 

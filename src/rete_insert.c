@@ -50,14 +50,14 @@ void detract_rete_beta_sub(rete_net_state* state,
 
 #ifdef __DEBUG_RETE_STATE
   fprintf(stdout, "\nRetracting: ");
-  print_substitution(sub, stdout);
+  print_substitution(sub, state->constants, stdout);
 #endif
 
   while(has_next_sub_list(iter)){
     substitution* sub2 = get_next_sub_list(iter);
-    if(subs_equal_intersection(sub, sub2, &state->constants)){
+    if(subs_equal_intersection(sub, sub2, state->constants)){
       if(node->type == beta_not)
-	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2, & state->local_subst_mem, state->net->th->sub_size_info, & state->constants));
+	detract_rete_beta_sub(state, node->children[0], union_substitutions_one_ts(sub, sub2, & state->local_subst_mem, state->net->th->sub_size_info, state->constants));
       else 
 	remove_rule_instance(state, sub2, node->val.rule.axm->axiom_no);
     }
@@ -86,7 +86,7 @@ void insert_rete_beta_sub(rete_net_state* state,
     if(insert_substitution(state, 
 			   node->val.rule.store_no, 
 			   sub, node->free_vars,
-			   & state->constants
+			   state->constants
 			   ))
       {
 	assert(test_substitution(sub));
@@ -104,16 +104,16 @@ void insert_rete_beta_sub(rete_net_state* state,
       if(insert_substitution(state, 
 			     node->val.beta.b_store_no, 
 			     sub, node->free_vars,
-			     & state->constants	
+			     state->constants	
 			     ))
 	{
 	  iter = get_state_sub_list_iter(state, node->val.beta.a_store_no);
 	  while(has_next_sub_list(iter)){
 	    substitution* join;
 	    if(node->in_positive_lhs_part)
-	      join = union_substitutions_with_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info, & state->constants);
+	      join = union_substitutions_with_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info, state->constants);
 	    else
-	      join = union_substitutions_one_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info, & state->constants);
+	      join = union_substitutions_one_ts(sub, get_next_sub_list(iter), & state->local_subst_mem, state->net->th->sub_size_info, state->constants);
 	    if(join != NULL) 
 	      insert_rete_beta_sub(state, node, node->children[0], join);
 	  }
@@ -125,12 +125,12 @@ void insert_rete_beta_sub(rete_net_state* state,
 	if(insert_substitution(state, 
 			       node->val.beta.b_store_no, 
 			       sub, node->free_vars,
-			       & state->constants
+			       state->constants
 			       ))
 	  {
 	    iter = get_state_sub_list_iter(state, node->val.beta.a_store_no);
 	    while(has_next_sub_list(iter)){
-	      if(subs_equal_intersection(sub, get_next_sub_list(iter), & state->constants)){
+	      if(subs_equal_intersection(sub, get_next_sub_list(iter), state->constants)){
 		free_state_sub_list_iter(state, node->val.beta.a_store_no, iter);
 		return;
 	      }
@@ -142,7 +142,7 @@ void insert_rete_beta_sub(rete_net_state* state,
 	if(insert_substitution(state, 
 			       node->val.beta.a_store_no, 
 			       sub, node->free_vars,
-			       & state->constants
+			       state->constants
 			       ))
 	  detract_rete_beta_sub(state, node->children[0], copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info));
       break;
@@ -199,7 +199,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     assert(node->val.alpha.argument_no < fact->args->n_args);
     arg = fact->args->args[node->val.alpha.argument_no];
     assert(test_term(arg));
-    if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, & state->constants)){
+    if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, state->constants)){
       return false;
     }
 #ifdef LAZY_RETE
@@ -214,7 +214,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     break;
   case beta_and:
     assert(node->n_children == 1);
-    if(!insert_substitution(state, node->val.beta.a_store_no, sub, node->free_vars, & state->constants)){  
+    if(!insert_substitution(state, node->val.beta.a_store_no, sub, node->free_vars, state->constants)){  
       return false;
     }
     if(node->left_parent->type == beta_root){
@@ -224,9 +224,9 @@ bool insert_rete_alpha_fact(rete_net_state* state,
       while(has_next_sub_list(iter)){
 	substitution* join;
 	if(node->in_positive_lhs_part)
-	  join = union_substitutions_with_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info, & state->constants);
+	  join = union_substitutions_with_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info, state->constants);
 	else
-	  join = union_substitutions_one_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info, & state->constants);
+	  join = union_substitutions_one_ts(get_next_sub_list(iter), sub, & state->local_subst_mem, state->net->th->sub_size_info, state->constants);
 	if(join != NULL) 
 	  insert_rete_beta_sub(state, node, node->children[0], join);
       }
@@ -237,7 +237,7 @@ bool insert_rete_alpha_fact(rete_net_state* state,
     if(insert_substitution(state, 
 			   node->val.beta.a_store_no, 
 			   sub, node->free_vars,
-			   & state->constants
+			   state->constants
 			   ))
       detract_rete_beta_sub(state, node->children[0], sub);
     else {

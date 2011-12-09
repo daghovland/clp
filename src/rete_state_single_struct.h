@@ -51,7 +51,7 @@ typedef struct rete_state_single_t {
   fact_store_iter * new_facts_iters;
   const rete_net* net;
   fresh_const_counter fresh;  
-  constants constants;
+  constants* constants;
   bool verbose;
   bool finished;
   unsigned int cur_step;

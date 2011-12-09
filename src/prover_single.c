@@ -63,7 +63,7 @@ void print_state_new_fact_store_rqs(rule_queue_state rqs, FILE* f){
 void write_prover_node_single(rete_state_single* state, const rule_instance* next){
   rule_queue_state rqs;
   rqs.single = state;
-  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, &state->constants, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
+  write_proof_node(get_state_step_no_single(state), get_state_step_no_single(state), "N/A", state->net, rqs, state->constants, print_state_new_fact_store_rqs, print_state_single_rule_queues_rqs, next);
 }
 
 
@@ -80,7 +80,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
   unsigned int i;
   assert(test_conjunction(con));
   assert(test_substitution(sub));
-  fresh_exist_constants(con, sub, & state->constants);
+  fresh_exist_constants(con, sub, state->constants);
   assert(test_is_conj_instantiation(con, sub));
   for(i = 0; i < con->n_args; i++){
     bool fact_is_new = true;
@@ -88,7 +88,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     assert(test_ground_atom(ground));
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");
-    print_fol_atom(ground, stdout);
+    print_fol_atom(ground, state->constants, stdout);
     printf("\n");
 #endif
     if(state->net->has_factset)
@@ -159,7 +159,7 @@ bool run_prover_single(rete_state_single* state){
 	} else { // rhs is single conjunction
 	  write_prover_node_single(state, next);
 	  insert_rete_net_conjunction_single(state, next->rule->rhs->args[0], & next->sub);
-	  //write_proof_edge(state, state);  
+	  write_proof_edge(state->current_proof_branch->name, state->cur_step, state->current_proof_branch->name, state->cur_step);  
 	}
       }
     } // end while(true)
@@ -180,6 +180,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
   const axiom* rule = next->rule;
   unsigned int n_branches = rule->rhs->n_args;
   rete_state_backup backup = backup_rete_state(state);
+  proof_branch* parent_prf_branch = state->current_proof_branch;
   for(i = 0; i < n_branches; i++){
     bool rv;
     substitution* sub;
@@ -190,6 +191,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     sub = & ((get_historic_rule_instance(state, step))->sub);
     assert(test_substitution(sub));
     insert_rete_net_conjunction_single(state, con, sub);
+    write_proof_edge(parent_prf_branch->name, step, state->current_proof_branch->name, state->cur_step);
     rv = run_prover_single(state);
     if(!rv)
       return false;
@@ -230,31 +232,31 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   assert(is_empty_ri_stack(branch->elim_stack) || ! is_empty_rev_ri_stack(branch->elim_stack));
   while(!is_empty_rev_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_rev_ri_stack(branch->elim_stack, &step_ri, &pusher));
-    write_elim_usage_proof(state->net, ri, step_ri, &state->constants);
+    write_elim_usage_proof(state->net, ri, step_ri, state->constants);
   }
   if(rule->type == goal && n_branches <= 1){
     fprintf(coq_fp, "(* Reached leaf at step %i *)\n", step);
-    write_goal_proof(end_ri, state->net, step, get_history_single, rqs, &state->constants);
+    write_goal_proof(end_ri, state->net, step, get_history_single, rqs, state->constants);
     fprintf(coq_fp, "(* Finished goal proof of leaf at step %i *)\n", step);
 
   } else {
     unsigned int i;
     assert(n_branches > 1);
-    write_elim_usage_proof(state->net, end_ri, step, &state->constants);
+    write_elim_usage_proof(state->net, end_ri, step, state->constants);
     for(i = 0; i < n_branches; i++){
       assert(branch != branch->children[i]);
       if(i > 0)
-	write_disj_proof_start(end_ri, step, i, &state->constants);
+	write_disj_proof_start(end_ri, step, i, state->constants);
       write_single_coq_proof(state, branch->children[i]);
     }
     fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
-    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs, &state->constants);
+    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs, state->constants);
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
   while(!is_empty_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_ri_stack(branch->elim_stack, &step_ri, &pusher));
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
-    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs, &state->constants);
+    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs, state->constants);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
   }
   fprintf(coq_fp, "(* Finished with branch %s *)\n", branch->name);

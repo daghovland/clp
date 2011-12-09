@@ -57,7 +57,7 @@ typedef struct theory_t {
 #ifndef NDEBUG
   bool finalized;
 #endif
-  constants constants;
+  constants* constants;
 } theory;
 
 

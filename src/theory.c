@@ -236,7 +236,7 @@ void print_coq_proof_intro(const theory* th, const constants* cs, FILE* stream){
   for(i = 0; i < th->n_predicates; i++)
     print_coq_predicate(th->predicates[i], stream);
 
-  print_coq_constants(& th->constants, stream);
+  print_coq_constants(th->constants, stream);
   fprintf(stream, "\n");
   
   for(i = 0; i < th->n_init_model; i++){

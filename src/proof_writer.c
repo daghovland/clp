@@ -108,7 +108,7 @@ void init_proof_coq_writer(const rete_net* net){
   coq_fp = file_err( fopen(coqfilename, "w"), "Could not create proof coq .v file\n" );
   coq_file_open = true;
 
-  print_coq_proof_intro(net->th, & net->th->constants, coq_fp);
+  print_coq_proof_intro(net->th, net->th->constants, coq_fp);
   
   free(coqfilename);
 }
@@ -168,7 +168,7 @@ void write_proof_node(unsigned int step_no
       print_dot_rule_instance(ri, cs, dot_fp);
       fp_err( fprintf(dot_fp, "\"] \n" ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT
-      sprintf(fname2, "rete_state_%i.dot", cur_step_no);
+      snprintf(fname2, "rete_state_%i.dot", cur_step_no);
       fp2 = file_err( fopen(fname2, "w"), "Could not create rete state dot file\n");
       print_dot_rete_state_net(net, s, fp2);
       fclose(fp2);
@@ -182,13 +182,13 @@ void write_proof_node(unsigned int step_no
     }// file open
   }// proof || dot
 }
-void write_proof_edge(const rete_net_state* s1, const rete_net_state* s2){
+void write_proof_edge(const char*  proof_branch_1, unsigned int step_no_1, const char* proof_branch_2, unsigned int step_no_2){
   if(proof){
     assert(dot_fp != NULL);
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_lock(&dot_file_lock), "Could not get lock on dot proof file\n");
 #endif
-    fp_err( fprintf(dot_fp, "\n n%ss%i -> n%ss%i \n", s1->proof_branch_id, s1->step_no, s2->proof_branch_id, s2->step_no+1 ), "Could not write proof node dot info\n");
+    fp_err( fprintf(dot_fp, "\n n%ss%i -> n%ss%i \n", proof_branch_1, step_no_1, proof_branch_2, step_no_2 + 1 ), "Could not write proof node dot info\n");
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(&dot_file_lock), "Could not release lock on dot proof file\n");
 #endif

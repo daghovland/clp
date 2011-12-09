@@ -84,7 +84,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
     }
   }
   //  state->constants = init_constants(net->th->vars->n_vars);
-  state->constants = copy_constants(& net->th->constants);
+  state->constants = copy_constants(net->th->constants);
   state->elim_stack = initialize_ri_stack();
   state->finished = false;
   state->parent = NULL;
@@ -120,7 +120,7 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
   }
 
   //  destroy_substitution_store_mt(& state->local_subst_mem);
-  destroy_constants(& state->constants);
+  destroy_constants(state->constants);
   free(state);
 }
 
@@ -150,7 +150,7 @@ void delete_full_rete_state(rete_net_state* state){
   }
   // destroy_substitution_store_mt(& state->local_subst_mem);
   //destroy_substitution_store_mt(state->global_subst_mem);
-  destroy_constants(& state->constants);
+  destroy_constants(state->constants);
   free(state);
 }
 
@@ -191,7 +191,7 @@ rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
     }
   }
 
-  copy->constants = copy_constants(& orig->constants);
+  copy->constants = copy_constants(orig->constants);
 
   for(i = 0; i < orig->net->th->n_axioms; i++)
     copy->axiom_inst_queue[i] = copy_rule_queue(orig->axiom_inst_queue[i]);
@@ -251,7 +251,7 @@ bool remaining_conjunction_true_in_fact_set(rete_net_state* state, const conjunc
   fs = state->factset[con->args[conjunct]->pred->pred_no];
   while(fs != NULL){
     substitution* sub2 = copy_substitution(sub, & state->local_subst_mem, state->net->th->sub_size_info);
-    if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2, & state->constants)){
+    if(find_instantiate_sub(con->args[conjunct], fs->fact, sub2, state->constants)){
       if(remaining_conjunction_true_in_fact_set(state, con, conjunct+1, sub2)){
 	return true;
       }
@@ -306,7 +306,7 @@ bool remaining_axiom_false_in_fact_set(rete_net_state* state,
   }
   do{
     substitution* sub2 = copy_substitution(*sub, & state->local_subst_mem, state->net->th->sub_size_info);
-    if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2, & state->constants)){
+    if(find_instantiate_sub(axm->lhs->args[arg_no], fs->fact, sub2, state->constants)){
       add_sub_timestamp(sub2, get_fact_set_timestamp(fs), state->net->th->sub_size_info);
       if(remaining_axiom_false_in_fact_set(state, axm, arg_no+1, &sub2)){
 	*sub = sub2;
@@ -389,7 +389,7 @@ void print_rete_state(const rete_net_state* state, FILE*  f){
   fprintf(f, "State of RETE net\n");
   for(i = 0; i < state->net->th->n_axioms; i++){
     printf("Axiom %s ", state->net->th->axioms[i]->name);
-    print_rule_queue(state->axiom_inst_queue[i], &state->constants, f);
+    print_rule_queue(state->axiom_inst_queue[i], state->constants, f);
   }
   //  print_rule_queue(state->rule_queue, f);
   fprintf(f, "\nBranch: %s, Step: %i", state->proof_branch_id,state->step_no);
@@ -397,7 +397,7 @@ void print_rete_state(const rete_net_state* state, FILE*  f){
   for(i = 0; i < state->net->n_subs; i++){
     fprintf(f, "\n\t%i: ", i);
     if(state->subs[i] != NULL)
-      print_substitution_list(state->subs[i], & state->constants, f);
+      print_substitution_list(state->subs[i], state->constants, f);
   }
   fprintf(f, "\n-----------------------------\n");
 }
@@ -411,7 +411,7 @@ void print_state_rule_queues(rete_net_state* s, FILE* f){
   for(i = 0; i < s->net->th->n_axioms; i++){
     if(s->axiom_inst_queue[i]->end != s->axiom_inst_queue[i]->first){
       printf("Axiom %s ", s->net->th->axioms[i]->name);
-      print_rule_queue(s->axiom_inst_queue[i], &s->constants, stdout);
+      print_rule_queue(s->axiom_inst_queue[i], s->constants, stdout);
     }
   }
 }
@@ -420,15 +420,15 @@ void print_dot_rete_state_node(const rete_node* node, const rete_net_state* stat
   unsigned int i;
   fprintf(stream, "n%li [label=\"", (unsigned long) node);
   if(node->type == rule)
-    print_dot_axiom(node->val.rule.axm, & state->constants, stream);
+    print_dot_axiom(node->val.rule.axm, state->constants, stream);
   else
-    print_rete_node_type(node, & state->constants, stream);
+    print_rete_node_type(node, state->constants, stream);
   if(node->type == beta_and || node->type == beta_not){
     fprintf(stream, "\\nStore a: {");
-    print_substitution_list(state->subs[node->val.beta.a_store_no], & state->constants, stream);
+    print_substitution_list(state->subs[node->val.beta.a_store_no], state->constants, stream);
     fprintf(stream, "}");
     fprintf(stream, "\\nStore b: {");
-    print_substitution_list(state->subs[node->val.beta.b_store_no], & state->constants, stream);
+    print_substitution_list(state->subs[node->val.beta.b_store_no], state->constants, stream);
     fprintf(stream, "}");
   }
   fprintf(stream, "\"]\n");
@@ -467,7 +467,7 @@ void print_state_new_facts(rete_net_state* state, FILE* f){
       if(!first_iter)
 	fprintf(f, ", ");
       first_iter = false;
-      print_fol_atom(fs->fact, & state->constants, f);
+      print_fol_atom(fs->fact, state->constants, f);
       fs = fs->next;
     }
     state->prev_factset[i] = state->factset[i];

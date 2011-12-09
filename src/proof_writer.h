@@ -46,7 +46,7 @@ void write_proof_node(unsigned int step_no
 void end_proof_dot_writer(const char*, const rete_net*);
 void end_proof_coq_writer(const theory* th);
 void write_proof_state(const rete_net_state*, const rete_net_state*);
-void write_proof_edge(const rete_net_state*, const rete_net_state*);
+void write_proof_edge(const char*, unsigned int, const char*, unsigned int);
 void write_goal_proof(const rule_instance*, const rete_net*, int,  rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state, const constants*);
 void write_elim_usage_proof(const rete_net*, rule_instance*, int, const constants*);
 void write_disj_proof_start(const rule_instance* ri, int ts, int branch, const constants*);

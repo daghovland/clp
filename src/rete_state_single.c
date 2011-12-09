@@ -46,7 +46,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
   //  state->constants = init_constants(net->th->vars->n_vars);
-  state->constants = copy_constants(& net->th->constants);
+  state->constants = copy_constants(net->th->constants);
   state->cur_step = 0;
   state->total_steps = 0;
   state->rule_queues = calloc_tester(net->n_rules, sizeof(rule_queue_single*));
@@ -55,7 +55,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   for(i = 0; i < net->n_rules; i++){
     state->rule_queues[i] = initialize_queue_single(ssi, i);
     state->worker_queues[i] = init_rete_worker_queue();
-    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i], &state->constants);
+    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i], state->constants);
   }
   state->history = initialize_queue_single(ssi, 0);
   if(state->net->has_factset){
@@ -191,7 +191,7 @@ void delete_rete_state_single(rete_state_single* state){
   destroy_substitution_store_mt(& state->tmp_subs);
   free(state->rule_queues);
   free(state->worker_queues);
-  destroy_constants(& state->constants);
+  destroy_constants(state->constants);
   delete_proof_branch_tree(state->root_branch);
   
   free(state);
@@ -302,7 +302,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
   while(!found_true && has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
     copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info);
-    if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, &state->constants)){
+    if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, state->constants)){
       if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
 	found_true = true;
 	break;
@@ -481,7 +481,7 @@ bool insert_state_factset_single(rete_state_single* state, const atom* ground){
   fact_store_iter iter = get_fact_store_iter(& state->factsets[pred_no]);
   while(has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
-    if(equal_atoms(fact, ground, &state->constants)){
+    if(equal_atoms(fact, ground, state->constants)){
       already_in_factset = true;
       break;
     }
@@ -504,7 +504,7 @@ void print_state_fact_store(rete_state_single* state, FILE* f){
       first_iter = false;
     else
       fprintf(f, ", ");
-    print_fact_store(& state->factsets[i], &state->constants, f);
+    print_fact_store(& state->factsets[i], state->constants, f);
   }
   fprintf(f, "}\n");
 }
@@ -518,7 +518,7 @@ void print_state_new_fact_store(rete_state_single* state, FILE* f){
   for(i = 0; i < state->net->th->n_predicates; i++){
     fact_store_iter* iter = & state->new_facts_iters[i];
     while(has_next_fact_store(iter)){
-      print_fol_atom(get_next_fact_store(iter), &state->constants, f);
+      print_fol_atom(get_next_fact_store(iter), state->constants, f);
       fprintf(f, ", ");
     }
   }
@@ -568,7 +568,7 @@ void print_state_single_rule_queues(rete_state_single* s, FILE* f){
   for(i = 0; i < s->net->n_rules; i++){
     if(!rule_queue_single_is_empty(s->rule_queues[i])){
       printf("Axiom %s ", s->net->th->axioms[i]->name);
-      print_rule_queue_single(s->rule_queues[i], &s->constants, stdout);
+      print_rule_queue_single(s->rule_queues[i], s->constants, stdout);
     }
   }
 }

@@ -74,7 +74,7 @@ typedef struct rete_net_state_t {
   unsigned int * global_step_counter;
   unsigned int cursteps;
   unsigned int start_step_no;
-  constants constants;
+  constants* constants;
   bool verbose;
   rule_instance* end_of_branch;
   rule_instance_stack* elim_stack;

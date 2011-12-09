@@ -100,7 +100,7 @@ void print_state_new_facts_rqs(rule_queue_state rqs, FILE* f){
 void write_prover_node_old(rete_net_state* state, rule_instance* next){
   rule_queue_state rqs;
   rqs.state = state;
-  write_proof_node(state->step_no, get_current_state_step_no(state), state->proof_branch_id, state->net, rqs, &state->constants, print_state_new_facts_rqs, print_state_rule_queues_rqs, next);
+  write_proof_node(state->step_no, get_current_state_step_no(state), state->proof_branch_id, state->net, rqs, state->constants, print_state_new_facts_rqs, print_state_rule_queues_rqs, next);
 }
 
 /**
@@ -178,7 +178,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
   // At the moment the substitution is copied, when the instance is popped, 
   // so we know it is unique. This could be change if memory becomes an issue.
   if(!state->net->existdom)
-    fresh_exist_constants(con, sub, & state->constants);
+    fresh_exist_constants(con, sub, state->constants);
   
   assert(test_is_conj_instantiation(con, sub));
   
@@ -190,12 +190,12 @@ void insert_rete_net_conjunction(rete_net_state* state,
     
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");
-    print_fol_atom(ground, stdout);
+    print_fol_atom(ground, state->constants, stdout);
     printf("\n");
 #endif
     
     if(state->net->has_factset){
-      insert_state_fact_set(state->factset, ground, get_current_state_step_no(state), &state->constants);
+      insert_state_fact_set(state->factset, ground, get_current_state_step_no(state), state->constants);
     }
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
@@ -211,7 +211,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
 bool return_found_model(rete_net_state* state){
   fprintf(stdout, "Found a model of the theory \n");
   if(state->net->has_factset)
-    print_state_fact_set(state->factset, & state->constants, stdout, state->net->th->n_predicates);
+    print_state_fact_set(state->factset, state->constants, stdout, state->net->th->n_predicates);
   else
     fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
   foundproof = false;
@@ -321,7 +321,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 	} else { // rhs is single conjunction
 	  insert_rete_net_conjunction(state, next->rule->rhs->args[0], & next->sub);
 	  write_prover_node_old(state, next);
-	  write_proof_edge(state, state);  
+	  write_proof_edge(state->proof_branch_id, state->step_no, state->proof_branch_id, state->step_no);  
 
 	}
       }
@@ -333,7 +333,7 @@ bool run_prover_rete_coq_mt(rete_net_state* state){
 **/
 rete_net_state* run_rete_proof_disj_branch(rete_net_state* state, conjunction* con, substitution* sub, unsigned int branch_no){
   rete_net_state* copy_state = split_rete_state(state, branch_no);
-  write_proof_edge(state, copy_state);
+  write_proof_edge(state->proof_branch_id, state->step_no, copy_state->proof_branch_id, copy_state->step_no);
   insert_rete_net_conjunction(copy_state, con, sub);
   return copy_state;
 }
@@ -601,31 +601,31 @@ void write_mt_coq_proof(rete_net_state* state){
   assert(is_empty_ri_stack(state->elim_stack) || ! is_empty_rev_ri_stack(state->elim_stack));
   while(!is_empty_rev_ri_stack(state->elim_stack)){
     rule_instance* ri = history[pop_rev_ri_stack(state->elim_stack, &step_ri, &pusher)]->ri;
-    write_elim_usage_proof(state->net, ri, step_ri, &state->constants);
+    write_elim_usage_proof(state->net, ri, step_ri, state->constants);
   }
   if(state->end_of_branch->rule->type == goal && n_branches <= 1){
     fprintf(coq_fp, "(* Reached leaf at step %i *)\n", step);
-    write_goal_proof(state->end_of_branch, state->net, step, get_history_state, rqs, &state->constants);
+    write_goal_proof(state->end_of_branch, state->net, step, get_history_state, rqs, state->constants);
     fprintf(coq_fp, "(* Finished goal proof of leaf at step %i *)\n", step);
 
   } else {
     unsigned int i;
     assert(n_branches > 1);
-    write_elim_usage_proof(state->net, state->end_of_branch, step, &state->constants);
+    write_elim_usage_proof(state->net, state->end_of_branch, step, state->constants);
     for(i = 0; i < n_branches; i++){
       assert(state != state->branches[i]);
       if(i > 0)
-	write_disj_proof_start(state->end_of_branch, step, i, &state->constants);
+	write_disj_proof_start(state->end_of_branch, step, i, state->constants);
       write_mt_coq_proof(state->branches[i]);
     }
     fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step);
-    write_premiss_proof(state->end_of_branch, step, state->net, get_history_state, rqs, &state->constants);
+    write_premiss_proof(state->end_of_branch, step, state->net, get_history_state, rqs, state->constants);
     fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step);
   }
   while(!is_empty_ri_stack(state->elim_stack)){
     rule_instance* ri = history[pop_ri_stack(state->elim_stack, &step_ri, &pusher)]->ri;
     fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri, pusher);
-    write_premiss_proof(ri, step_ri, state->net, get_history_state, rqs, &state->constants);
+    write_premiss_proof(ri, step_ri, state->net, get_history_state, rqs, state->constants);
     fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri);
   }
   fprintf(coq_fp, "(* Finished with branch %s *)\n", state->proof_branch_id);
@@ -687,7 +687,7 @@ unsigned int prover(const rete_net* rete, bool multithread){
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
   if(state->net->has_factset)
-    insert_state_fact_set(state->factset, true_atom, get_current_state_step_no(state), &state->constants);
+    insert_state_fact_set(state->factset, true_atom, get_current_state_step_no(state), state->constants);
 
   if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact(state, true_atom);

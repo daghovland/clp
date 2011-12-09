@@ -112,7 +112,7 @@ term* create_function_term(const char* function, const term_list *args){
 **/
 term* parser_create_constant_term(theory* th, const char* name){
   term* t =  _init_term(constant_term, _create_term_list(0));
-  t->val.constant = parser_new_constant(&th->constants, name);
+  t->val.constant = parser_new_constant(th->constants, name);
   return t;
 }
 
