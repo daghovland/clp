@@ -91,7 +91,9 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     print_fol_atom(ground, state->constants, stdout);
     printf("\n");
 #endif
-    if(state->net->has_factset)
+    if(ground->pred->is_equality)
+      union_constants(ground->args->args[0]->val.constant, ground->args->args[1]->val.constant, state->constants);
+    else if(state->net->has_factset) 
       fact_is_new = insert_state_factset_single(state, ground);
     if(fact_is_new && (!state->net->factset_lhs || state->net->use_beta_not))
       insert_state_rete_net_fact(state, ground);
@@ -105,6 +107,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 **/
 bool return_found_model_mt(rete_state_single* state){
   fprintf(stdout, "Found a model of the theory \n");
+  print_all_constants(state->constants, stdout);
   if(state->net->has_factset)
     print_state_fact_store(state, stdout);
   else
@@ -262,6 +265,7 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   fprintf(coq_fp, "(* Finished with branch %s *)\n", branch->name);
 }
 
+
 /**
    The main prover function 
 **/
@@ -270,6 +274,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;
+  constant_iter ci;
   foundproof = true;
   reached_max = false;
   srand(1000);

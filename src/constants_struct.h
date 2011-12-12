@@ -50,5 +50,6 @@ typedef struct constants_t {
   unsigned int n_constants;
 } constants;
 
+typedef unsigned int constants_iter ;
 
 #endif

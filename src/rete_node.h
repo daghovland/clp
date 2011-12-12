@@ -66,7 +66,7 @@
  automatically passed on, but rather put in a queue on the rule node, which then will
  ask for it when more rule instances are needed.
 **/
-enum rete_node_type { alpha, beta_and, beta_root, beta_not, beta_or, selector, rule };
+enum rete_node_type { alpha, beta_and, beta_root, beta_not, beta_or, beta_equality, selector, rule };
 
 struct rete_node_t {
   enum rete_node_type type;
@@ -83,6 +83,10 @@ struct rete_node_t {
       size_t a_store_used_no;
       size_t b_store_no;
     } beta;
+    struct beta_equality_t {
+      const term* t1;
+      const term* t2;
+    }
     struct rule_t {
       const axiom* axm;
       unsigned int store_no;

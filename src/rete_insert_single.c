@@ -100,6 +100,16 @@ void insert_rete_beta_sub_single(const rete_net* net,
     
     
     switch(node->type){
+    case beta_equality:
+      term* i1 = instantiate_term(node->val.beta_equality.t1, sub);
+      term* i2 = instantiate_term(node->val.beta_equality.t2, sub);
+      if(i1->type == constant_term && i2->type == constant_term){
+	if(equal_constants(i1->val.constant, i2->val.constant, cs))
+	  insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
+      } else if (i1->type == variable_term && i2->type == variable_term){
+	
+      }
+      break;
     case beta_and:
       if(insert_substitution_single(node_caches, 
 				    node->val.beta.b_store_no, 

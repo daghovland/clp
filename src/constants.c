@@ -139,7 +139,10 @@ constants* backup_constants(const constants* orig){
   return copy_constants(orig);
 }
 
-/*
+/**
+   The prover iterates over all constants to get 
+   the domain
+**/
 constants_iter get_constants_iter(constants* state){
   return 0;
 }
@@ -148,12 +151,15 @@ bool constants_iter_has_next(constants* state, constants_iter* iter){
   return *iter < state->n_constants;
 }
 
-const char* constants_iter_get_next(constants* state, constants_iter *iter){
+constant* constants_iter_get_next(constants* state, constants_iter *iter){
   assert(constants_iter_has_next(state, iter));
-  return state->constants[*iter++];
+  return & state->constants[*iter++];
 }
-  
-*/
+
+void destroy_constants_iter(constants_iter iter){
+  return;
+}
+
  
 /**
    Called from the parser (via create_constant_term in atom_and_term.c) 
@@ -167,6 +173,32 @@ unsigned int parser_new_constant(constants* cs, const char* new){
       return i;
   }
   return insert_constant_name(cs, new);
+}
+
+/**
+   Prints all constants, with partitions
+**/
+void print_all_constants(constants* cs, FILE* stream){
+  unsigned int partitions[cs->n_constants][cs->n_constants];
+  unsigned int size_partition[cs->n_constants];
+  unsigned int i;
+  for(i = 0; i < cs->n_constants; i++)
+    size_partition[i] = 0;
+  for(i = 0; i < cs->n_constants; i++){
+    unsigned int p = find_constant_root(i, cs);
+    partitions[p][size_partition[p]] = i;
+    size_partition[p]++;
+  }
+  for(i = 0; i < cs->n_constants; i++){
+    if(size_partition[i] > 0){
+      unsigned int j;
+      fprintf(stream, "{");
+      for(j = 0; j < size_partition[i]; j++)
+	fprintf(stream, "%s ", cs->constants[partitions[i][j]].name);
+      fprintf(stream, "}");
+    }
+  }
+  fprintf(stream, "\n");
 }
 
 

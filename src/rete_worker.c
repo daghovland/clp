@@ -112,7 +112,7 @@ void * queue_worker_routine(void* arg){
 void start_worker_thread(rete_worker* worker){
   pthread_attr_t attr;
   int errval;
-  size_t stacksize = 100000;
+  size_t stacksize = 10000;
   pt_err(pthread_attr_init(&attr), "rete_worker.c: start_worker_thread: attr init");
   pthread_attr_setstacksize(&attr, stacksize); 
   errval = pthread_create(& worker->tid, &attr, queue_worker_routine, worker);

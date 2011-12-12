@@ -47,9 +47,6 @@ domain_iter get_domain_iter(rete_net_state*);
 bool domain_iter_has_next(rete_net_state*, domain_iter*);
 const term* domain_iter_get_next(rete_net_state*, domain_iter*);
 void insert_constants_elem(rete_net_state*, const term*);
-constants_iter get_constants_iter(rete_net_state*);
-bool constants_iter_has_next(rete_net_state*, constants_iter*);
-const char* constants_iter_get_next(rete_net_state*, constants_iter*);
 
 // Called from prover.c
 void insert_rete_net_fact(rete_net_state*, const atom*);

@@ -39,6 +39,13 @@ constants* init_constants(unsigned int);
 void destroy_constants(constants*);
 constants* copy_constants(const constants*);
 constants* backup_constants(const constants*);
+void print_all_constants(constants*, FILE*);
 bool equal_constants(unsigned int, unsigned int, constants*);
 void union_constants(unsigned int, unsigned int, constants*);
+
+constants_iter get_constants_iter(constants*);
+bool constants_iter_has_next(constants*, constants_iter*);
+constant* constants_iter_get_next(constants*, constants_iter*);
+void destroy_constants_iter(constants_iter);
+
 #endif

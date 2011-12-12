@@ -224,10 +224,12 @@ term_list* _create_term_list(size_t size_args){
 
 
 atom* parser_create_equality(const term * t1, const term * t2, theory* th){
+  atom* a;
   term_list* tl = _create_term_list(2);
   tl = extend_term_list(tl, t1);
   tl = extend_term_list(tl, t2);
-  return parser_create_atom("=", tl, th);
+  a = parser_create_atom("=", tl, th);
+  return a;
 }
 
 
