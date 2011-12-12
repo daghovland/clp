@@ -47,6 +47,6 @@ void print_fol_atom(const atom*, const constants*, FILE*);
 void print_coq_atom(const atom*, const constants*, FILE*);
 void print_geolog_atom(const atom*, const constants*, FILE*);
 
-bool equal_atoms(const atom*, const atom*, const constants*);
+bool equal_atoms(const atom*, const atom*, constants*);
 
 #endif

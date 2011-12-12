@@ -133,7 +133,7 @@ void start_worker_thread(rete_worker* worker){
 
    Also allocates memory for the qeue
  **/
-rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work, const constants* cs){
+rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substitution_store_mt * tmp_subs, substitution_store_array * node_subs, rule_queue_single * output, rete_worker_queue * work, constants* cs){
   rete_worker * worker = (rete_worker *) malloc_tester(sizeof(rete_worker));
   worker->work = work;
   worker->output = output;

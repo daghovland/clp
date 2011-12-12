@@ -39,6 +39,6 @@ constants* init_constants(unsigned int);
 void destroy_constants(constants*);
 constants* copy_constants(const constants*);
 constants* backup_constants(const constants*);
-bool equal_constants(unsigned int, unsigned int, const constants*);
+bool equal_constants(unsigned int, unsigned int, constants*);
 void union_constants(unsigned int, unsigned int, constants*);
 #endif

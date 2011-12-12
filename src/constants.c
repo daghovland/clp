@@ -95,7 +95,7 @@ const term* get_fresh_constant(variable* var, constants* constants){
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
-bool find_constant_root(unsigned int c, const constants* cs){
+unsigned int find_constant_root(unsigned int c, constants* cs){
   if(cs->constants[c].parent != c)
     cs->constants[c].parent = find_constant_root(cs->constants[c].parent, cs);
   return cs->constants[c].parent;
@@ -126,8 +126,10 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts){
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
-bool equal_constants(unsigned int c1, unsigned int c2, const constants* consts){
-  return find_constant_root(c1, consts) == find_constant_root(c2, consts);
+bool equal_constants(unsigned int c1, unsigned int c2, constants* consts){
+  unsigned int p1 = find_constant_root(c1, consts);
+  unsigned int p2 = find_constant_root(c2, consts);
+  return p1 == p2;
 }
 
 /**

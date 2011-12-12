@@ -67,7 +67,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				 const rete_node* node, 
 				 unsigned int step, 
 				 const substitution* sub,
-				 const constants* cs
+				 constants* cs
 				 )
 {
   sub_store_iter iter;
@@ -173,7 +173,7 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
 					    const atom* fact, 
 					    unsigned int step, 
 					    substitution* sub, 
-					    const constants* cs){
+					    constants* cs){
   unsigned int i;
   substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   assert(node->type == selector || node->type == alpha);
@@ -206,7 +206,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   const atom* fact, 
 				   unsigned int step, 
 				   substitution* sub, 
-				   const constants* cs)
+				   constants* cs)
 {
   const term *arg;
   sub_store_iter iter;

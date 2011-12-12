@@ -180,9 +180,9 @@ void fresh_exist_constants(const conjunction* con, substitution* sub, constants*
 
    If this is not possible, it returns false
 **/
-bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, const constants*);
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, constants*);
 
-bool find_instantiate_sub_term(const term* t, const term* ground, substitution* sub, const constants* cs){
+bool find_instantiate_sub_term(const term* t, const term* ground, substitution* sub, constants* cs){
   const term* val;
   if(t == ground){
     assert(t->type == constant_term);
@@ -213,7 +213,7 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
   exit(EXIT_FAILURE);
 }
 
-bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, const constants* cs){
+bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, constants* cs){
   unsigned int i;
   assert(tl->n_args == ground->n_args);
   assert(test_ground_term_list(ground));
@@ -225,7 +225,7 @@ bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground,
 }
 
 
-bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, const constants* cs){
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants* cs){
   assert(at->pred->pred_no == fact->pred->pred_no && at->args->n_args == fact->args->n_args);
   assert(test_ground_atom(fact));
   return find_instantiate_sub_termlist(at->args, fact->args, sub, cs);

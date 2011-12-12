@@ -46,6 +46,6 @@ atom* instantiate_atom(const atom* orig, const substitution* sub);
 void delete_instantiated_atom(atom* copy);
 const term* get_fresh_constant(variable* var, constants* constants);
 void fresh_exist_constants(const conjunction* con, substitution* sub, constants* constants);
-bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, const constants* cs);
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants* cs);
 
 #endif

@@ -166,7 +166,7 @@ const term* find_substitution(const substitution*, const variable*);
 void print_rete_state(const rete_net_state*, FILE*);
 void print_dot_rete_state_net(const rete_net*, const rete_net_state*, FILE*);
 
-bool insert_substitution(rete_net_state*, unsigned int, substitution*, const freevars*, const constants*);
+bool insert_substitution(rete_net_state*, unsigned int, substitution*, const freevars*, constants*);
 
 // in rete_state.c
 unsigned int get_current_state_step_no(const rete_net_state*);
