@@ -274,7 +274,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;
-  constant_iter ci;
+  constants_iter ci;
   foundproof = true;
   reached_max = false;
   srand(1000);

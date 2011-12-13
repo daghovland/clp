@@ -51,6 +51,17 @@ bool test_timestamps(const axiom* rule, const substitution* sub){
   return true;
 }
 
+/**
+   Gets a constant, either the one in the term *t, or the
+   substitution value of the variable.
+   Called from insert below
+**/
+unsigned int get_instantiated_constant(const term* t, const substitution* sub){
+  if(t->type == variable_term)
+    t = find_substitution(sub, t->val.var);
+  assert(t->type == constant_term);
+  return t->val.constant;
+}
 
 /**
    Inserting a substitution into a beta node in a rete network
@@ -97,18 +108,13 @@ void insert_rete_beta_sub_single(const rete_net* net,
     assert(node->type == beta_and);
     assert(node->n_children == 1);	
     assert(node->left_parent != NULL && node->left_parent->type != alpha);
-    
-    
     switch(node->type){
-    case beta_equality:
-      term* i1 = instantiate_term(node->val.beta_equality.t1, sub);
-      term* i2 = instantiate_term(node->val.beta_equality.t2, sub);
-      if(i1->type == constant_term && i2->type == constant_term){
-	if(equal_constants(i1->val.constant, i2->val.constant, cs))
-	  insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
-      } else if (i1->type == variable_term && i2->type == variable_term){
-	
-      }
+    case equality:
+      if(equal_constants(get_instantiated_constant(node->val.equality.t1, sub), 
+			 get_instantiated_constant(node->val.equality.t2, sub), 
+			 cs)
+	 )
+	insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
       break;
     case beta_and:
       if(insert_substitution_single(node_caches, 

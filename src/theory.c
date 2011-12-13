@@ -168,6 +168,8 @@ void finalize_theory(theory* th){
 
 /**
    Creates new rete network for the whole theory
+
+   TODO: Check that equalitites are last. Add dom() for variables only in equalities.
 **/
 rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts, bool verbose){
 #ifdef HAVE_PTHREAD
