@@ -37,9 +37,9 @@ check_SCRIPTS = check_clp.sh
 check_DATA = $(srcdir)/anc.in  $(srcdir)/anl.in 
 TESTS = $(check_SCRIPTS)
 check_clp.sh:
-	echo "./clpmemdebug -q $(srcdir)/nl.in" > $(check_SCRIPTS)
+	echo "./clpdebug -q $(srcdir)/nl.in" > $(check_SCRIPTS)
 	echo "coqc nl.v" >> $(check_SCRIPTS)
-	echo "rm anl.v anl.vo" >> $(check_SCRIPTS)
+	echo "rm nl.v nl.vo" >> $(check_SCRIPTS)
 	chmod +x $(check_SCRIPTS)
 CLEANFILES = $(check_SCRIPTS) geolog_parser.h clpl_parser.h geolog_parser.c clpl_parser.c geolog_parser.tab.h clpl_parser.tab.h geolog_parser.tab.c clpl_parser.tab.c y.tab.c y.tab.h clpl.c geolog.c
 

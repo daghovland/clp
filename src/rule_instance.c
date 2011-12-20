@@ -87,10 +87,12 @@ bool test_rule_instance(const rule_instance* ri){
   assert(ri->rule != NULL);
   assert(test_substitution(& ri->sub));
   assert(test_axiom(ri->rule, ri->rule->axiom_no));
+#if false  
   if(!test_is_instantiation(ri->rule->rhs->free_vars, & (ri->sub))){
     fprintf(stderr, "An incorrect rule instance added to the queue\n");
     return false;
   }
+#endif
   return true;
 }
 

@@ -164,6 +164,7 @@ conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
 ;
 atom:      term EQUALS term { $$ = parser_create_equality($1, $3, th);} 
+          | EQUALS LPAREN term COMMA term RPAREN { $$ = parser_create_equality($3, $5, th);} 
           | NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
           | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
           | NAME {$$ = create_prop_variable($1, th);}

@@ -145,7 +145,7 @@ rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const 
 
 
 rete_node* create_rete_equality_node(rete_net* net, const term* t1, const term* t2, rete_node* left_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
-  assert(left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  assert(left_parent->type == equality || left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
   rete_node* node = _create_rete_node(equality, left_parent, free_vars, in_positive_lhs_part, rule_no);
   node->val.equality.t1 = t1;
   node->val.equality.t2 = t2;
