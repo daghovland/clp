@@ -40,4 +40,12 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   unsigned int step, 
 				   substitution* sub, 
 				   constants*);
+
+void recheck_beta_node(const rete_net* net,
+		       substitution_store_array * node_caches, 
+		       substitution_store_mt * tmp_subs,
+		       const rete_node* node, 
+		       rule_queue_single * rule_queue,
+		       unsigned int step, 
+		       constants* cs);
 #endif

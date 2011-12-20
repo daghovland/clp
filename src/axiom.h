@@ -54,7 +54,6 @@ typedef struct axiom_t {
 } axiom;
 
 
-axiom* create_axiom(conjunction*, disjunction*);
 axiom* create_goal(conjunction*);
 axiom* create_negative(conjunction*);
 

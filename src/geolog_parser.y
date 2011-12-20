@@ -117,7 +117,7 @@ axiom:    TRUE ARROW disjunction  {$$ = create_fact($3, th); }
 | disjunction   {$$ = create_fact($1, th); }
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
               | conjunction ARROW FALSE  { $$ = create_goal($1);}
-              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}
+              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3, th);}
                ;
 conjunction:   atom { $$ = create_conjunction($1);}
                          | conjunction COMMA TRUE { $$ = $1;}

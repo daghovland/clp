@@ -49,10 +49,10 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->constants = copy_constants(net->th->constants);
   state->cur_step = 0;
   state->total_steps = 0;
-  state->rule_queues = calloc_tester(net->n_rules, sizeof(rule_queue_single*));
-  state->worker_queues = calloc_tester(net->n_rules, sizeof(rete_worker_queue*));
-  state->workers = calloc_tester(net->n_rules, sizeof(rete_worker*));
-  for(i = 0; i < net->n_rules; i++){
+  state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
+  state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
+  state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
+  for(i = 0; i < net->th->n_axioms; i++){
     state->rule_queues[i] = initialize_queue_single(ssi, i);
     state->worker_queues[i] = init_rete_worker_queue();
     state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i], state->constants);
@@ -80,7 +80,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
 rete_state_backup backup_rete_state(rete_state_single* state){
   rete_state_backup backup;
   unsigned int i;
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
   backup.current_proof_branch = state->current_proof_branch;
   backup.cur_step = state->cur_step;
@@ -90,19 +90,29 @@ rete_state_backup backup_rete_state(rete_state_single* state){
     copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   }
   backup.state = state;
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     wait_for_worker_to_pause(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
-  backup.rq_backups = calloc_tester(state->net->n_rules, sizeof(rule_queue_single_backup));
-  backup.worker_backups = calloc_tester(state->net->n_rules, sizeof(rete_worker_queue_backup));
-  for(i = 0; i < state->net->n_rules; i++){
+  backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
+  backup.worker_backups = calloc_tester(state->net->th->n_axioms, sizeof(rete_worker_queue_backup));
+  for(i = 0; i < state->net->th->n_axioms; i++){
     backup.rq_backups[i] = backup_rule_queue_single(state->rule_queues[i]);
     backup.worker_backups[i] = backup_rete_worker_queue(state->worker_queues[i]);
   }
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     continue_rete_worker(state->workers[i]);
   return backup;
 }
+
+/**
+   Called when the prover sees an equality
+**/
+void recheck_rete_state_net(rete_state_single* state){
+  unsigned int i;
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    set_recheck_net(state->workers[i]);
+}
+
 
 /**
    Called when treating disjunction in prover_single
@@ -143,7 +153,7 @@ void destroy_rete_backup(rete_state_backup* backup){
 rete_state_single* restore_rete_state(rete_state_backup* backup){
   unsigned int i;
   rete_state_single* state = backup->state;
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
   state->current_proof_branch = backup->current_proof_branch;
   state->cur_step = backup->cur_step;
@@ -152,15 +162,15 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
       restore_fact_store(& state->factsets[i], backup->factset_backups[i]);
     copy_fact_iter_array(state->new_facts_iters, backup->new_facts_backups, state->net->th->n_predicates);
   }
-  for(i = 0; i < state->net->n_rules; i++){
+  for(i = 0; i < state->net->th->n_axioms; i++){
     wait_for_worker_to_pause(state->workers[i]);
   }
   state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
-  for(i = 0; i < backup->state->net->n_rules; i++){
+  for(i = 0; i < backup->state->net->th->n_axioms; i++){
     backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
     backup->state->worker_queues[i] = restore_rete_worker_queue(backup->state->worker_queues[i], & backup->worker_backups[i]);
   }
-  for(i = 0; i < state->net->n_rules; i++){
+  for(i = 0; i < state->net->th->n_axioms; i++){
     continue_rete_worker(state->workers[i]);
   }
   return backup->state;
@@ -172,7 +182,7 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
 **/
 void delete_rete_state_single(rete_state_single* state){
   unsigned int i;
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     destroy_rete_worker(state->workers[i]);
   destroy_substitution_store_array(state->node_subs);
   if(state->net->has_factset){
@@ -183,7 +193,7 @@ void delete_rete_state_single(rete_state_single* state){
     free(state->factsets);
     free(state->new_facts_iters);
   }
-  for(i = 0; i < state->net->n_rules; i++){
+  for(i = 0; i < state->net->th->n_axioms; i++){
     destroy_rule_queue_single(state->rule_queues[i]);
     destroy_rete_worker_queue(state->worker_queues[i]);
   }
@@ -204,7 +214,7 @@ void delete_rete_state_single(rete_state_single* state){
 **/
 void stop_rete_state_single(rete_state_single* state){
   unsigned int i;
-  for(i = 0; i < state->net->n_rules; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++)
     stop_rete_worker(state->workers[i]);
 }
   
@@ -565,7 +575,7 @@ unsigned int rule_queue_possible_age_single_state(rete_state_single* state, size
 **/
 void print_state_single_rule_queues(rete_state_single* s, FILE* f){
   unsigned int i;
-  for(i = 0; i < s->net->n_rules; i++){
+  for(i = 0; i < s->net->th->n_axioms; i++){
     if(!rule_queue_single_is_empty(s->rule_queues[i])){
       printf("Axiom %s ", s->net->th->axioms[i]->name);
       print_rule_queue_single(s->rule_queues[i], s->constants, stdout);

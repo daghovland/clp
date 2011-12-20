@@ -42,6 +42,11 @@
    The name used in the coq proof writer for the set domain
 **/
 #define DOMAIN_SET_NAME "domain_set"
+
+/**
+   The name used when inserting variables only occurring in equalities
+**/
+#define DOMAIN_PRED_NAME "dom"
 /**
    Debugs the parsers
    

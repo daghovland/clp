@@ -76,6 +76,8 @@ void check_worker_queue_too_small(rete_worker_queue* rq){
   }
 }
 
+
+
 /**
    Creates the initial queue containing
    all facts from the theory

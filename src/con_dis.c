@@ -149,6 +149,46 @@ bool test_disjunction(const disjunction* d){
   return true;
 }
 
+/**
+   Only called from fix_equality_vars below
+
+   Checks that if the term t is a variable, then it either occurs in left, 
+   or a dom(t->val.var) is inserted into the conjunction
+**/
+unsigned int test_equality_var(conjunction* con, theory* th, unsigned int i, freevars* left, const term* t){
+  if(t->type == variable_term && !is_in_freevars(left, t->val.var)){
+    unsigned int j;
+    term_list* tl = create_term_list(copy_term(t));
+    extend_conjunction(con, con->args[con->n_args - 1]);
+    for(j = i; j < con->n_args - 1; j++)
+      con->args[j+1] = con->args[j];
+    con->args[i] = parser_create_atom(DOMAIN_PRED_NAME, tl, th);
+    i++;
+    free_term_variables(t, left);
+  }
+  return i;
+}
+
+
+/**
+   Checks that equalitites are not the left-most instance of any variable. 
+   Adds dom() for variables only in equalities.
+
+   Called from extend_theory
+**/
+void fix_equality_vars(conjunction *con, theory* th){
+  freevars* left = init_freevars();
+  unsigned int i;
+  for(i = 0; i < con->n_args; i++){
+    if(con->args[i]->pred->is_equality){
+      const term* t1 = con->args[i]->args->args[0];
+      const term* t2 = con->args[i]->args->args[1];
+      i = test_equality_var(con, th, i, left, t1);
+      i = test_equality_var(con, th, i, left, t2);
+    }
+  }
+  //  del_freevars(left);
+}
 
 /**
    Creating the rete network
@@ -178,8 +218,12 @@ rete_node * create_rete_conj_node(rete_net* net,
     freevars* copy = copy_freevars(vars);
     for(j = i; j < con->n_args; j++)
       copy = free_atom_variables(con->args[j], copy);
-    right_parent = create_rete_atom_node(net, con->args[i], copy, propagate, in_positive_lhs_part, axiom_no);
-    left_parent = create_beta_and_node(net, left_parent, right_parent, copy, in_positive_lhs_part, axiom_no);
+    if(con->args[i]->pred->is_equality)
+      left_parent = create_rete_equality_node(net, con->args[i]->args->args[0], con->args[i]->args->args[1], left_parent, copy, in_positive_lhs_part, axiom_no);
+    else {
+      right_parent = create_rete_atom_node(net, con->args[i], copy, propagate, in_positive_lhs_part, axiom_no);
+      left_parent = create_beta_and_node(net, left_parent, right_parent, copy, in_positive_lhs_part, axiom_no);
+    }
   } // end for(i = 0; i < con->n_args; i++){
   return left_parent;
 }

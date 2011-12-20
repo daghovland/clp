@@ -57,8 +57,6 @@ atom* prover_create_atom(const predicate* pred, const term_list * args){
   return ret_val;
 }
 
-
-
 atom* create_prop_variable(const char* name, theory* th){
   return parser_create_atom(name, _create_term_list(0), th);
 }

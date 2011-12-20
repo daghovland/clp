@@ -63,6 +63,8 @@ unsigned int get_instantiated_constant(const term* t, const substitution* sub){
   return t->val.constant;
 }
 
+
+
 /**
    Inserting a substitution into a beta node in a rete network
    The substitution sub is changed, but not freed
@@ -82,17 +84,19 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				 )
 {
   sub_store_iter iter;
+  unsigned int c1, c2;
+  const term *t1, *t2;
   substitution_size_info ssi = net->th->sub_size_info;
   substitution * tmp_sub = create_empty_substitution(net->th, tmp_subs);
 
   assert(parent == node->left_parent || parent == node->val.beta.right_parent);
   assert(test_substitution(sub));
   
-  assert(node->rule_no < net->th->n_axioms && test_timestamps(net->th->axioms[node->rule_no], sub));
+  //assert(node->rule_no < net->th->n_axioms && test_timestamps(net->th->axioms[node->rule_no], sub));
   
   if(node->type == rule){
     assert(node->n_children == 0);
-    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
+    //    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
     assert(test_substitution(sub));	
     if(insert_substitution_single(node_caches, node->val.rule.store_no, sub, node->free_vars, cs)){
       push_rule_instance_single(rule_queue
@@ -105,15 +109,16 @@ void insert_rete_beta_sub_single(const rete_net* net,
     }
   } else {
 
-    assert(node->type == beta_and);
+    assert(node->type == beta_and || node->type == equality);
     assert(node->n_children == 1);	
     assert(node->left_parent != NULL && node->left_parent->type != alpha);
     switch(node->type){
     case equality:
-      if(equal_constants(get_instantiated_constant(node->val.equality.t1, sub), 
-			 get_instantiated_constant(node->val.equality.t2, sub), 
-			 cs)
-	 )
+      t1 = node->val.equality.t1;
+      c1 = get_instantiated_constant(t1, sub);
+      t2 = node->val.equality.t2;
+      c2 = get_instantiated_constant(t2, sub);
+      if(equal_constants(c1, c2, cs))
 	insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
       break;
     case beta_and:
@@ -173,6 +178,81 @@ void insert_rete_beta_sub_single(const rete_net* net,
   return;
 }
 
+
+
+/**
+   Called from recheck_beta_node
+   and from rete_insert_alpha
+
+   Inserts from the alpha into the beta node
+**/
+void insert_rete_alpha_beta(const rete_net* net,
+			    substitution_store_array * node_caches, 
+			    substitution_store_mt * tmp_subs,
+			    const rete_node* node, 
+			    rule_queue_single * rule_queue,
+			    unsigned int step, 
+			    substitution* sub, 
+			    constants* cs)
+{
+  if(node->left_parent->type == beta_root)
+    insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
+  else {
+    substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
+    substitution_size_info ssi = net->th->sub_size_info;
+    sub_store_iter iter = get_array_sub_store_iter(node_caches, node->val.beta.b_store_no);
+    while(has_next_sub_store(& iter)){
+      bool has_overlap;
+      if(node->in_positive_lhs_part)
+	has_overlap = union_substitutions_struct_with_ts(tmp_sub, get_next_sub_store(& iter), sub, ssi, cs);
+      else
+	has_overlap = union_substitutions_struct_one_ts(tmp_sub, get_next_sub_store(& iter), sub, ssi, cs);
+      if(has_overlap) 
+	insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, tmp_sub, cs);
+    }
+    destroy_sub_store_iter(& iter);
+    free_substitution(tmp_sub);
+  }
+}
+/**
+   Called when a new equality is added to the model. 
+   For each beta node, first re-inserts all beta into the next beta-node, 
+   the reinserts all from the alpha node into the beta node.
+
+   Should first be called at the rule node, iterates backwards
+**/
+void recheck_beta_node(const rete_net* net,
+		       substitution_store_array * node_caches, 
+		       substitution_store_mt * tmp_subs,
+		       const rete_node* node, 
+		       rule_queue_single * rule_queue,
+		       unsigned int step, 
+		       constants* cs)
+{
+  sub_store_iter iter;
+  substitution* tmp_sub;
+  switch(node->type){
+  case beta_root:
+    return;
+  case equality:
+    break;
+  case beta_and:
+    tmp_sub = create_empty_substitution(net->th, tmp_subs);
+    iter= get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
+    while(has_next_sub_store(& iter)){
+      copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info);
+      insert_rete_alpha_beta(net, node_caches, tmp_subs, node, rule_queue, step, tmp_sub, cs);
+    }
+    destroy_sub_store_iter(& iter);
+    break;
+  case rule:
+    break;
+  default:
+    fprintf(stderr, "rete_insert_single.c: recheck_beta_node: Invalid node type");
+    exit(EXIT_FAILURE);
+  }
+  recheck_beta_node(net, node_caches, tmp_subs, node->left_parent, rule_queue, step, cs);
+}
 /**
    Inserting fact into all alpha children 
    Called from insert_rete_alpha_fact on selectors and alpha nodes
@@ -225,13 +305,8 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   constants* cs)
 {
   const term *arg;
-  sub_store_iter iter;
-  substitution_size_info ssi = net->th->sub_size_info;
-  substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   bool ret_val = true;
-
   assert(test_substitution(sub));
-
   switch(node->type){
   case selector:
     assert(false);
@@ -249,23 +324,8 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
     assert(node->n_children == 1);
     if(!insert_substitution_single(node_caches, node->val.beta.a_store_no, sub, node->free_vars, cs))
       ret_val = false;
-    else {
-      if(node->left_parent->type == beta_root)
-	insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, sub, cs);
-      else {
-	iter = get_array_sub_store_iter(node_caches, node->val.beta.b_store_no);
-	while(has_next_sub_store(& iter)){
-	  bool has_overlap;
-	  if(node->in_positive_lhs_part)
-	    has_overlap = union_substitutions_struct_with_ts(tmp_sub, get_next_sub_store(& iter), sub, ssi, cs);
-	  else
-	    has_overlap = union_substitutions_struct_one_ts(tmp_sub, get_next_sub_store(& iter), sub, ssi, cs);
-	  if(has_overlap) 
-	    insert_rete_beta_sub_single(net, node_caches, tmp_subs, rule_queue, node, node->children[0], step, tmp_sub, cs);
-	}
-	destroy_sub_store_iter(& iter);
-      }
-    }
+    else 
+      insert_rete_alpha_beta(net, node_caches, tmp_subs, node, rule_queue, step, sub, cs);
     break;
   case beta_not: 
     if(insert_substitution_single(node_caches, 
@@ -280,7 +340,6 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
     fprintf(stderr, "Encountered wrong node type %i\n", node->type);
     assert(false);
   }
-  free_substitution(tmp_sub);
   return ret_val;
 }    
 

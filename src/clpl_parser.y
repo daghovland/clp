@@ -154,7 +154,7 @@ axiom:    LPAREN axiom RPAREN { $$ = $2; }
               |  TRUE ARROW disjunction  {$$ = create_fact($3, th); }
               | ARROW disjunction   {$$ = create_fact($2, th); }
               | disjunction   {$$ = create_fact($1, th); }
-              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3);}
+              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3, th);}
               | conjunction ARROW GOAL   { $$ = create_goal($1);}
               | conjunction ARROW FALSE  { $$ = create_goal($1);}
 ;

@@ -50,6 +50,7 @@ variable* next_freevars_iter(freevars_iter*);
 bool has_next_freevars_iter(const freevars_iter*);
 variable* parser_new_variable(freevars**, const char*);
 bool empty_intersection(const freevars*, const freevars*);
+bool is_in_freevars(const freevars*, const variable*);
 
 bool test_variable(const variable*);
 void print_variable(const variable*, FILE*);

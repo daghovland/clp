@@ -41,6 +41,8 @@ typedef struct worker_queue_elem_t {
    for a "rete worker" to put into the alpha nodes of a rule
 
    They are pushed by the prover and popped by the worker thread
+
+   recheck_net is set to true by the prover whenever a new equality is encountered
 **/
 typedef struct rete_worker_queue_t {
 #ifdef HAVE_PTHREAD

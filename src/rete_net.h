@@ -57,7 +57,7 @@
 typedef struct rete_net_t {
   unsigned int n_subs;
   unsigned int n_selectors;
-  unsigned int n_rules;
+  rete_node ** rule_nodes;
   const theory* th;
   bool existdom;
   bool lazy;

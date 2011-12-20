@@ -59,6 +59,7 @@ typedef struct rete_worker_t {
   rule_queue_single * output;
   unsigned int axiom_no;
   bool working;
+  bool recheck_net;
   enum worker_state state;
   bool pause_signalled;
   bool stop_signalled;
@@ -73,5 +74,8 @@ void continue_rete_worker(rete_worker*);
 bool rete_worker_is_working(rete_worker*);
 unsigned int get_worker_step(rete_worker*);
 void wait_for_worker_to_pause(rete_worker*);
+
+bool read_recheck_net(rete_worker*);
+void set_recheck_net(rete_worker*);
 #endif
 #endif

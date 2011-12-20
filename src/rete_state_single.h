@@ -52,6 +52,7 @@ sub_store_iter get_state_sub_store_iter(rete_state_single*, unsigned int);
 fact_store_iter get_state_fact_store_iter(rete_state_single*, unsigned int);
 
 void insert_rete_worker_queue(rete_state_single*, substitution*, const atom*, const rete_node*);
+void recheck_rete_state_net(rete_state_single*);
 
 void insert_state_rete_net_fact(rete_state_single* state, const atom* fact);
 

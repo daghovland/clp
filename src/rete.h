@@ -76,7 +76,8 @@ rete_node* create_beta_and_node(rete_net*, rete_node*, rete_node*, const freevar
 rete_node* create_beta_or_node(rete_net*, rete_node*, rete_node*, const freevars*, bool in_positive_lhs_part, unsigned int axiom_no);
 rete_node* create_beta_not_node(rete_net*, rete_node*, rete_node*, const freevars*, unsigned int axiom_no);
 rete_node* create_selector_node(rete_net*, const char*, unsigned int, const freevars*);
-void create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*, unsigned int axiom_no);
+rete_node* create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*, unsigned int axiom_no);
+rete_node* create_rete_equality_node(rete_net* , const term* , const term* , rete_node* , const freevars*, bool , unsigned int);
 
 rete_net_state* create_rete_state(const rete_net*, bool);
 
@@ -99,7 +100,7 @@ const rete_node* get_const_selector(unsigned int, const rete_net*);
 
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
 rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, bool in_positive_lhs_part, unsigned int axiom_no);
-void create_rete_axiom_node(rete_net*, const axiom*, unsigned int axiom_no, bool);
+rete_node* create_rete_axiom_node(rete_net*, const axiom*, unsigned int axiom_no, bool);
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool, bool, bool, bool, bool, bool);
 rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, unsigned int axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, unsigned int axiom_no);

@@ -80,9 +80,12 @@ atom* create_prop_variable(const char*, theory*);
 
 // In con_dis.c
 conjunction* create_empty_conjunction(theory*);
+void fix_equality_vars(conjunction*, theory*);
+
 
 //In axiom.c
 axiom* create_fact(disjunction*, theory*);
+axiom* create_axiom(conjunction*, disjunction*, theory*);
 
 
 

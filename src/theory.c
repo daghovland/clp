@@ -86,7 +86,7 @@ void extend_theory(theory *th, axiom *ax){
     return;
   }
   ax->axiom_no = th->n_axioms;
-  
+
   assert(!th->finalized);
   if(!ax->has_name){
     char* axname = malloc_tester(10 + abs(log10(th->n_axioms)));
@@ -169,7 +169,6 @@ void finalize_theory(theory* th){
 /**
    Creates new rete network for the whole theory
 
-   TODO: Check that equalitites are last. Add dom() for variables only in equalities.
 **/
 rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts, bool verbose){
 #ifdef HAVE_PTHREAD
@@ -178,14 +177,13 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   unsigned int i;
   rete_net* net = init_rete(th, maxsteps, lazy, coq);
   assert(th->finalized);
-  net->n_rules = 0;
+  net->rule_nodes = calloc_tester(th->n_axioms, sizeof(rete_node*));
   for(i = 0; i < th->n_axioms; i++){
 #ifndef NDEBUG
     const axiom* ax = th->axioms[i];
 #endif
     assert(!(ax->type == fact && ax->rhs->n_args == 1));
-    create_rete_axiom_node(net, th->axioms[i], net->n_rules, use_beta_not);
-    net->n_rules++;
+    net->rule_nodes[i] = create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
   }
   net->th = th;
   net->existdom = existdom;

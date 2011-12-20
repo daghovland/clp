@@ -29,6 +29,7 @@
 #include "axiom.h"
 #include "fresh_constants.h"
 #include "rete.h"
+#include "theory.h"
 
 
 /**
@@ -36,7 +37,7 @@
    Constructors and destructor
 **/
 
-axiom* create_axiom(conjunction* lhs, disjunction* rhs){
+axiom* create_axiom(conjunction* lhs, disjunction* rhs, theory* th){
   int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = normal;
@@ -57,6 +58,7 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs){
       ret_val->exist_vars = plus_freevars(ret_val->exist_vars, rhs->args[i]->bound_vars);
     }
   }
+  fix_equality_vars(lhs, th);
   return ret_val;
 }
 
@@ -116,8 +118,9 @@ void delete_axiom(axiom* a){
 
    This is the only place where net->lazy is used, and it leads to setting the
    propagate value of alpha nodes in the left hand side to the opposite value
+
 **/
-void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, bool use_beta_not){
+rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, bool use_beta_not){
   rete_node* node;
   const freevars* rule_free_vars;
   if(ax->type != goal) {
@@ -138,7 +141,7 @@ void create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, boo
 				 ax->rhs,
 				 axiom_no);
   }
-  create_rule_node(net, node, ax, rule_free_vars, axiom_no);
+  return create_rule_node(net, node, ax, rule_free_vars, axiom_no);
 }
     
 void set_axiom_name(axiom* a, const char* name){

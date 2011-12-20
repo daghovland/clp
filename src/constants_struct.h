@@ -28,6 +28,7 @@
 
 #include "common.h"
 #include "fresh_constants.h"
+#include "timestamps.h"
 
 /**
    Part of a union-find / disjoint set structure
@@ -38,6 +39,7 @@ typedef struct constant_t {
   const char* name;
   unsigned int parent;
   unsigned int rank;
+  timestamps ts;
 } constant;
 
 /**

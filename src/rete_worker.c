@@ -34,11 +34,35 @@ bool worker_pause(rete_worker* worker){
 }
 
 bool worker_wait_for_pop(rete_worker*  worker){
-  return rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled;
+  return rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled && !worker->recheck_net;
 }
 
 bool worker_should_pop(rete_worker* worker){
-  return !rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled;
+  return !rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled && !worker->recheck_net;
+}
+
+
+
+/**
+   Called by the worker to see if it must reevaluate the beta nodes
+**/
+bool read_recheck_net(rete_worker* w){
+  bool retval = w->recheck_net;
+  w->recheck_net = false;
+  return retval;
+}
+/**
+   Called by the prover when a new equality is inserted
+**/
+void set_recheck_net(rete_worker* w){
+#ifdef HAVE_PTHREAD
+  lock_worker_queue(w->work);
+#endif
+  w->recheck_net = true;
+#ifdef HAVE_PTHREAD
+  signal_worker_queue(w->work);
+  unlock_worker_queue(w->work);
+#endif
 }
 
 /**
@@ -85,25 +109,29 @@ void * queue_worker_routine(void* arg){
     unlock_worker_queue(worker->work);
     if(worker->stop_signalled)
       break;
-    worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
-    if(worker->state == has_popped){
-      init_substitution(tmp_sub, worker->net->th, step);
-      insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub, worker->constants);
-      __sync_lock_test_and_set(& worker->state, waiting);
-      if(!worker->pause_signalled && !worker->stop_signalled){
-	lock_queue_single(worker->output);
-	signal_queue_single(worker->output);
-	unlock_queue_single(worker->output);
-      } else {
-	lock_worker_queue(worker->work);
-	signal_worker_queue(worker->work);
-	unlock_worker_queue(worker->work);
+    if(read_recheck_net(worker)){
+      worker->state = has_popped;
+      recheck_beta_node(worker->net, worker->node_subs, worker->tmp_subs, worker->net->rule_nodes[worker->axiom_no], worker->output, step, worker->constants);
+    } else {
+      worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
+      if(worker->state == has_popped){
+	init_substitution(tmp_sub, worker->net->th, step);
+	insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->output, alpha, fact, step, tmp_sub, worker->constants);
       }
+    }
+    __sync_lock_test_and_set(& worker->state, waiting);
+    if(!worker->pause_signalled && !worker->stop_signalled){
+      lock_queue_single(worker->output);
+      signal_queue_single(worker->output);
+      unlock_queue_single(worker->output);
+    } else {
+      lock_worker_queue(worker->work);
+      signal_worker_queue(worker->work);
+      unlock_worker_queue(worker->work);
     }
   }
   return NULL;
 }
-
 
 /**
    The functions for starting the thread
@@ -145,6 +173,7 @@ rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substi
   worker->node_subs = node_subs;
   worker->axiom_no = axiom_no;
   worker->constants = cs;
+  worker->recheck_net = false;
   start_worker_thread(worker);
   return worker;
 }

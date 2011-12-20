@@ -69,7 +69,7 @@ rule_instance* normal_next_instance(rule_queue_state state
   unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
-  for(i = 0; i < net->n_rules; i++){
+  for(i = 0; i < net->th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
     assert(axiom_no == i);

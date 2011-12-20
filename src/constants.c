@@ -33,6 +33,7 @@ constants* init_constants(unsigned int init_size){
   new_c->size_constants = init_size;
   new_c->constants = calloc_tester(new_c->size_constants, sizeof(constant));
   new_c->n_constants = 0;
+  
   return new_c;
 }
 
@@ -54,7 +55,7 @@ const char* get_constant_name(unsigned int c, const constants* cs){
 }
 
 /**
-   We keep track of all constants, so equality on constants can be decided by pointer equality
+   
 **/
 unsigned int insert_constant_name(constants * consts, const char* name){
   unsigned int new_const_ind;

@@ -91,8 +91,10 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     print_fol_atom(ground, state->constants, stdout);
     printf("\n");
 #endif
-    if(ground->pred->is_equality)
+    if(ground->pred->is_equality){
       union_constants(ground->args->args[0]->val.constant, ground->args->args[1]->val.constant, state->constants);
+      recheck_rete_state_net(state);
+    }
     else if(state->net->has_factset) 
       fact_is_new = insert_state_factset_single(state, ground);
     if(fact_is_new && (!state->net->factset_lhs || state->net->use_beta_not))
@@ -274,7 +276,6 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   bool has_fact = false;
   unsigned int i, retval;
   atom * true_atom;
-  constants_iter ci;
   foundproof = true;
   reached_max = false;
   srand(1000);
