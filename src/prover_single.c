@@ -200,7 +200,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     rv = run_prover_single(state);
     if(!rv)
       return false;
-    if(!(get_historic_rule_instance(state, step))->used_in_proof){
+    if(!state->net->treat_all_disjuncts && !(get_historic_rule_instance(state, step))->used_in_proof){
       state = restore_rete_state(&backup);
       prune_proof(state->current_proof_branch, i);
       break;

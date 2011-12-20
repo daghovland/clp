@@ -426,6 +426,12 @@ void print_coq_term(const term *t, const constants* cs, FILE* stream){
   print_term(t, cs, stream, print_coq_term_list);
 }
 void print_coq_atom(const atom* a, const constants* cs, FILE* stream){
-  fprintf(stream, "%s ", a->pred->name);
-  print_coq_term_list(a->args, cs, stream);
+  if(a->pred->is_equality){
+    print_coq_term(a->args->args[0], cs, stream);
+    fprintf(stream, " = ");
+    print_coq_term(a->args->args[1], cs, stream);
+  } else {
+    fprintf(stream, "%s ", a->pred->name);
+    print_coq_term_list(a->args, cs, stream);
+  }
 }

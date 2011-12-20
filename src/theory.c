@@ -233,8 +233,10 @@ void print_coq_proof_intro(const theory* th, const constants* cs, FILE* stream){
   fprintf(stream, "Variable goal : Prop.\n");
   fprintf(stream, "Variable %s : Set.\n", DOMAIN_SET_NAME);
 
-  for(i = 0; i < th->n_predicates; i++)
-    print_coq_predicate(th->predicates[i], stream);
+  for(i = 0; i < th->n_predicates; i++){
+    if(! th->predicates[i]->is_equality)
+      print_coq_predicate(th->predicates[i], stream);
+  }
 
   print_coq_constants(th->constants, stream);
   fprintf(stream, "\n");
