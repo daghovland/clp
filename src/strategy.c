@@ -83,10 +83,17 @@ rule_instance* normal_next_instance(rule_queue_state state
 	  continue;
 	}
       }
-      axiom_weights[axiom_no] = 
-	(possible_age(state, axiom_no) + rule_previously_applied) 
-	* rule->lhs->n_args 
-	* (1 + rand() / RAND_DIV);
+      if(net->treat_all_disjuncts)
+	axiom_weights[axiom_no] = 
+	  (possible_age(state, axiom_no) + rule_previously_applied) 
+	  * rule->rhs->n_args 
+	  * (1 + rand() / RAND_DIV);
+      else 
+	axiom_weights[axiom_no] = 
+	  (possible_age(state, axiom_no) + rule_previously_applied) 
+	  * rule->lhs->n_args 
+	  * (1 + rand() / RAND_DIV);
+      
       
            
       if(!rule->is_existential){
@@ -106,7 +113,6 @@ rule_instance* normal_next_instance(rule_queue_state state
 	}
       } else { // not definite rule
 	may_have_next_rule = true;
-	
 	if(axiom_no == 0 || axiom_weights[axiom_no] < axiom_weights[lightest_rule]){
 	  min_weight = axiom_weights[axiom_no];
 	  lightest_rule = axiom_no;
@@ -125,7 +131,7 @@ rule_instance* normal_next_instance(rule_queue_state state
   if(has_definite_non_splitting)
     return pop_axiom(state, definite_non_splitting_rule);
 
-  if(has_definite)
+  if(!net->treat_all_disjuncts && has_definite)
     return pop_axiom(state, definite_rule);
 
   while(may_have_next_rule){
