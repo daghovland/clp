@@ -68,7 +68,7 @@ rule_instance* normal_next_instance(rule_queue_state state
   size_t lightest_rule = 0;
   unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
-  unsigned int max_weight = 40 * step_no * (1 + RAND_RULE_WEIGHT);
+  unsigned int max_weight = 50 * step_no * (1 + RAND_RULE_WEIGHT);
   for(i = 0; i < net->th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
     size_t axiom_no = rule->axiom_no;
@@ -83,17 +83,17 @@ rule_instance* normal_next_instance(rule_queue_state state
 	  continue;
 	}
       }
-      if(net->treat_all_disjuncts)
-	axiom_weights[axiom_no] = 
-	  (possible_age(state, axiom_no) + rule_previously_applied) 
-	  * rule->rhs->n_args 
-	  * (1 + rand() / RAND_DIV);
-      else 
-	axiom_weights[axiom_no] = 
-	  (possible_age(state, axiom_no) + rule_previously_applied) 
-	  * rule->lhs->n_args 
-	  * (1 + rand() / RAND_DIV);
-      
+
+      axiom_weights[axiom_no] = 
+	(possible_age(state, axiom_no) + rule_previously_applied) 
+	* (rule->rhs->n_args + 1)
+	* (1 + rand() / RAND_DIV);
+#if false
+      axiom_weights[axiom_no] = 
+	(possible_age(state, axiom_no) + rule_previously_applied) 
+	* (rule->lhs->n_args + 1)
+	* (1 + rand() / RAND_DIV);
+#endif
       
            
       if(!rule->is_existential){
@@ -101,7 +101,6 @@ rule_instance* normal_next_instance(rule_queue_state state
 	  may_have_next_rule = true;
 	  has_definite = true;
 	  definite_rule = axiom_no;
-	  lightest_rule = axiom_no;
 	  if(rule->rhs->n_args == 1){
 	    has_definite_non_splitting = true;
 	    definite_non_splitting_rule = axiom_no;
@@ -133,6 +132,8 @@ rule_instance* normal_next_instance(rule_queue_state state
 
   if(!net->treat_all_disjuncts && has_definite)
     return pop_axiom(state, definite_rule);
+
+  assert(lightest_rule < th->n_axioms && min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
 
   while(may_have_next_rule){
     assert(lightest_rule < th->n_axioms && min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);

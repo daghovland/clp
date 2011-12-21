@@ -399,7 +399,7 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
 
 
 bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t axiom_no){
-  return ! is_empty_axiom_rule_queue_single_state(state, axiom_no) || ! rete_worker_queue_is_empty(state->worker_queues[axiom_no]) || rete_worker_is_working(state->workers[axiom_no]);
+  return worker_may_have_new_instance(state->workers[axiom_no]);
 }
 
 
@@ -414,13 +414,17 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   bool retval = false;
   bool queue_locked = true;
   substitution *tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
-#ifdef HAVE_PTHREAD
-  lock_queue_single(rq);
-#endif
+
   while( axiom_may_have_new_instance_single_state(state, axiom_no)){
+#ifdef HAVE_PTHREAD
+    lock_queue_single(rq);
+#endif
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
       wait_queue_single(rq);
     if(rule_queue_single_is_empty(rq)){
+#ifdef HAVE_PTHREAD
+      unlock_queue_single(rq);
+#endif
       retval = false;
       break;
     } else {
@@ -430,7 +434,6 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
       unlock_queue_single(rq);
 #endif
       if(!disjunction_true_in_fact_store(state, ri->rule->rhs, tmp_sub)){
-	queue_locked = false;
 	retval = true;
 	break;
       }
@@ -438,14 +441,12 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
       lock_queue_single(rq);
 #endif
       pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
+#ifdef HAVE_PTHREAD
+      unlock_queue_single(rq);
+#endif
     }
   }
   
-#ifdef HAVE_PTHREAD
-  if(queue_locked){
-    unlock_queue_single(rq);
-  }
-#endif
   free_substitution(tmp_sub);
   return retval;
 }

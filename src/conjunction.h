@@ -30,6 +30,7 @@ typedef struct conjunction_t {
   unsigned int n_args;
   size_t size_args;
   bool is_existential;
+  unsigned int n_equalities;
   freevars *bound_vars;
   freevars *free_vars;
 } conjunction;

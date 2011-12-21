@@ -288,7 +288,7 @@ void write_goal_proof_step(const rule_instance* ri, const rete_net* net, int ts,
 void write_premiss_proof(const rule_instance* ri, int ts, const rete_net* net, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs, const constants* cs){
   unsigned int i = 0;
   timestamps_iter iter = get_sub_timestamps_iter(&ri->sub);
-  assert(get_sub_n_timestamps(&ri->sub) == ri->rule->lhs->n_args);
+  assert(get_sub_n_timestamps(&ri->sub) == (ri->rule->lhs->n_args - ri->rule->lhs->n_equalities));
   while(has_next_timestamps_iter(&iter)){
     int premiss_no = get_next_timestamps_iter(&iter);
     i++;

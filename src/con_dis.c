@@ -43,6 +43,7 @@ conjunction* create_conjunction(const atom *at){
   (ret_val->args)[0] = at;
   ret_val->free_vars = init_freevars();
   ret_val->free_vars = free_atom_variables(at, ret_val->free_vars);
+  ret_val->n_equalities = (at->pred->is_equality) ? 1 : 0;
   ret_val->bound_vars =  init_freevars();
   ret_val->bound_vars = free_atom_variables(at, ret_val->bound_vars);
   return ret_val;
@@ -59,17 +60,21 @@ conjunction* create_empty_conjunction(theory* th){
   return ret_val;
 }
 
-conjunction* extend_conjunction(conjunction *conj, const atom* at){
+void increase_conjunction_size(conjunction *conj){
   conj->n_args++;
   if(conj->n_args >= conj->size_args){
     conj->size_args *= 2;
     conj->args = realloc_tester(conj->args, (conj->size_args + 1) * sizeof(atom));
   }
-  conj->args[conj->n_args - 1] = at;
+}
 
+conjunction* extend_conjunction(conjunction *conj, const atom* at){
+  increase_conjunction_size(conj);
+  conj->args[conj->n_args - 1] = at;
   conj->free_vars = free_atom_variables(at, conj->free_vars);
   conj->bound_vars = free_atom_variables(at, conj->bound_vars);
-
+  if(at->pred->is_equality)
+    conj->n_equalities++;
   return conj;
 }
 
@@ -159,8 +164,8 @@ unsigned int test_equality_var(conjunction* con, theory* th, unsigned int i, fre
   if(t->type == variable_term && !is_in_freevars(left, t->val.var)){
     unsigned int j;
     term_list* tl = create_term_list(copy_term(t));
-    extend_conjunction(con, con->args[con->n_args - 1]);
-    for(j = i; j < con->n_args - 1; j++)
+    increase_conjunction_size(con);
+    for(j = i; j < con->n_args; j++)
       con->args[j+1] = con->args[j];
     con->args[i] = parser_create_atom(DOMAIN_PRED_NAME, tl, th);
     i++;

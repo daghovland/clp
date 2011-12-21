@@ -41,7 +41,15 @@ bool worker_should_pop(rete_worker* worker){
   return !rete_worker_queue_is_empty(worker->work) && !worker->pause_signalled && !worker->stop_signalled && !worker->recheck_net;
 }
 
-
+bool worker_may_have_new_instance(rete_worker* worker){
+  bool retval;
+  lock_worker_queue(worker->work);
+  retval =  ! rule_queue_single_is_empty(worker->output)
+    || ! rete_worker_queue_is_empty(worker->work)
+    || rete_worker_is_working(worker);
+  unlock_worker_queue(worker->work);
+  return retval;
+}
 
 /**
    Called by the worker to see if it must reevaluate the beta nodes
