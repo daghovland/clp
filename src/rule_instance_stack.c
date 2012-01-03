@@ -26,9 +26,9 @@
 rule_instance_stack* initialize_ri_stack(void){
   rule_instance_stack* ris = malloc_tester(sizeof(rule_instance_stack));
   ris->size_stack = 5;
-  ris->stack = calloc(ris->size_stack, sizeof(unsigned int));
-  ris->step_nos = calloc(ris->size_stack, sizeof(unsigned int));
-  ris->pusher_step_nos = calloc(ris->size_stack, sizeof(unsigned int));
+  ris->stack = calloc(ris->size_stack, sizeof(timestamp));
+  ris->step_nos = calloc(ris->size_stack, sizeof(timestamp));
+  ris->pusher_step_nos = calloc(ris->size_stack, sizeof(timestamp));
   ris->n_stack = 0;
   return ris;
 }
@@ -37,27 +37,27 @@ rule_instance_stack* initialize_ri_stack(void){
 void increase_ri_stack_size(rule_instance_stack* ris, unsigned int min_size){
   while(min_size >= ris->size_stack){
     ris->size_stack *= 2;
-    ris->stack = realloc_tester(ris->stack, sizeof(unsigned int) * ris->size_stack);
-    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
-    ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(unsigned int) * ris->size_stack);
+    ris->stack = realloc_tester(ris->stack, sizeof(timestamp) * ris->size_stack);
+    ris->step_nos = realloc_tester(ris->step_nos, sizeof(timestamp) * ris->size_stack);
+    ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(timestamp) * ris->size_stack);
   }
 }
 
 void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src){
   increase_ri_stack_size(dest, dest->n_stack + src->n_stack + 1);
-  memcpy(dest->stack + dest->n_stack, src->stack, src->n_stack * sizeof(unsigned int));
-  memcpy(dest->step_nos + dest->n_stack, src->step_nos, src->n_stack * sizeof(unsigned int));
-  memcpy(dest->pusher_step_nos + dest->n_stack, src->pusher_step_nos, src->n_stack * sizeof(unsigned int));
+  memcpy(dest->stack + dest->n_stack, src->stack, src->n_stack * sizeof(timestamp));
+  memcpy(dest->step_nos + dest->n_stack, src->step_nos, src->n_stack * sizeof(timestamp));
+  memcpy(dest->pusher_step_nos + dest->n_stack, src->pusher_step_nos, src->n_stack * sizeof(timestamp));
   dest->n_stack += src->n_stack;
 }
     
 
-void push_ri_stack(rule_instance_stack* ris, unsigned int ri, unsigned int step_no, unsigned int pusher){
+void push_ri_stack(rule_instance_stack* ris, timestamp ri, timestamp step_no, timestamp pusher){
   while(ris->n_stack >= ris->size_stack - 1){
     ris->size_stack *= 2;
-    ris->stack = realloc_tester(ris->stack, sizeof(unsigned int) * ris->size_stack);
-    ris->step_nos = realloc_tester(ris->step_nos, sizeof(unsigned int) * ris->size_stack);
-    ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(unsigned int) * ris->size_stack);
+    ris->stack = realloc_tester(ris->stack, sizeof(timestamp) * ris->size_stack);
+    ris->step_nos = realloc_tester(ris->step_nos, sizeof(timestamp) * ris->size_stack);
+    ris->pusher_step_nos = realloc_tester(ris->pusher_step_nos, sizeof(timestamp) * ris->size_stack);
   }
   ris->stack[ris->n_stack] = ri;
   ris->step_nos[ris->n_stack] = step_no;
@@ -70,10 +70,10 @@ bool is_empty_ri_stack(rule_instance_stack * ris){
 }
 
 bool next_ri_is_after(rule_instance_stack* ris, unsigned int limit){
-  return (ris->n_stack > 0 && ris->step_nos[ris->n_stack - 1] > limit);
+  return (ris->n_stack > 0 && ris->step_nos[ris->n_stack - 1].step > limit);
 }
 
-unsigned int pop_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int *pusher){
+timestamp pop_ri_stack(rule_instance_stack* ris, timestamp * step_no, timestamp *pusher){
   assert(ris->n_stack > 0);
   -- ris->n_stack;
   *step_no = ris->step_nos[ris->n_stack];
@@ -90,8 +90,8 @@ void init_rev_stack(rule_instance_stack* ri){
   ri->n_2_stack = 0;
 }
 
-unsigned int pop_rev_ri_stack(rule_instance_stack* ris, unsigned int * step_no, unsigned int* pusher){
-  unsigned int ri;
+timestamp pop_rev_ri_stack(rule_instance_stack* ris, timestamp * step_no, timestamp* pusher){
+  timestamp ri;
   assert(ris->n_2_stack < ris->n_stack);
   *step_no = ris->step_nos[ris->n_2_stack];
   *pusher = ris->pusher_step_nos[ris->n_2_stack];
@@ -120,7 +120,7 @@ void print_coq_ri_stack(FILE* f, rule_instance_stack* ris){
     fprintf(f, "empty stack");
   else {
     for(i = ris->n_stack-1; i >= 0; i--)
-      fprintf(f, "%i ", ris->step_nos[i]);
+      fprintf(f, "%i ", ris->step_nos[i].step);
   }
   fprintf(f, "*)\n");
 }

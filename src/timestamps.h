@@ -25,9 +25,24 @@
 #include "common.h"
 #include "substitution_size_info.h"
 
+/**
+   Used to keep info about the steps that were necessary to infer a fact
+**/
+
+typedef enum timestamp_type_t { normal_timestamp, equality_timestamp, domain_timestamp } 
+  timestamp_type;
+
+typedef struct timestamp_t {
+  timestamp_type type;
+  signed int step;
+  bool init_model;
+} timestamp;
+  
+
+
 typedef struct timestamps_t {
   unsigned int n_timestamps;
-  signed int timestamps[];
+  timestamp timestamps[];
 } timestamps;  
 
 typedef struct timestamps_iter_t {
@@ -35,17 +50,22 @@ typedef struct timestamps_iter_t {
   const timestamps* ts;
 } timestamps_iter;
 
+timestamp create_normal_timestamp(unsigned int);
+
 void init_empty_timestamps(timestamps*, substitution_size_info);
 unsigned int get_n_timestamps(const timestamps*);
 
-void add_timestamp(timestamps*, unsigned int);
+void add_normal_timestamp(timestamps*, unsigned int);
+void add_equality_timestamp(timestamps*, unsigned int);
+void add_domain_timestamp(timestamps*, unsigned int);
+void add_timestamp(timestamps*, timestamp);
 void add_timestamps(timestamps* dest, const timestamps* orig);
 
 int compare_timestamps(const timestamps*, const timestamps*);
 
 timestamps_iter get_timestamps_iter(const timestamps*);
 bool has_next_timestamps_iter(const timestamps_iter*);
-signed int get_next_timestamps_iter(timestamps_iter*);
+timestamp get_next_timestamps_iter(timestamps_iter*);
 void destroy_timestamps_iter(timestamps_iter*);
-
+bool is_init_timestamp(timestamp);
 #endif

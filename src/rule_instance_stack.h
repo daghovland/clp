@@ -35,9 +35,9 @@
 **/
 typedef struct rule_instance_stack_t {
   size_t size_stack;
-  unsigned int * stack;
-  unsigned int * step_nos;
-  unsigned int * pusher_step_nos;
+  timestamp * stack;
+  timestamp * step_nos;
+  timestamp * pusher_step_nos;
   unsigned int n_stack;
   unsigned int n_2_stack;
 } rule_instance_stack;
@@ -46,9 +46,9 @@ typedef struct rule_instance_stack_t {
 
 rule_instance_stack* initialize_ri_stack(void);
 void init_rev_stack(rule_instance_stack*);
-void push_ri_stack(rule_instance_stack*, unsigned int, unsigned int, unsigned int);
-unsigned int pop_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
-unsigned int pop_rev_ri_stack(rule_instance_stack*, unsigned int*, unsigned int*);
+void push_ri_stack(rule_instance_stack*, timestamp, timestamp, timestamp);
+timestamp pop_ri_stack(rule_instance_stack*, timestamp*, timestamp*);
+timestamp pop_rev_ri_stack(rule_instance_stack*, timestamp*, timestamp*);
 void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src);
 bool is_empty_ri_stack(rule_instance_stack*);
 bool is_empty_rev_ri_stack(rule_instance_stack*);

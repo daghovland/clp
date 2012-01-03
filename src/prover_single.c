@@ -214,8 +214,8 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
    Auxiliary for write_single_coq_prof
    Instantiates "get_history" in proof_writer
 **/
-rule_instance* get_history_single(unsigned int no, rule_queue_state rqs){
-  return get_historic_rule_instance(rqs.single, no);
+rule_instance* get_history_single(timestamp no, rule_queue_state rqs){
+  return get_historic_rule_instance(rqs.single, no.step);
 }
 
 /**
@@ -224,11 +224,11 @@ rule_instance* get_history_single(unsigned int no, rule_queue_state rqs){
 **/
 void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   FILE* coq_fp = get_coq_fdes();
-  unsigned int step = branch->end_step;
+  timestamp step = branch->end_step;
   rule_instance* end_ri = get_historic_rule_instance(state, step);
   const axiom* rule = end_ri->rule;
   unsigned int n_branches = branch->n_children;
-  unsigned int step_ri, pusher;
+  timestamp step_ri, pusher;
   rule_queue_state rqs;
   rqs.single = state;
   assert( n_branches == 0 || n_branches == rule->rhs->n_args);

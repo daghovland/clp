@@ -24,6 +24,14 @@
 #include "common.h"
 #include "timestamps.h"
 
+timestamp create_normal_timestamp(unsigned int step){
+  timestamp retval;
+  retval.type = normal_timestamp;
+  retval.init_model = false;
+  retval.step = step;
+  return retval;
+}
+
 /**
    Initializes already allocated substitution
    Only used directly by the factset_lhs implementation 
@@ -32,8 +40,10 @@
 void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
   unsigned int i;    
   ts->n_timestamps = 0;
-  for(i = 0; i < get_max_n_timestamps(ssi); i++)
-    ts->timestamps[i] = 0;
+  for(i = 0; i < get_max_n_timestamps(ssi); i++){
+    ts->timestamps[i].type = normal;
+    ts->timestamps[i].step = 0;
+  }
 }
 
 
@@ -48,7 +58,7 @@ bool has_next_timestamps_iter(const timestamps_iter* iter){
   return iter->n < iter->ts->n_timestamps;
 }
 
-signed int get_next_timestamps_iter(timestamps_iter* iter){
+timestamp get_next_timestamps_iter(timestamps_iter* iter){
   iter->n++;
   return iter->ts->timestamps[iter->n - 1];
 }
@@ -56,7 +66,7 @@ signed int get_next_timestamps_iter(timestamps_iter* iter){
 void destroy_timestamps_iter(timestamps_iter* iter){
   ;
 }
-
+ 
 unsigned int get_n_timestamps(const timestamps* ts){
   return ts->n_timestamps;
 }
@@ -68,10 +78,37 @@ unsigned int get_n_timestamps(const timestamps* ts){
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(timestamps* ts, unsigned int timestamp){  
+void add_timestamp(timestamps* ts, timestamp timestamp){  
   ts->timestamps[ts->n_timestamps] = timestamp;
   ts->n_timestamps ++;  
 }
+
+void add_normal_timestamp(timestamps* ts, unsigned int step){
+  timestamp t;
+  t.type = normal_timestamp;
+  t.step = step;
+  t.init_model = false;
+  add_timestamp(ts, t);
+}
+
+void add_equality_timestamp(timestamps* ts, unsigned int step){
+  timestamp t;
+  t.type = equality_timestamp;
+  t.step = step;
+  t.init_model = false;
+  add_timestamp(ts, t);
+}
+
+
+void add_domain_timestamp(timestamps* ts, unsigned int step){
+  timestamp t;
+  t.type = domain_timestamp;
+  t.step = step;
+  t.init_model = false;
+  add_timestamp(ts, t);
+}
+
+
 
 /**
    Adds the timestamps in orig to those in dest.
@@ -98,7 +135,11 @@ int compare_timestamps(const timestamps* first, const timestamps* last){
   unsigned int i;
   for(i = 0; i < first->n_timestamps; i++){
     if(first->timestamps[i] != last->timestamps[i])
-      return first->timestamps[i] - last->timestamps[i];
+      return first->timestamps[i].step - last->timestamps[i].step;
   }
   return 0;
+}
+
+bool is_init_timestamp(timestamp ts){
+  return ts.init_model || ts.step == 0;
 }

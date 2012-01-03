@@ -570,7 +570,7 @@ bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, 
    Necessary for the output of correct coq proofs
 **/
 void add_sub_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi){  
-  add_timestamp(& sub->sub_ts, timestamp);
+  add_normal_timestamp(& sub->sub_ts, timestamp);
   assert(get_max_n_timestamps(ssi) >= get_sub_n_timestamps(sub));
 }
 
@@ -609,7 +609,7 @@ void print_substitution(const substitution* sub, const constants* cs, FILE* f){
   fprintf(f, "] from steps ");
   iter = get_sub_timestamps_iter(sub);
   while(has_next_timestamps_iter(&iter))
-    fprintf(f, "%u, ", get_next_timestamps_iter(&iter));
+    fprintf(f, "%u, ", get_next_timestamps_iter(&iter).step);
 }
 
 void print_coq_substitution(const substitution* sub, const constants* cs, const freevars* vars, FILE* f){

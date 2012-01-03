@@ -220,6 +220,6 @@ unsigned int rule_queue_possible_age(rule_queue_state rqs, size_t axiom_no){
     // TODO: This might be a performance hit if the queues become very long. 
     for( new_root = state->sub_alpha_queues[axiom_no].root; new_root->next != root; new_root = new_root->next)
       ;
-    return new_root->sub->sub_ts.timestamps[0];
+    return new_root->sub->sub_ts.timestamps[0].step;
   }
 }

@@ -28,7 +28,7 @@
 typedef struct rule_instance_state_t {
   rule_instance* ri;
   rete_net_state* s;
-  unsigned int step_no;
+  timestamp step_no;
 } rule_instance_state;
 
 
@@ -45,16 +45,16 @@ typedef struct rule_instance_state_stack_t {
   size_t size_stack;
   rule_instance ** ris;
   rete_net_state ** states;
-  unsigned int* step_nos;
+  timestamp* step_nos;
   unsigned int n_stack;
 } rule_instance_state_stack;
 
 
-rule_instance_state* create_rule_instance_state(rule_instance*, rete_net_state*, unsigned int);
+rule_instance_state* create_rule_instance_state(rule_instance*, rete_net_state*, timestamp);
 rule_instance_state_stack* initialize_ri_state_stack(void);
-void push_ri_state_stack(rule_instance_state_stack*, rule_instance*, rete_net_state*, unsigned int);
+void push_ri_state_stack(rule_instance_state_stack*, rule_instance*, rete_net_state*, timestamp);
 void add_ri_state_stack(rule_instance_state_stack* dest, rule_instance_state_stack* src);
-void pop_ri_state_stack(rule_instance_state_stack*, rule_instance**, rete_net_state**, unsigned int*);
+void pop_ri_state_stack(rule_instance_state_stack*, rule_instance**, rete_net_state**, timestamp*);
 bool is_empty_ri_state_stack(rule_instance_state_stack*);
 void delete_ri_state_stack(rule_instance_state_stack*);
 #endif
