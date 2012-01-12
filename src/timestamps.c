@@ -32,6 +32,10 @@ timestamp create_normal_timestamp(unsigned int step){
   return retval;
 }
 
+bool is_normal_timestamp(timestamp ts){
+  return ts.type == normal_timestamp && ts.step > 0;
+}
+
 /**
    Initializes already allocated substitution
    Only used directly by the factset_lhs implementation 

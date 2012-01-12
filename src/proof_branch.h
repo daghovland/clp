@@ -35,7 +35,7 @@ typedef struct proof_branch_t {
   char* name;
   unsigned int start_step;
   rule_instance_stack* elim_stack;
-  unsigned int end_step;
+  timestamp end_step;
   struct proof_branch_t * parent;
   struct proof_branch_t ** children;
   unsigned int n_children;
@@ -44,7 +44,7 @@ typedef struct proof_branch_t {
 
 proof_branch* create_root_proof_branch(void);
 void delete_proof_branch_tree(proof_branch*);
-void end_proof_branch(proof_branch*, unsigned int, unsigned int);
+void end_proof_branch(proof_branch*, timestamp, unsigned int);
 proof_branch* create_child_branch(proof_branch*, const theory*);
 void prune_proof(proof_branch* parent, unsigned int);
 #endif

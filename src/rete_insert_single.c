@@ -39,11 +39,11 @@ bool test_timestamps(const axiom* rule, const substitution* sub){
   timestamps_iter iter = get_timestamps_iter(& sub->sub_ts);
   while(has_next_timestamps_iter(&iter)){
     assert(i < rule->lhs->n_args);
-    signed int ts = get_next_timestamps_iter(&iter);
+    timestamp ts = get_next_timestamps_iter(&iter);
     const term* val = get_sub_value(sub,i);
     if(val != NULL && !test_term(val))
       return false;
-    if(ts < 0) 
+    if(ts.step < 0) 
       return false;
     ++i;
   }

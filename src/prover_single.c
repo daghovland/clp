@@ -69,7 +69,7 @@ void write_prover_node_single(rete_state_single* state, const rule_instance* nex
 
 
 
-bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step);
+bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, timestamp step);
 
 
 
@@ -139,7 +139,7 @@ bool return_reached_max_steps_mt(rete_state_single* state, const rule_instance* 
 
 bool run_prover_single(rete_state_single* state){
     while(true){
-      unsigned int ts;
+      timestamp ts;
       rule_instance* next;
       bool incval;
       next = choose_next_instance_single(state);
@@ -149,7 +149,7 @@ bool run_prover_single(rete_state_single* state){
       incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
-      ts = get_state_step_no_single(state);
+      ts = create_normal_timestamp(get_state_step_no_single(state));
       if(next->rule->type == goal || next->rule->rhs->n_args == 0){
 	end_proof_branch(state->current_proof_branch, ts, 0);
 	check_used_rule_instances_coq_single(next, state, state->current_proof_branch, ts, ts);
@@ -180,7 +180,7 @@ bool run_prover_single(rete_state_single* state){
    Note that the rule instance pointer next may be invalidated during every branch, 
    this is why the next and sub is reinstantiated at every loop iteration
 **/
-bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, unsigned int step){
+bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, timestamp step){
   unsigned int i;
   const axiom* rule = next->rule;
   unsigned int n_branches = rule->rhs->n_args;
@@ -196,7 +196,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     sub = & ((get_historic_rule_instance(state, step))->sub);
     assert(test_substitution(sub));
     insert_rete_net_conjunction_single(state, con, sub);
-    write_proof_edge(parent_prf_branch->name, step, state->current_proof_branch->name, state->cur_step);
+    write_proof_edge(parent_prf_branch->name, step.step, state->current_proof_branch->name, state->cur_step);
     rv = run_prover_single(state);
     if(!rv)
       return false;
@@ -215,7 +215,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
    Instantiates "get_history" in proof_writer
 **/
 rule_instance* get_history_single(timestamp no, rule_queue_state rqs){
-  return get_historic_rule_instance(rqs.single, no.step);
+  return get_historic_rule_instance(rqs.single, no);
 }
 
 /**

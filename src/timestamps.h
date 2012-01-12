@@ -51,6 +51,7 @@ typedef struct timestamps_iter_t {
 } timestamps_iter;
 
 timestamp create_normal_timestamp(unsigned int);
+bool is_normal_timestamp(timestamp);
 
 void init_empty_timestamps(timestamps*, substitution_size_info);
 unsigned int get_n_timestamps(const timestamps*);

@@ -359,8 +359,8 @@ rule_instance* insert_rule_instance_history_single(rete_state_single* state, con
   return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
 }
 
-rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int step_no){
-  return get_rule_instance_single(state->history, step_no);
+rule_instance* get_historic_rule_instance(rete_state_single* state, timestamp step_no){
+  return get_rule_instance_single(state->history, step_no.step);
 }
 
 /**
@@ -371,7 +371,7 @@ rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int
    At the moment, all rule instances are unique in each branch (they are copied when popped from the queue)
    So we know that changing the "used_in_proof" here is ok.
 **/
-void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, proof_branch* branch, unsigned int historic_ts, unsigned int current_ts){
+void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* state, proof_branch* branch, timestamp historic_ts, timestamp current_ts){
   assert(branch->end_step >= historic_ts && branch->start_step <= historic_ts);
   if(!ri->used_in_proof){
     ri->used_in_proof = true; 
@@ -379,12 +379,12 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
       timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
       //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
        while(has_next_timestamps_iter(&iter)){
-	int premiss_no = get_next_timestamps_iter(&iter);
-	if(premiss_no > 0){
+	timestamp premiss_no = get_next_timestamps_iter(&iter);
+	if(is_normal_timestamp(premiss_no)){
 	  rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no);
 	  proof_branch* br = branch;
 	  assert(br->end_step >= premiss_no);
-	  while(br->start_step > premiss_no)
+	  while(br->start_step > premiss_no.step)
 	    br = br->parent;
 	  assert(br->end_step >= premiss_no && br->start_step <= premiss_no);
 	  check_used_rule_instances_coq_single(premiss_ri, state, br, premiss_no, current_ts);
@@ -412,7 +412,6 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
   rete_state_single* state = rqs.single;
   rule_queue_single* rq = state->rule_queues[axiom_no];
   bool retval = false;
-  bool queue_locked = true;
   substitution *tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
 
   while( axiom_may_have_new_instance_single_state(state, axiom_no)){
