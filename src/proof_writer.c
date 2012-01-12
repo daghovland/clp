@@ -246,7 +246,7 @@ void write_disj_proof_start(const rule_instance* ri, timestamp ts, int branch, c
    Called from check_used_rule_instances in prover.c
 **/
 void write_elim_usage_proof(const rete_net* net, rule_instance* ri, timestamp ts, const constants* cs){
-  assert(ts > 0);
+  assert(ts.step > 0);
   if(net->coq){
     // Elimination of disjunction and existential variables is done on the way down.
     if(ri->rule->rhs->n_args > 1){

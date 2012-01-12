@@ -36,6 +36,10 @@ bool is_normal_timestamp(timestamp ts){
   return ts.type == normal_timestamp && ts.step > 0;
 }
 
+int compare_timestamp(timestamp ts1, timestamp ts2){
+  return ts1.step - ts2.step;
+}
+
 /**
    Initializes already allocated substitution
    Only used directly by the factset_lhs implementation 
@@ -45,7 +49,7 @@ void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
   unsigned int i;    
   ts->n_timestamps = 0;
   for(i = 0; i < get_max_n_timestamps(ssi); i++){
-    ts->timestamps[i].type = normal;
+    ts->timestamps[i].type = normal_timestamp;
     ts->timestamps[i].step = 0;
   }
 }
@@ -138,7 +142,7 @@ int compare_timestamps(const timestamps* first, const timestamps* last){
   assert(first->n_timestamps == last->n_timestamps);
   unsigned int i;
   for(i = 0; i < first->n_timestamps; i++){
-    if(first->timestamps[i] != last->timestamps[i])
+    if(first->timestamps[i].step != last->timestamps[i].step)
       return first->timestamps[i].step - last->timestamps[i].step;
   }
   return 0;

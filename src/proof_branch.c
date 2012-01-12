@@ -30,7 +30,7 @@ proof_branch* create_root_proof_branch(void){
   proof_branch* br = malloc_tester(sizeof(proof_branch));
   br->id = 0;
   br->name = "";
-  br->start_step = 0;
+  br->start_step = create_normal_timestamp(0);
   br->n_children = 0;
   br->size_children = 0;
   br->parent = NULL;
@@ -62,7 +62,7 @@ void delete_proof_branch_tree(proof_branch* br){
 
    Must be called (correctly) before create_child_branch
 **/
-void end_proof_branch(proof_branch* br, unsigned int step, unsigned int n_children){
+void end_proof_branch(proof_branch* br, timestamp step, unsigned int n_children){
   br->end_step = step;
   br->size_children = n_children;
   if(br->size_children > 0)

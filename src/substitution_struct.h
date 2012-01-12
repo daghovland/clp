@@ -38,10 +38,13 @@
    The pointer allvars points to the freevar of _all_ variables in the theory. 
 
    The timestamps are used to know when substitutions were inserted into the rete network.
-   This is necessary for the emulation of the prolog search strategy in CL.pl
+   This is necessary for pruning and for constructing coq output proofs
    The timestamps are a list of the timestamps when each conjunct in the precedent was 
    matched by the factset. The length of timestamps is given by get_size_timestamps in
    substitution_memory, which is set by theory->max_lhs_conjuncts in init_substitution_memory
+
+   sub_values_offset is the offset of the sub_values, caused by the dynamic array member in sub_ts. 
+   This is fixed for each theory, since it depends on the number of premises of a clause.
 **/
 typedef struct substitution_t {
   unsigned int n_subs;

@@ -33,7 +33,7 @@
 typedef struct proof_branch_t {
   unsigned int id;
   char* name;
-  unsigned int start_step;
+  timestamp start_step;
   rule_instance_stack* elim_stack;
   timestamp end_step;
   struct proof_branch_t * parent;

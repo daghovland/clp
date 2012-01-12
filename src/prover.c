@@ -113,7 +113,7 @@ void write_prover_node_old(rete_net_state* state, rule_instance* next){
 **/
 void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* historic_state, timestamp historic_ts, timestamp current_ts){
   substitution_size_info ssi = historic_state->net->th->sub_size_info;
-  assert(ri == history[historic_ts]->ri);
+  assert(ri == history[historic_ts.step]->ri);
   if(!ri->used_in_proof && (ri->rule->type != fact || ri->rule->rhs->n_args > 1)){
     timestamps_iter iter = get_sub_timestamps_iter(& ri->sub);
     if(ri->rule->rhs->n_args <= 1){
@@ -124,7 +124,7 @@ void check_used_rule_instances_coq_mt(rule_instance* ri, rete_net_state* histori
     while(has_next_timestamps_iter(&iter)){
       timestamp premiss_no = get_next_timestamps_iter(&iter);
       if(!is_init_timestamp(premiss_no)){
-	assert(premiss_no.step == history[premiss_no]->step_no);
+	assert(premiss_no.step == history[premiss_no.step]->step_no.step);
 	check_used_rule_instances_coq_mt((history[premiss_no.step])->ri, (history[premiss_no.step])->s, (history[premiss_no.step])->step_no, current_ts);
       }
     }
@@ -349,7 +349,7 @@ void insert_rete_disjunction_coq_mt(rete_net_state* state, rule_instance* next, 
     for(i = 0; i < state->end_of_branch->rule->rhs->n_args; i++){
       assert(state != state->branches[i] && copy_state != state->branches[i]);
     }
-    assert(get_current_state_step_no(state) > step);
+    assert(get_current_state_step_no(state) > step.step);
     check_state_finished(state);
     return;
   }
