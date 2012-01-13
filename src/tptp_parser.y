@@ -401,7 +401,7 @@ iquote_item        : iquote LPAREN atomic_word RPAREN
 inference_item     : inference_status | assumptions_record |
                          new_symbol_record | refutation
 inference_status   : status LPAREN status_value RPAREN  | inference_info
-;
+
 status_value       : lower_word
 ;
 inference_info     : inference_rule LPAREN atomic_word COMMA general_list RPAREN 
