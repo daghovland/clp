@@ -7,7 +7,6 @@
 %option yylineno
 %option   warn nodefault
 %option nounput
-%start C_COMMENT
 
 
 %{
@@ -21,52 +20,45 @@ extern int fileno(FILE*);
 extern int tptp_lineno;
 %}
 
-
-digit         [0-9]
-Letter         [A-Z]
-letter        [a-zA-Z]
+comment    comment_line|comment_block
+comment_line  [%]<printable_char>*
+zero_numeric 0
+non_zero_numeric [1-9]
+numeric         [0-9]
+upper_alpha         [A-Z]
+lower_alpha        [a-z]
 symbol     [\'\"_]
 
 
 %%
-<INITIAL>"/*"                           {  BEGIN(C_COMMENT);}
-<C_COMMENT>"*/"                BEGIN(INITIAL);
-<C_COMMENT>.                     { ;}
-<INITIAL>,                                            {  return COMMA;                   }
-<INITIAL>;                                    {  return OR_SEPARATOR;  }
-<INITIAL>\(                                         {  return LPAREN;                  }
-<INITIAL>\)                                         {  return RPAREN;                 }
-<INITIAL>"."                                         {  return PERIOD;                   }
-<INITIAL>=>                                        {  return ARROW;                   }
-<INITIAL>"_"                             { return UNDERSCORE; }
-<INITIAL>"/"                             { return SLASH; }
-<INITIAL>":"                                { return COLON; }
-<INITIAL>"-"                                { return DASH; }
-<INITIAL>"="                                { return EQUALS; }
-<INITIAL>"\\="                                { return NOT_EQUALS; }
-<INITIAL>"*"                                { return TIMES; }
-<INITIAL>\[                                         {  return LSQPAREN;                  }
-<INITIAL>\]                                         {  return RSQPAREN;                 }
-<INITIAL>\|                                          { return HOR_BAR; }
-<INITIAL>"next"                                { return STRING_NEXT;                      }
-<INITIAL>"enabled"                                { return STRING_ENABLED;                      }
-<INITIAL>"true"                                  {  return TRUE;                       }
-<INITIAL>"name"                                  {  return STRING_NAME;                       }
-<INITIAL>"false"                                 {  return FALSE;                     }
-<INITIAL>"goal"                                  {  return GOAL;                       }
-<INITIAL>"axiom"                                  { return AXIOM_NAME; }
-<INITIAL>"dynamic"                                { return DYNAMIC;                      }
-<INITIAL>{Letter}({letter}|{digit}|{symbol})* {
-                                               yylval->str = malloc (strlen(yytext)+1);
-                                               strcpy(yylval->str, yytext);
-                                              return VARIABLE;                   }
-<INITIAL>(\'[^\']+\')|({digit}+"."{digit}+)|({letter}|{digit}|{symbol}|"["|"]")+    {
-                                               yylval->str = malloc (strlen(yytext)+1);
-                                               strcpy(yylval->str, yytext);
-                                              return NAME;                   }
-[ \t]                            {                                                  }
-[\n\r]                            {                                               }
-<INITIAL>"%"[^\n]*                        {                                                 }
-<INITIAL>.                                           { fprintf( stderr, "Error with symbol %s\n", yytext); exit( EXIT_FAILURE ); }
+\.                                           { return PERIOD; }
+","                                           { return COMMA; }
+\*                                           { return STAR; }
+"+"                                           { return PLUS; }
+"-"                                           { return MINUS; }
+"~"                                           { return TILDE; }
+"^"                                           { return HAT; }
+"="                                           { return EQUALS; }
+"!"                                           { return EXCLAMATION; }
+"?"                                           { return QUESTION; }
+"$"                                           { return DOLLAR; }
+">"                                          { return ARROW; }
+"<"                                           { return LESS_SIGN; }
+":"                                           { return COLON; }
+\(                                            { return LPAREN; }
+\)                                            { return RPAREN; }
+\|                                             { return VLINE; }
+\[                                         {  return LSQPAREN;                  }
+\]                                         {  return RSQPAREN;                 }
+"&"                                             { return AMPERSAND; }
+"@"                                             { return ATSIGN; }
+"thf"                                           { return thf_string; }
+"ttf"                                           { return tff_string; }
+"fof"                                           { return fof_string; }
+"cnf"                                           { return cnf_string; }
+"include"                                           { return include_string; }
+"true"                                           { return true_string; }
+"false"                                           { return false_string; }
+.                                           { return printable_char;}
 %%
 

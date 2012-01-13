@@ -54,7 +54,7 @@ bool use_substitution_store;
 bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts;
 strategy strat;
 unsigned long maxsteps;
-typedef enum input_format_type_t {clpl_input, geolog_input} input_format_type;
+typedef enum input_format_type_t {tptp_input, clpl_input, geolog_input} input_format_type;
 input_format_type input_format;
 
 /**
@@ -216,7 +216,7 @@ void print_help(char* exec){
   printf(" Explanation of options:\n");
   printf("\t-p, --proof\t\tOutput a proof if one is found\n");
   printf("\t-g, --debug \t\tGives (lots of) extra output useful for debugging or understanding the prover\n");
-  printf("\t-t, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
+  printf("\t-x, --text\t\tGives output of proof in separate text file. Same prefix of name as input file, but with .out as suffix. \n");
   printf("\t-v, --verbose\t\tGives extra output about the proving process\n");
   printf("\t-V, --version\t\tSome info about the program, including copyright and license\n");
   printf("\t-e, --eager\t\tUses the eager version of RETE. This is probably always slower.\n");
@@ -227,8 +227,9 @@ void print_help(char* exec){
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
+  printf("\t-T, --TPTP\t\tParses the input as TPTP simple, and translates to CL. See http://www.cs.miami.edu/~tptp/. Not finished. \n");
   printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm. Should probably be used with -a|--all-disjuncts.\n");
-  printf("\t-T, --cpu_timer=LIMIT\t\tSets a limit to total number of seconds of CPU time spent.\n");
+  printf("\t-t, --cpu_timer=LIMIT\t\tSets a limit to total number of seconds of CPU time spent.\n");
   printf("\t-w, --wallclocktimer=LIMIT\t\tSets a limit to total number of seconds that may elapse before prover exits.\n");
   printf("\t-a, --all-disjuncts\t\tAlways treats all disjuncts of all treated disjuncts. .\n");
   printf("\t-r, --rhs-beta\t\tConstructs rete nodes for the rhs of rules, in stead of using a factset to determine whether the right hand side of a new instance is already satisified. (Beta-not-nodes).\n");
@@ -239,7 +240,7 @@ void print_help(char* exec){
 
 void print_version(){
   printf("clp (coherent logic prover) 0.10\n"); 
-  printf("Copyright (C) 2011 University of Oslo and/or Dag Hovland.\n");
+  printf("Copyright (C) 2011, 2012 University of Oslo and/or Dag Hovland.\n");
   printf("This is free software.  You may redistribute copies of it under the terms of\n");
   printf("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
   printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -256,7 +257,7 @@ int main(int argc, char *argv[]){
     {"help", no_argument, NULL, 'h'}, 
     {"debug", no_argument, NULL, 'g'}, 
     {"factset_lhs", no_argument, NULL, 'f'}, 
-    {"text", no_argument, NULL, 't'},
+    {"x", no_argument, NULL, 'x'},
     {"max", required_argument, NULL, 'm'}, 
     {"depth-first", no_argument, NULL, 'd'}, 
     {"eager", no_argument, NULL, 'e'}, 
@@ -266,9 +267,10 @@ int main(int argc, char *argv[]){
     {"coq", no_argument, NULL, 'q'}, 
     {"factset_rhs", no_argument, NULL, 's'}, 
     {"rhs-beta", no_argument, NULL, 'r'}, 
-    {"cputimer", required_argument, NULL, 'T'}, 
+    {"cputimer", required_argument, NULL, 't'}, 
     {"wallclocktimer", required_argument, NULL, 'w'}, 
     {"print_model", no_argument, NULL, 'o'},
+    {"TPTP", no_argument, NULL, 'T'},
     {"substitution_store", no_argument, NULL, 's'}, 
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {0,0,0,0}
@@ -310,7 +312,7 @@ int main(int argc, char *argv[]){
     case 'q':
       coq = true;
       break;
-    case 'T':
+    case 't':
       maxtimer = get_ui_arg_opt();
       start_cpu_timer(maxtimer);
       break;
@@ -346,11 +348,14 @@ int main(int argc, char *argv[]){
     case 'M':
       multithreaded = true;
       break;
-    case 't':
+    case 'x':
       text = true;
       break;
     case 'C':
       input_format = clpl_input;
+      break;
+    case 'T':
+      input_format = tptp_input;
       break;
     case 'G':
       input_format = geolog_input;

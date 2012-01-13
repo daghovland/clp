@@ -19,7 +19,11 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 /**
-   Parses the format used by CL.pl
+   Parses the format used by TPTP
+
+   thf (typed higher order form) is not supported, since an efficient translation to cl is not known to me
+
+   See http://www.cs.miami.edu/~tptp/TPTP/SyntaxBNF.html
 **/
 
 %{
@@ -67,153 +71,386 @@
   theory* theory;
 }
 
-%token <str> VARIABLE
-%token <str> NAME
-%token LPAREN
-%token RPAREN    
-%left OR_SEPARATOR
-%left COMMA
-%token TRUE
-%token ARROW
-%token NEWLINE
+%token comment
+%token zero_numeric
+%token non_zero_numeric
+%token <int> numeric
+%token <chr> lower_alpha
+%token <chr> upper_alpha
+%token <str> lower_word
+%token <str> upper_word
+%token alpha_numeric
+%token printable_char
 %token PERIOD
-%token FALSE
-%token STRING_NAME
-%token STRING_NEXT
-%token STRING_ENABLED
-%token SECTION_MARKER
+%token COMMA
+%token COLON
+%token LPAREN
+%token RPAREN
 %token LSQPAREN
 %token RSQPAREN
-%left HOR_BAR
-%token GOAL
-%token DYNAMIC
-%token AXIOM_NAME
-%token UNDERSCORE
-%token COLON
-%token SLASH
+%token VLINE
+%token AMPERSAND
+%token ATSIGN
+%token STAR
+%token PLUS
+%token MINUS
+%token TILDE
+%token HAT
 %token EQUALS
-%token NOT_EQUALS
-%token TIMES
-%token DASH
+%token DOLLAR
+%token ARROW
+%token LESS_SIGN
+%token PERCENTAGE_SIGN
+%token EXCLAMATION
+%token QUESTION
+%token thf_string
+%token tff_string
+%token fof_string
+%token cnf_string
+%token include_string
+%token true_string
+%token false_string
 
 
 
-%type <atom> atom
-%type <term> term
-%type <terms> terms
-%type <disj> disjunction
-%type <conj> conjunction
-%type <axiom> axiom
-%type <axiom> axiomw
-%type <str> axiom_name
-%start theory
+%start TPTP_file
 
 %{
   void tptp_error(YYLTYPE*, char const*);
   %}
 
 %%
+null               :
+		       ;
 
-theory:   theory_line {;}
-        | theory_line theory {;}
+tff_annotated      : tff_string LPAREN name COMMA formula_role COMMA tff_formula annotations RPAREN PERIOD
 ;
-theory_name_line:    STRING_NAME LPAREN NAME RPAREN PERIOD { set_theory_name(th, $3); }
+fof_annotated      : fof_string LPAREN name COMMA formula_role COMMA fof_formula annotations RPAREN PERIOD
 ;
-dynamicline:  COLON DASH DYNAMIC predlist PERIOD  {;} // :- dynamic e/2,r/3 ...
+cnf_annotated      : cnf_string LPAREN name COMMA formula_role COMMA cnf_formula annotations RPAREN PERIOD
 ;
-redefine_axiom_prolog:     LPAREN UNDERSCORE AXIOM_NAME LPAREN prolog_arg COLON VARIABLE RPAREN RPAREN COLON DASH VARIABLE PERIOD {;}
-;
-theory_line:   redefine_axiom_prolog {;}
-               | axiomw { extend_theory(th, $1); }
-               | strategy_def { ; }
-               | theory_name_line { ; }
-               | dynamicline { ; }
-;
-axiomw:               axiom PERIOD { $$ = $1;}
-|   axiom_name AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
-|     UNDERSCORE AXIOM_NAME axiom_name COLON axiom PERIOD { set_axiom_name($5,$3), $$=$5 ; }
+annotations        : COMMA source optional_info | null
 ;
 
+formula_role       : lower_word
+;
+thf_formula        : thf_logic_formula | thf_sequent
+   ;
 
-axiom_name:    NAME LPAREN varlist RPAREN { $$ = $1;}
-                      | NAME LPAREN RPAREN { $$ = $1;}
-                      | NAME { $$ = $1;}
+tff_formula        : tff_logic_formula | tff_typed_atom | tff_sequent
 ;
-predicate_def : NAME SLASH NAME {;}
+tff_logic_formula  : tff_binary_formula | tff_unitary_formula
 ;
-predlist:   predicate_def COMMA predlist {;}
-           | predicate_def  {;}
+tff_binary_formula : tff_binary_nonassoc | tff_binary_assoc
+;
+tff_binary_nonassoc : tff_unitary_formula binary_connective
+                         tff_unitary_formula
+;
+tff_binary_assoc   : tff_or_formula | tff_and_formula
+;
+tff_or_formula     : tff_unitary_formula VLINE tff_unitary_formula |
+                         tff_or_formula VLINE tff_unitary_formula
+;
+tff_and_formula    : tff_unitary_formula  AMPERSAND  tff_unitary_formula |
+                         tff_and_formula  AMPERSAND  tff_unitary_formula
+;
+tff_unitary_formula : tff_quantified_formula | tff_unary_formula |
+                         atomic_formula | tff_conditional | tff_let |
+                          LPAREN tff_logic_formula RPAREN 
+;
+tff_quantified_formula : fol_quantifier  LSQPAREN tff_variable_list RSQPAREN  COLON
+                         tff_unitary_formula
+			 ;
+tff_variable_list  : tff_variable | tff_variable COMMA tff_variable_list
+;
+tff_variable       : tff_typed_variable | variable
+;
+tff_typed_variable : variable COLON tff_atomic_type
+;
+tff_unary_formula  : unary_connective tff_unitary_formula |
+                         fol_infix_unary
+;
+tff_conditional    :  DOLLAR ite_f LPAREN tff_logic_formula COMMA tff_logic_formula COMMA 
+                         tff_logic_formula RPAREN 
+;
+tff_let            :  DOLLAR let_tf LPAREN tff_let_term_defn COMMA tff_formula RPAREN  |
+                          DOLLAR let_ff LPAREN tff_let_formula_defn COMMA tff_formula RPAREN 
+;
+tff_let_term_defn  :  EXCLAMATION   LSQPAREN tff_variable_list RSQPAREN  COLON tff_let_term_binding |
+                         tff_let_term_binding
+;
+tff_let_term_binding : term EQUALS term
+;
+tff_let_formula_defn :  EXCLAMATION   LSQPAREN tff_variable_list RSQPAREN  COLON tff_let_formula_binding |
+                         tff_let_formula_binding
+tff_let_formula_binding : atomic_formula EQUALS tff_unitary_formula
+
+tff_sequent        : tff_tuple gentzen_arrow tff_tuple |
+                          LPAREN tff_sequent RPAREN 
+tff_tuple          :  LSQPAREN  RSQPAREN  |  LSQPAREN tff_tuple_list RSQPAREN 
+			   ;
+tff_tuple_list     : tff_logic_formula |
+                         tff_logic_formula COMMA tff_tuple_list
 ;
 
-varlist:      VARIABLE { ; }
-            |  VARIABLE COMMA varlist { ; }
+tff_typed_atom     : tff_untyped_atom COLON tff_top_level_type |
+                          LPAREN tff_typed_atom RPAREN 
 ;
-axiom:    LPAREN axiom RPAREN { $$ = $2; }    
-              |  TRUE ARROW disjunction  {$$ = create_fact($3, th); }
-              | ARROW disjunction   {$$ = create_fact($2, th); }
-              | disjunction   {$$ = create_fact($1, th); }
-              | conjunction ARROW disjunction   { $$ = create_axiom($1, $3, th);}
-              | conjunction ARROW GOAL   { $$ = create_goal($1);}
-              | conjunction ARROW FALSE  { $$ = create_goal($1);}
-;
-conjunction:   atom { $$ = create_conjunction($1);}
-                         | conjunction COMMA TRUE { $$ = $1;}
-                         | TRUE COMMA conjunction { $$ = $3;}
-                         | conjunction COMMA atom { $$ = extend_conjunction($1, $3);}
-;
-atom:      term EQUALS term { $$ = parser_create_equality($1, $3, th);} 
-          | EQUALS LPAREN term COMMA term RPAREN { $$ = parser_create_equality($3, $5, th);} 
-          | NAME LPAREN RPAREN { $$ = create_prop_variable($1, th); }
-          | NAME LPAREN terms RPAREN {$$ = parser_create_atom($1, $3, th);}
-          | NAME {$$ = create_prop_variable($1, th);}
-;
-terms:         terms COMMA term
-                    { $$ = extend_term_list($1, $3); }
-                   | term 
-                   { $$ = create_term_list($1); }
-;
-term:              NAME LPAREN terms RPAREN 
-                   { $$ = create_function_term($1, $3); }
-                   | NAME
-                   { $$ = parser_create_constant_term(th, $1); }
-                   | VARIABLE 
-                   { $$ = create_variable($1, th); }
-;
-disjunction:            conjunction  { $$ = create_disjunction($1);}
-                    | FALSE OR_SEPARATOR disjunction { $$ = $3; }
-                     | disjunction OR_SEPARATOR FALSE { $$ = $1; }
-                                 | disjunction OR_SEPARATOR conjunction { $$ = extend_disjunction($1, $3);}
+tff_untyped_atom   : functor | system_functor
 ;
 
-strategy_def:         STRING_NEXT LPAREN prolog_arg_list RPAREN PERIOD { ; }
-                      | STRING_ENABLED LPAREN prolog_arg_list RPAREN PERIOD { ; }
-                      | STRING_ENABLED LPAREN prolog_arg_list RPAREN COLON DASH prolog_atom_list PERIOD { ; }
+
+tff_top_level_type : tff_atomic_type | tff_mapping_type |
+                         tff_quantified_type
+;
+tff_quantified_type :  EXCLAMATION   LSQPAREN tff_variable_list RSQPAREN  COLON tff_monotype |
+                           LPAREN tff_quantified_type RPAREN 
+;
+tff_monotype       : tff_atomic_type |  LPAREN tff_mapping_type RPAREN 
+;
+tff_unitary_type   : tff_atomic_type |  LPAREN tff_xprod_type RPAREN 
+;
+tff_atomic_type    : atomic_word | defined_type | 
+                         atomic_word LPAREN tff_type_arguments RPAREN  | variable
+;
+tff_type_arguments : tff_atomic_type |
+                         tff_atomic_type COMMA tff_type_arguments
+;
+tff_mapping_type   : tff_unitary_type ARROW tff_atomic_type |
+                          LPAREN tff_mapping_type RPAREN 
+;
+tff_xprod_type     : tff_atomic_type STAR tff_atomic_type |
+                         tff_xprod_type STAR tff_atomic_type |
+                          LPAREN tff_xprod_type RPAREN 
+;
+fof_formula        : fof_logic_formula | fof_sequent
+;
+fof_logic_formula  : fof_binary_formula | fof_unitary_formula
+;
+fof_binary_formula : fof_binary_nonassoc | fof_binary_assoc
+;
+fof_binary_nonassoc : fof_unitary_formula binary_connective
+                         fof_unitary_formula
+;
+fof_binary_assoc   : fof_or_formula | fof_and_formula
+;
+fof_or_formula     : fof_unitary_formula VLINE fof_unitary_formula |
+                         fof_or_formula VLINE fof_unitary_formula
+;
+fof_and_formula    : fof_unitary_formula  AMPERSAND  fof_unitary_formula |
+                         fof_and_formula  AMPERSAND  fof_unitary_formula
+;
+fof_unitary_formula : fof_quantified_formula | fof_unary_formula |
+                         atomic_formula |  LPAREN fof_logic_formula RPAREN 
+;
+fof_quantified_formula : fol_quantifier  LSQPAREN fof_variable_list RSQPAREN  COLON
+                         fof_unitary_formula
+;
+fof_variable_list  : variable | variable COMMA fof_variable_list
+;
+fof_unary_formula  : unary_connective fof_unitary_formula |
+                         fol_infix_unary
+;
+fof_sequent        : fof_tuple gentzen_arrow fof_tuple |
+                          LPAREN fof_sequent RPAREN 
+;
+fof_tuple          :  LSQPAREN  RSQPAREN  |  LSQPAREN fof_tuple_list RSQPAREN 
+;
+fof_tuple_list     : fof_logic_formula |
+                         fof_logic_formula COMMA fof_tuple_list
 ;
 
-prolog_atom_list : prolog_atom COMMA prolog_atom_list { ; }
-                   | prolog_atom {;}
+
+cnf_formula        :  LPAREN disjunction RPAREN  | disjunction
 ;
-prolog_atom :  NAME LPAREN RPAREN {;}
-             | NAME LPAREN prolog_arg_list RPAREN {;}
-             | prolog_arg prolog_infix_op prolog_arg {;}
+disjunction        : literal | disjunction VLINE literal
 ;
-prolog_infix_op: EQUALS {;}
-               | NOT_EQUALS { ; }
-               | TIMES {;}
-               | SLASH {;}
-prolog_arg_list:     prolog_arg COMMA prolog_arg_list {;}
-                     | prolog_arg {;}
+literal            : atomic_formula |  TILDE  atomic_formula |
+                         fol_infix_unary
 ;
-prolog_arg:         UNDERSCORE {;}
-                          | VARIABLE {;}
-                          | LSQPAREN prolog_list_content RSQPAREN { ; }
-                          | LSQPAREN RSQPAREN { ; }
-                          | NAME {;}
-                          | NAME LPAREN prolog_arg_list RPAREN {;}
+thf_conn_term      : thf_pair_connective | assoc_connective |
+                         thf_unary_connective
 ;
-prolog_list_content : VARIABLE HOR_BAR VARIABLE {;}
-                      | prolog_arg { ; }
-                      | prolog_list_content COMMA prolog_arg {;}
+fol_infix_unary    : term infix_inequality term
+;
+
+thf_quantifier     : fol_quantifier | HAT |  EXCLAMATION  |  QUESTION  STAR  |  ATSIGN PLUS |  ATSIGN MINUS
+;
+thf_pair_connective : infix_equality | infix_inequality |
+                         binary_connective
+;
+thf_unary_connective : unary_connective |  EXCLAMATION  EXCLAMATION  |  QUESTION  QUESTION 
+;
+subtype_sign       : less_signless_sign
+;
+fol_quantifier     :  EXCLAMATION  |  QUESTION 
+;
+binary_connective  : LESS_SIGN EQUALS ARROW | EQUALS ARROW | LESS_SING EQUALS |  LESS_SIGN TILDE ARROW  |  TILDE VLINE |  TILDE  AMPERSAND 
+;
+assoc_connective   : VLINE |  AMPERSAND 
+;
+unary_connective   :  TILDE 
+;
+gentzen_arrow      : MINUS MINUS ARROW
+;
+
+defined_type       : atomic_defined_word
+;
+defined_type       :  DOLLAR oType |  DOLLAR o |  DOLLAR iType |  DOLLAR i |  DOLLAR tType |
+                          DOLLAR real |  DOLLAR rat |  DOLLAR int
+;
+system_type        : atomic_system_word
+;
+
+
+atomic_formula     : plain_atomic_formula | defined_atomic_formula |
+                         system_atomic_formula
+plain_atomic_formula : plain_term
+plain_atomic_formula : proposition | predicate LPAREN arguments RPAREN 
+proposition        : predicate
+predicate          : atomic_word
+
+defined_atomic_formula : defined_plain_formula | defined_infix_formula
+defined_plain_formula : defined_plain_term
+defined_plain_formula : defined_prop | defined_pred LPAREN arguments RPAREN 
+defined_prop       : atomic_defined_word
+defined_prop       :  DOLLAR true |  DOLLAR false
+
+defined_pred       : atomic_defined_word
+		     /*defined_pred       :  DOLLAR distinct |
+                          DOLLAR less |  DOLLAR lesseq |  DOLLAR greater |  DOLLAR greatereq |
+                          DOLLAR is_int |  DOLLAR is_rat
+		     */
+defined_infix_formula  : term defined_infix_pred term
+defined_infix_pred : infix_equality
+infix_equality     : EQUALS
+infix_inequality   :  EXCLAMATION EQUALS
+
+system_atomic_formula : system_term
+
+term               : function_term | variable | conditional_term |
+                         let_term
+function_term      : plain_term | defined_term | system_term
+plain_term         : constant | functor LPAREN arguments RPAREN 
+constant           : functor
+functor            : atomic_word
+
+defined_term       : defined_atom | defined_atomic_term
+defined_atom       : number | distinct_object
+defined_atomic_term : defined_plain_term
+
+defined_plain_term : defined_constant | defined_functor LPAREN arguments RPAREN 
+defined_constant   : defined_functor
+defined_constant   : defined_type
+defined_functor    : atomic_defined_word
+
+
+system_term        : system_constant | system_functor LPAREN arguments RPAREN 
+system_constant    : system_functor
+system_functor     : atomic_system_word
+
+variable           : upper_word
+
+arguments          : term | term COMMA arguments
+
+principal_symbol   : functor | variable
+
+conditional_term   :  DOLLAR ite_t LPAREN tff_logic_formula COMMA term COMMA term RPAREN 
+
+let_term           :  DOLLAR let_ft LPAREN tff_let_formula_defn COMMA term RPAREN  |
+                          DOLLAR let_tt LPAREN tff_let_term_defn COMMA term RPAREN 
+
+
+source             : general_term
+source             : dag_source | internal_source | external_source |
+                         unknown |  LSQPAREN sources RSQPAREN 
+sources            : source | source COMMA sources
+
+
+dag_source         : name | inference_record
+inference_record   : inference LPAREN inference_rule COMMA useful_info COMMA 
+                              LSQPAREN parent_list RSQPAREN  RPAREN 
+inference_rule     : atomic_word
+
+parent_list        : parent_info | parent_info COMMA parent_list
+parent_info        : source parent_details
+parent_details     : COLON general_list | null
+internal_source    : introduced LPAREN intro_type optional_info RPAREN 
+intro_type         : definition | axiom_of_choice | tautology | assumption
+
+external_source    : file_source | theory | creator_source
+file_source        : file LPAREN file_name file_info RPAREN 
+file_info          :  COMMA name | null
+theory             : theory LPAREN theory_name optional_info RPAREN 
+theory_name        : equality | ac
+
+creator_source     : creator LPAREN creator_name optional_info RPAREN 
+creator_name       : atomic_word
+
+
+optional_info      :  COMMA useful_info | null
+useful_info        : general_list
+useful_info        :  LSQPAREN  RSQPAREN  |  LSQPAREN info_items RSQPAREN 
+info_items         : info_item | info_item COMMA info_items
+info_item          : formula_item | inference_item | general_function
+
+formula_item       : description_item | iquote_item
+description_item   : description LPAREN atomic_word RPAREN 
+iquote_item        : iquote LPAREN atomic_word RPAREN 
+
+inference_item     : inference_status | assumptions_record |
+                         new_symbol_record | refutation
+inference_status   : status LPAREN status_value RPAREN  | inference_info
+;
+status_value       : lower_word
+;
+inference_info     : inference_rule LPAREN atomic_word COMMA general_list RPAREN 
+
+assumptions_record : assumptions LPAREN  LSQPAREN name_list RSQPAREN  RPAREN 
+
+refutation         : refutation LPAREN file_source RPAREN 
+
+new_symbol_record  : new_symbols LPAREN atomic_word COMMA  LSQPAREN new_symbol_list RSQPAREN  RPAREN 
+new_symbol_list    : principal_symbol |
+                         principal_symbol COMMA new_symbol_list
+
+
+
+general_term       : general_data | general_data:general_term |
+                         general_list
+		       ;
+general_data       : atomic_word | general_function |
+                         variable | number | distinct_object |
+                         formula_data
+general_function   : atomic_word LPAREN general_terms RPAREN
+		       ;
+
+general_data       : bind LPAREN variable COMMA formula_data RPAREN 
+formula_data       :  DOLLAR thf_string LPAREN thf_formula RPAREN  |  DOLLAR tff_string LPAREN tff_formula RPAREN  |
+                          DOLLAR fof_string LPAREN fof_formula RPAREN  |  DOLLAR cnf_string LPAREN cnf_formula RPAREN  |
+                          DOLLAR fot LPAREN term RPAREN 
+;
+general_list       : LSQPAREN RSQPAREN | LSQPAREN general_terms RSQPAREN
+		       ;
+general_terms      : general_term | general_term COMMA general_terms
+		       ;
+name               : atomic_word | integer
+		       ;
+atomic_word        : lower_word | single_quoted
+		       ;
+atomic_defined_word : dollar_word
+		       ;
+atomic_system_word : dollar_dollar_word
+		       ;
+number             : integer | rational | real
+		       ;
+annotated_formula  :  tff_annotated {;} | fof_annotated {;} | cnf_annotated {;}
+;
+
+TPTP_input : annotated_formula {;}
+
+TPTP_file : TPTP_input TPTP_file {;}
+           | TPTP_input {;}
 %%
 
 				   
