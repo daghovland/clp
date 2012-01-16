@@ -20,15 +20,19 @@ extern int fileno(FILE*);
 extern int tptp_lineno;
 %}
 
-comment    comment_line|comment_block
-comment_line  [%]<printable_char>*
-zero_numeric 0
-non_zero_numeric [1-9]
-numeric         [0-9]
-upper_alpha         [A-Z]
-lower_alpha        [a-z]
-symbol     [\'\"_]
-
+comment                 comment_line|comment_block
+comment_line            [%]{printable_char}*
+comment_block           [/][*]{not_star_slash}[*][*]*[/]
+not_star_slash        ([^*]*[*][*]*[^/*])*[^*]*
+zero_numeric            0
+non_zero_numeric        [1-9]
+numeric                 [0-9]
+upper_alpha             [A-Z]
+lower_alpha             [a-z]
+symbol                  [\'\"_]
+lower_word            {lower_alpha}+
+dollar_word           [$]{lower_word}
+dollar_dollar_word    {dollar}{dollar}{lower_word}
 
 %%
 \.                                           { return PERIOD; }

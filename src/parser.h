@@ -27,5 +27,6 @@
 
 theory* geolog_parser(FILE*);
 theory* clpl_parser(FILE*);
+theory* tptp_parser(FILE*);
 
 #endif

@@ -289,4 +289,12 @@ void print_fol_theory(const theory * th, const constants* cs, FILE* stream){
 void print_geolog_theory(const theory* th, const constants* cs, FILE* stream){
   print_theory(th, cs, stream, print_geolog_axiom);
 }
+
+/**
+   Print in TPTP format
+**/
+void print_tptp_theory(const theory* th, const constants* cs, FILE* stream){
+  print_theory(th, cs, stream, print_tptp_axiom);
+  fprintf(stream, "fof(goal_to_be_proved,conjecture,( goal )).\n");
+}
   

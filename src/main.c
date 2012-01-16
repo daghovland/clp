@@ -51,7 +51,7 @@ bool lazy;
 extern char * optarg;
 extern int optind, optopt, opterr;
 bool use_substitution_store;
-bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts;
+bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts, print_tptp;
 strategy strat;
 unsigned long maxsteps;
 typedef enum input_format_type_t {tptp_input, clpl_input, geolog_input} input_format_type;
@@ -156,11 +156,17 @@ int file_prover(FILE* f, const char* prefix){
   case geolog_input:
     th = geolog_parser(f);
     break;
+  case tptp_input: 
+    th = tptp_parser(f);
+    break;
   default:
     perror("Error in enum for file input type\n");
     exit(EXIT_FAILURE);
   }
-
+  if(print_tptp){
+    print_tptp_theory(th, th->constants, stdout);
+    exit(EXIT_SUCCESS);
+  }
   assert(test_theory(th));
   if(!has_theory_name(th))
     set_theory_name(th, prefix);
@@ -223,7 +229,8 @@ void print_help(char* exec){
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory.\n");
   printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. \n");
   printf("\t-f, --factset_lhs\t\tUses standard fact-set method to determine whether the lhs of an instance is satisified. The default is to use rete. Implies -n|--not. Work in progress.\n");
-  printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
+  printf("\t-P, --print_tptp\t\tOnly outputs the theory in tTPTP format. (The prover is not run.)\n");
+    printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
@@ -254,6 +261,7 @@ int main(int argc, char *argv[]){
     {"version", no_argument, NULL, 'V'}, 
     {"verbose", no_argument, NULL, 'v'}, 
     {"proof", no_argument, NULL, 'p'}, 
+    {"print_tptp", no_argument, NULL, 'P'}, 
     {"help", no_argument, NULL, 'h'}, 
     {"debug", no_argument, NULL, 'g'}, 
     {"factset_lhs", no_argument, NULL, 'f'}, 
@@ -275,10 +283,11 @@ int main(int argc, char *argv[]){
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {0,0,0,0}
   };
-  char shortargs[] = "w:vfVphgdoacCsaT:GeqMrm:";
+  char shortargs[] = "w:vfVphgdoacCsPaT:GeqMrm:";
   int longindex;
   char argval;
   verbose = false;
+  print_tptp = false;
   proof = false;
   text = false;
   debug = false;
@@ -318,6 +327,9 @@ int main(int argc, char *argv[]){
       break;
     case 'a':
       all_disjuncts = true;
+      break;
+    case 'P':
+      print_tptp = true;
       break;
     case 'w':
       maxtimer = get_ui_arg_opt();
@@ -377,8 +389,6 @@ int main(int argc, char *argv[]){
 	fprintf(stderr, "%s\n", argv[optind]); 
 	exit(EXIT_FAILURE);
       }
-      printf("%s\n", argv[optind]);
-
       if(file_prover(f, basename(argv[optind])) == EXIT_FAILURE)
 	retval = EXIT_FAILURE;
 

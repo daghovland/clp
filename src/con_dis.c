@@ -259,7 +259,7 @@ freevars* free_conj_variables(const conjunction * con, freevars* vars){
 /** 
     Generic printing function
 **/
-void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char* or_sign, char* exist_sign, bool print_bindings, void (*print_conj)(const conjunction*, const constants*, FILE*)){
+void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char* or_sign, char* exist_sign, char* exist_end, bool print_bindings, void (*print_conj)(const conjunction*, const constants*, FILE*)){
   int i, j;
   bool print_parentheses;
   if(dis->n_args > 1 && print_bindings)
@@ -276,7 +276,7 @@ void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char*
 	  if(j+1 < con->bound_vars->n_vars)
 	    fprintf(stream, ", ");
 	}
-	fprintf(stream, ": ");
+	fprintf(stream, "%s ", exist_end);
       }
     }
     print_parentheses =  print_bindings && 
@@ -313,7 +313,7 @@ void print_fol_conj(const conjunction *con, const constants* cs, FILE* stream){
 }
 
 void print_fol_disj(const disjunction *dis, const constants* cs, FILE* stream){
-  print_disj(dis, cs, stream, " \\/ "," ∃",  true, print_fol_conj);
+  print_disj(dis, cs, stream, " \\/ "," ∃",  ":", true, print_fol_conj);
 }
 
 void print_dot_conj(const conjunction *con, const constants* cs, FILE* stream){
@@ -321,7 +321,7 @@ void print_dot_conj(const conjunction *con, const constants* cs, FILE* stream){
 }
 
 void print_dot_disj(const disjunction *dis, const constants* cs, FILE* stream){
-  print_disj(dis, cs, stream, " ∨ ", " ∃", true, print_dot_conj);
+  print_disj(dis, cs, stream, " ∨ ", " ∃", ":", true, print_dot_conj);
 }
 
 /**
@@ -364,10 +364,23 @@ void print_coq_disj(const disjunction* dis, const constants* cs, FILE* stream){
    Print in geolog input format
 **/
 void print_geolog_disj(const disjunction *dis, const constants* cs, FILE* stream){
-  print_disj(dis, cs, stream, ";", " ∃", false, print_geolog_conj);
+  print_disj(dis, cs, stream, ";", " ∃", ":", false, print_geolog_conj);
 }
 
 void print_geolog_conj(const conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, ",", print_geolog_atom);
+}
+
+/**
+   Print in TPTP format
+**/
+void print_tptp_disj(const disjunction *dis, const constants* cs, FILE* stream){
+  print_disj(dis, cs, stream, "|", " ? [", " ]: ", true, print_tptp_conj);
+}
+
+void print_tptp_conj(const conjunction *con, const constants* cs, FILE* stream){
+  fprintf(stream, "(");
+  print_conj(con, cs, stream, " & ", print_fol_atom);
+  fprintf(stream, ")");
 }
   

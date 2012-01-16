@@ -435,3 +435,4 @@ void print_coq_atom(const atom* a, const constants* cs, FILE* stream){
     print_coq_term_list(a->args, cs, stream);
   }
 }
+

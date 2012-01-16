@@ -272,7 +272,31 @@ void print_coq_axiom(const axiom* a, const constants* cs, FILE* stream){
     print_coq_disj(a->rhs, cs, stream);
   fprintf(stream, ".\n");
 }
-      
+
+void print_tptp_axiom(const axiom* a, const constants* cs, FILE *stream){
+  freevars* f = a->lhs->free_vars;
+  unsigned int i;
+  fprintf(stream, "fof(%s,axiom, ", a->name);
+  if(f->n_vars > 0){
+    fprintf(stream, "![ ");
+    for(i = 0; i < f->n_vars; i++){
+      fprintf(stream, "%s", f->vars[i]->name);
+      if(i +1 < f->n_vars)
+	fprintf(stream, ", ");
+    }
+    fprintf(stream, "] : ");
+  }
+  fprintf(stream, "(");
+  if(a->type != fact){
+    print_tptp_conj(a->lhs, cs, stream);
+    fprintf(stream, " => ");
+  }
+  if(a->rhs->n_args == 0)
+    fprintf(stream, " goal");
+  else
+    print_tptp_disj(a->rhs, cs, stream);
+  fprintf(stream, " )).");
+}      
 
 /**
    Returns some properties of the axioms/rules

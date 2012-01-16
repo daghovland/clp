@@ -47,5 +47,6 @@ void print_fol_conj(const conjunction*, const constants*, FILE*);
 void print_dot_conj(const conjunction*, const constants*, FILE*);
 bool print_coq_conj(const conjunction*, const constants*, FILE*);
 void print_geolog_conj(const conjunction*, const constants*, FILE*);
+void print_tptp_conj(const conjunction*, const constants*, FILE*);
 
 #endif

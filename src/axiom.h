@@ -70,6 +70,7 @@ void print_dot_axiom(const axiom*, const constants*, FILE*);
 void print_coq_axiom(const axiom*, const constants*, FILE*);
 
 void print_geolog_axiom(const axiom*, const constants*, FILE*);
+void print_tptp_axiom(const axiom* , const constants*, FILE *);
 
 bool is_definite(axiom*);
 bool is_existential(axiom*);
