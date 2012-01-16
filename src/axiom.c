@@ -287,10 +287,11 @@ void print_tptp_axiom(const axiom* a, const constants* cs, FILE *stream){
     fprintf(stream, "] : ");
   }
   fprintf(stream, "(");
-  if(a->type != fact){
+  if(a->type != fact)
     print_tptp_conj(a->lhs, cs, stream);
-    fprintf(stream, " => ");
-  }
+  else
+    fprintf(stream, " $true "); 
+  fprintf(stream, " => ");
   if(a->rhs->n_args == 0)
     fprintf(stream, " goal");
   else
