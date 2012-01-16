@@ -270,13 +270,15 @@ void print_coq_proof_ending(const theory* th, FILE* stream){
 **/
 void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const axiom*, const constants*, FILE*) ,  void (*print_conj)(const conjunction*, const constants*, FILE*), const char* init_start, const char* init_end, const char* and_sign ){
   int i;
-  fprintf(stream, "%s", init_start);
-  for(i = 0; i < th->n_init_model; i++){
-    print_conj(th->init_model[i], cs, stream);
-    if(i +1 < th->n_init_model)
-      fprintf(stream, " %s ", and_sign);
+  if(th->n_init_model > 0){
+    fprintf(stream, "%s", init_start);
+    for(i = 0; i < th->n_init_model; i++){
+      print_conj(th->init_model[i], cs, stream);
+      if(i +1 < th->n_init_model)
+	fprintf(stream, " %s ", and_sign);
+    }
+    fprintf(stream, "%s \n", init_end);
   }
-  fprintf(stream, "%s \n", init_end);
   for(i = 0; i < th->n_axioms; i++){
     print_axiom(th->axioms[i], cs, stream);
     fprintf(stream, "\n");
@@ -301,7 +303,7 @@ void print_geolog_theory(const theory* th, const constants* cs, FILE* stream){
    Print in TPTP format
 **/
 void print_tptp_theory(const theory* th, const constants* cs, FILE* stream){
-  print_theory(th, cs, stream, print_tptp_axiom, print_tptp_conj, "fof(__initial_model, axiom, ", ").", " & ");
+  print_theory(th, cs, stream, print_tptp_axiom, print_tptp_conj, "fof(initial_model, axiom, ", ").", " & ");
   fprintf(stream, "fof(goal_to_be_proved,conjecture,( goal )).\n");
 }
   
