@@ -379,8 +379,10 @@ void print_tptp_disj(const disjunction *dis, const constants* cs, FILE* stream){
 }
 
 void print_tptp_conj(const conjunction *con, const constants* cs, FILE* stream){
-  fprintf(stream, "(");
+  if(con->n_args > 1)
+    fprintf(stream, "(");
   print_conj(con, cs, stream, " & ", print_fol_atom);
-  fprintf(stream, ")");
+  if(con->n_args > 1)
+    fprintf(stream, ")");
 }
   

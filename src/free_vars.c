@@ -151,7 +151,7 @@ bool empty_intersection(const freevars* fv1, const freevars* fv2){
 **/
 bool is_in_freevars(const freevars* fv, const variable* var){
   unsigned int i;
-  for(i = 0 ; i < fv->n_vars; i++){
+  for(i = 0; i < fv->n_vars; i++){
     if (var->var_no == fv->vars[i]->var_no)
       return true;
   }
