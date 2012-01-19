@@ -283,7 +283,7 @@ int main(int argc, char *argv[]){
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {0,0,0,0}
   };
-  char shortargs[] = "w:vfVphgdoacCsPaT:GeqMrm:";
+  char shortargs[] = "w:vfVphgdoat:cCsPaT:GeqMrm:";
   int longindex;
   char argval;
   verbose = false;

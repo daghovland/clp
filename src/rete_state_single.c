@@ -29,7 +29,9 @@
 #include "theory.h"
 #include "rete.h"
 #include "instantiate.h"
+
 #include <string.h>
+#include <error.h>
 
 /**
    Called after the rete net is created.
@@ -419,7 +421,8 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
     lock_queue_single(rq);
 #endif
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
-      wait_queue_single(rq);
+      if(!timedwait_queue_single(rq, 1))
+	break;
     if(rule_queue_single_is_empty(rq)){
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq);

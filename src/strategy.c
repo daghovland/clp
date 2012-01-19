@@ -79,6 +79,8 @@ rule_instance* normal_next_instance(rule_queue_state state
 	if (has_new_instance(state, axiom_no))
 	  return pop_axiom(state, axiom_no);
 	else {
+	  if(may_have(state, axiom_no))
+	    may_have_next_rule = true;
 	  axiom_weights[axiom_no] = max_weight;
 	  continue;
 	}
@@ -107,6 +109,8 @@ rule_instance* normal_next_instance(rule_queue_state state
 	    return pop_axiom(state, definite_non_splitting_rule);
 	  }
 	} else {
+	  if(may_have(state, axiom_no))
+	    may_have_next_rule = true;
 	  axiom_weights[axiom_no] = max_weight;
 	  continue;
 	}
@@ -139,9 +143,10 @@ rule_instance* normal_next_instance(rule_queue_state state
     assert(lightest_rule < th->n_axioms && min_weight <= max_weight && axiom_weights[lightest_rule] == min_weight);
     if(has_new_instance(state, lightest_rule))
       return pop_axiom(state, lightest_rule);
+    if(!may_have(state, lightest_rule))
+      may_have_next_rule = false;
     axiom_weights[lightest_rule] = max_weight;
     min_weight = max_weight;
-    may_have_next_rule = false;
     for(i = 0; i < th->n_axioms; i++){
       if(axiom_weights[i] < min_weight){
 	lightest_rule = i;

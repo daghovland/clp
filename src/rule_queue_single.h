@@ -24,7 +24,7 @@
 #include "rule_instance.h"
 #include "substitution_size_info.h"
 #ifdef HAVE_PTHREAD
-#include "pthread.h"
+#include <pthread.h>
 #endif
 
 #define RULE_QUEUE_INIT_SIZE 10
@@ -73,6 +73,7 @@ rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
 
 
 void wait_queue_single(rule_queue_single*);
+bool timedwait_queue_single(rule_queue_single*, unsigned int);
 void signal_queue_single(rule_queue_single*);
 void lock_queue_single(rule_queue_single*);
 void unlock_queue_single(rule_queue_single*);

@@ -97,7 +97,13 @@ void insert_rete_beta_sub_single(const rete_net* net,
   if(node->type == rule){
     assert(node->n_children == 0);
     //    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
-    assert(test_substitution(sub));	
+    assert(test_substitution(sub));
+#ifdef DEBUG_RETE_INSERT
+    printf("Inserting ");
+    print_substitution(sub, cs, stdout);
+    printf("into rule node for axiom %i", node->rule_no);
+    printf("\n");
+#endif	
     if(insert_substitution_single(node_caches, node->val.rule.store_no, sub, node->free_vars, cs)){
       push_rule_instance_single(rule_queue
 				, node->val.rule.axm
@@ -106,6 +112,12 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				, net->strat == clpl_strategy
 				);
       //      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
+#ifdef DEBUG_RETE_INSERT
+      printf("Inserted ");
+      print_substitution(sub, cs, stdout);
+      printf("into rule node for axiom %i", node->rule_no);
+      printf("\n");
+#endif	
     }
   } else {
 
@@ -127,6 +139,12 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				    sub, node->free_vars, cs
 				    ))
 	{
+#ifdef DEBUG_RETE_INSERT
+	  printf("Inserting ");
+	  print_substitution(sub, cs, stdout);
+	  printf("into beta store %i for axiom %i", node->val.beta.b_store_no, node->rule_no);
+	  printf("\n");
+#endif	
 	  iter = get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
 	  while(has_next_sub_store(& iter)){
 	    bool overlapping_subs = false;

@@ -26,7 +26,8 @@
 #include "rule_instance.h"
 #include "substitution.h"
 #include "error_handling.h"
-
+#include <sys/time.h>
+#include <errno.h>
 
 #ifdef HAVE_PTHREAD
 /**
@@ -42,6 +43,20 @@ void unlock_queue_single(rule_queue_single* rq){
 
 void wait_queue_single(rule_queue_single* rq){
   pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: wait_queue_single: cond_wait");
+}
+
+bool timedwait_queue_single(rule_queue_single* rq, unsigned int secs){
+  struct timeval now;
+  struct timespec endwait;
+  int retval;
+  gettimeofday(&now, NULL);
+  endwait.tv_sec = now.tv_sec + secs;
+  endwait.tv_nsec = now.tv_usec * 1000;
+  retval = pthread_cond_timedwait(& rq->queue_cond, & rq->queue_mutex, &endwait);
+  if(retval == ETIMEDOUT)
+    return false;
+  pt_err(retval, "rule_queue_single.c: timedwait_queue_single: cond_timedwait");
+  return true;
 }
 
 void signal_queue_single(rule_queue_single* rq){
