@@ -158,35 +158,33 @@ void insert_rete_beta_sub_single(const rete_net* net,
 	  destroy_sub_store_iter(& iter);
 	} // end if insert ..
       break;
-#if false
     case beta_not:
       if(parent == node->left_parent){
 	if(
 	   insert_substitution_single(node_caches, 
 				      node->val.beta.b_store_no, 
-				      sub, node->free_vars
+				      sub, node->free_vars, cs
 				      ))
 	  {
 	    bool found_overlapping_sub = false;
 	    iter = get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
 	    while(has_next_sub_store(& iter)){
-	      if(subs_equal_intersection(sub, get_next_sub_store(& iter))){
+	      if(subs_equal_intersection(sub, get_next_sub_store(& iter), cs)){
 		found_overlapping_sub = true;
 		break;
 	      }
 	    }
 	    destroy_sub_store_iter(& iter);
 	    if(!found_overlapping_sub)
-	      insert_rete_beta_sub_single(net->th, node_caches, tmp_subs,  node, node->children[0], step, sub);
+	      insert_rete_beta_sub_single(net, node_caches, tmp_subs,  rule_queue, node, node->children[0], step, sub, cs);
 	  } // end if(insert_sub...
       } else // right parent 
 	if(insert_substitution_single(node_caches, 
 				      node->val.beta.a_store_no, 
-				      sub, node->free_vars
+				      sub, node->free_vars, cs
 				      ))
 	  ;
       break;
-#endif
     default:
       fprintf(stderr, "Encountered untreated node type: %i\n", node->type);
       assert(false);
