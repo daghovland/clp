@@ -104,6 +104,7 @@ rete_node* create_rete_axiom_node(rete_net*, const axiom*, unsigned int axiom_no
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool, bool, bool, bool, bool, bool);
 rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, unsigned int axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, unsigned int axiom_no);
+rete_node * insert_beta_not_nodes(rete_net* net, const conjunction* con, const disjunction* dis, rete_node* beta_node, unsigned int axiom_no);
 
 // Defined in strategy.c
 rule_instance* choose_next_instance(rule_queue_state

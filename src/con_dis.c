@@ -233,6 +233,57 @@ rete_node * create_rete_conj_node(rete_net* net,
   return left_parent;
 }
 
+/**
+   The newer beta-not implementaion, inserts beta-not nodes as much to the left as possible
+**/
+rete_node * insert_beta_not_nodes(rete_net* net, 
+				  const conjunction* con, 
+				  const disjunction* dis, 
+				  rete_node* beta_node, 
+				  unsigned int axiom_no){
+  unsigned int i, j;
+  freevars  *conj_freevars = init_freevars();
+  bool *disjunctions_done = calloc_tester(dis->n_args, sizeof(bool));
+  for(j = 0; j < dis->n_args; j++)
+    disjunctions_done[j] = false;
+  while(beta_node->left_parent->type != beta_root)
+    beta_node = (rete_node*) beta_node->left_parent;
+  for(i = 0; i < con->n_args; beta_node = (rete_node*) beta_node->children[0], i++){
+    assert(beta_node->type == beta_and);
+    conj_freevars = free_atom_variables(con->args[i], conj_freevars);
+    for(j = 0; j < dis->n_args; j++){
+      if(!disjunctions_done[j]){
+	if(freevars_included(dis->args[j]->free_vars, conj_freevars)){
+	  rete_node* child = NULL;
+	  if(beta_node->n_children == 1){
+	    child = beta_node->children[0];
+	    assert(child != NULL);
+	  }
+	  //beta_node->n_children = 0;
+	  rete_node * right_parent = create_rete_conj_node(net, dis->args[j], copy_freevars(dis->free_vars), true, false, axiom_no);
+	  rete_node* left_parent = create_beta_not_node(net, beta_node, right_parent, copy_freevars(dis->free_vars), axiom_no);
+	  assert(left_parent->size_children > 0);
+	  assert(left_parent->n_children == 0);
+	  if(child != NULL){
+	    child->left_parent = left_parent;
+	    left_parent->children[0] = child;
+	    left_parent->n_children = 1;
+	  } else {
+	    assert(beta_node->n_children == 1);
+	  }
+	  beta_node = left_parent;
+	  disjunctions_done[j] = true;
+	}
+      }
+    }
+  }
+  return beta_node;
+}
+
+/**
+   Used by the original "beta-not" implementation, where the beta-not comes last, just before the rule node.
+   
+**/
 rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const disjunction* dis, size_t axiom_no){
   unsigned int i;
   rete_node* right_parent;

@@ -147,6 +147,28 @@ bool empty_intersection(const freevars* fv1, const freevars* fv2){
 }
 
 /**
+   Tests that fv1 is included in fv2
+
+   Used by insert_beta_not_nodes in con_dis.c
+**/
+bool freevars_included(const freevars* fv1, const freevars* fv2){
+  unsigned int i, j;
+  for(i = 0; i < fv1->n_vars; i++){
+    bool is_in_fv2 = false;
+    for(j = 0; j < fv2->n_vars; j++){
+      if(fv1->vars[i]->var_no == fv2->vars[j]->var_no){
+	is_in_fv2 = true;
+	break;
+      }
+    }
+    if(!is_in_fv2)
+      return false;
+  }
+  return true;
+}
+
+
+/**
    returns true iff the var is in fv
 **/
 bool is_in_freevars(const freevars* fv, const variable* var){

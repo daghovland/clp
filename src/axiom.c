@@ -136,10 +136,11 @@ rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_n
 			       true,
 			       axiom_no);
   if(ax->type != goal && use_beta_not) {
-    node = create_rete_disj_node(net, 
-				 node, 
-				 ax->rhs,
-				 axiom_no);
+    node  = insert_beta_not_nodes(net, 
+				  ax->lhs, 
+				  ax->rhs, 
+				  node, 
+				  axiom_no);
   }
   return create_rule_node(net, node, ax, rule_free_vars, axiom_no);
 }
