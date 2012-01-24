@@ -75,13 +75,11 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
   state->global_step_counter = malloc_tester(sizeof(unsigned int));
   * state->global_step_counter = 0;
   state->proof_branch_id = "";
-  if(state->net->has_factset){
-    state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
-    state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
-    for(i = 0; i < net->th->n_predicates; i++){
-      state->factset[i] = NULL;
-      state->prev_factset[i] = NULL;
-    }
+  state->factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
+  state->prev_factset = calloc_tester(sizeof(fact_set*), net->th->n_predicates);
+  for(i = 0; i < net->th->n_predicates; i++){
+    state->factset[i] = NULL;
+    state->prev_factset[i] = NULL;
   }
   //  state->constants = init_constants(net->th->vars->n_vars);
   state->constants = copy_constants(net->th->constants);
@@ -113,11 +111,8 @@ void delete_rete_state(rete_net_state* state, rete_net_state* orig){
     free((char *) state->proof_branch_id);
   delete_ri_stack(state->elim_stack);
 
-  if(state->net->has_factset){
-    for(i = 0; i < state->net->th->n_predicates; i++){
-      delete_fact_set_below(state->factset[i], orig->factset[i]);
-    }
-  }
+  for(i = 0; i < state->net->th->n_predicates; i++)
+    delete_fact_set_below(state->factset[i], orig->factset[i]);
 
   //  destroy_substitution_store_mt(& state->local_subst_mem);
   destroy_constants(state->constants);
@@ -143,11 +138,8 @@ void delete_full_rete_state(rete_net_state* state){
   free(state->global_step_counter);
   delete_ri_stack(state->elim_stack);
 
-  if(state->net->has_factset){
-    for(i = 0; i < state->net->th->n_predicates; i++){
-      delete_fact_set(state->factset[i]);
-    }
-  }
+  for(i = 0; i < state->net->th->n_predicates; i++)
+    delete_fact_set(state->factset[i]);
   // destroy_substitution_store_mt(& state->local_subst_mem);
   //destroy_substitution_store_mt(state->global_subst_mem);
   destroy_constants(state->constants);
@@ -174,13 +166,10 @@ rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
   copy->subs = calloc_tester(n_subs, sizeof(substitution_list*));
   memcpy(copy->subs, orig->subs, sizeof(substitution_list*) * n_subs);
   copy->local_subst_mem = init_substitution_store_mt(orig->net->th->sub_size_info);
-  if(orig->net->has_factset){
-    copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
-    copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
-    memcpy(copy->factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
-    memcpy(copy->prev_factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
-  }
-
+  copy->factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
+  copy->prev_factset = calloc_tester(orig->net->th->n_predicates, sizeof(fact_set*));
+  memcpy(copy->factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
+  memcpy(copy->prev_factset, orig->factset, sizeof(fact_set*) * orig->net->th->n_predicates);
   
   copy->sub_alpha_queues = calloc_tester(n_axioms, sizeof(sub_alpha_queue*));
   memcpy(copy->sub_alpha_queues, orig->sub_alpha_queues, sizeof(sub_alpha_queue*) * n_axioms);
@@ -458,7 +447,6 @@ void print_dot_rete_state_net(const rete_net* net, const rete_net_state* state, 
 **/
 void print_state_new_facts(rete_net_state* state, FILE* f){
   int i;
-  assert(state->net->has_factset);
   for(i = 0; i < state->net->th->n_predicates; i++){
     fact_set* fs = state->factset[i];
     fact_set* old = state->prev_factset[i];

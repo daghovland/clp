@@ -65,7 +65,6 @@ typedef struct rete_net_t {
   bool treat_all_disjuncts;
   bool factset_lhs;
   bool use_beta_not;
-  bool has_factset;
   strategy strat;
 #ifdef HAVE_PTHREAD
   pthread_mutex_t * sub_mutexes;

@@ -229,8 +229,8 @@ void print_help(char* exec){
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory.\n");
   printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. \n");
   printf("\t-f, --factset_lhs\t\tUses standard fact-set method to determine whether the lhs of an instance is satisified. The default is to use rete. Implies -n|--not. Work in progress.\n");
-  printf("\t-P, --print_tptp\t\tOnly outputs the theory in tTPTP format. (The prover is not run.)\n");
-    printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
+  printf("\t-P, --print_tptp\t\tOnly outputs the theory in TPTP format. (The prover is not run.)\n");
+  printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
@@ -238,8 +238,8 @@ void print_help(char* exec){
   printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm. Should probably be used with -a|--all-disjuncts.\n");
   printf("\t-t, --cpu_timer=LIMIT\t\tSets a limit to total number of seconds of CPU time spent.\n");
   printf("\t-w, --wallclocktimer=LIMIT\t\tSets a limit to total number of seconds that may elapse before prover exits.\n");
-  printf("\t-a, --all-disjuncts\t\tAlways treats all disjuncts of all treated disjuncts. .\n");
-  printf("\t-r, --rhs-beta\t\tConstructs rete nodes for the rhs of rules, in stead of using a factset to determine whether the right hand side of a new instance is already satisified. (Beta-not-nodes).\n");
+  printf("\t-a, --all-disjuncts\t\tAlways treats all disjuncts of all treated disjuncts.\n");
+  printf("\t-n, --no-beta-not\t\tPrevents construction of beta-not rete nodes for the rhs of rules. \n");
   printf("\t-s, --substitution_store\t\tTries to avoid all single mallocs for each substitution. (Enables substitution_memory.c) \n");
   printf("\nReport bugs to <hovlanddag@gmail.com>\n");
 }
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]){
     {"geolog", no_argument, NULL, 'G'}, 
     {"coq", no_argument, NULL, 'q'}, 
     {"factset_rhs", no_argument, NULL, 's'}, 
-    {"rhs-beta", no_argument, NULL, 'r'}, 
+    {"no-beta-not", no_argument, NULL, 'n'}, 
     {"cputimer", required_argument, NULL, 't'}, 
     {"wallclocktimer", required_argument, NULL, 'w'}, 
     {"print_model", no_argument, NULL, 'o'},
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]){
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {0,0,0,0}
   };
-  char shortargs[] = "w:vfVphgdoat:cCsPaT:GeqMrm:";
+  char shortargs[] = "w:vfVphgdoat:cCsPaT:GeqMnm:";
   int longindex;
   char argval;
   verbose = false;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]){
   print_model = false;
   lazy = true;
   coq = false;
-  use_beta_not = false;
+  use_beta_not = true;
   multithreaded = false;
   factset_lhs = false;
   all_disjuncts = false;
@@ -338,8 +338,8 @@ int main(int argc, char *argv[]){
     case 'f':
       factset_lhs = true;
       break;
-    case 'r':
-      use_beta_not = true;
+    case 'n':
+      use_beta_not = false;
       break;
     case 'g':
       debug = true;

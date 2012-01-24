@@ -95,7 +95,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
       union_constants(ground->args->args[0]->val.constant, ground->args->args[1]->val.constant, state->constants);
       recheck_rete_state_net(state);
     }
-    else if(state->net->has_factset) 
+    else
       fact_is_new = insert_state_factset_single(state, ground);
     if(fact_is_new && (!state->net->factset_lhs || state->net->use_beta_not))
       insert_state_rete_net_fact(state, ground);
@@ -110,10 +110,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 bool return_found_model_mt(rete_state_single* state){
   fprintf(stdout, "Found a model of the theory \n");
   print_all_constants(state->constants, stdout);
-  if(state->net->has_factset)
-    print_state_fact_store(state, stdout);
-  else
-    fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
+  print_state_fact_store(state, stdout);
   foundproof = false;
   return false;
 }
@@ -298,8 +295,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
     }
   }
   true_atom = create_prop_variable("true", (theory*) rete->th);
-  if(state->net->has_factset)
-    insert_state_factset_single(state, true_atom);
+  insert_state_factset_single(state, true_atom);
   if(!state->net->factset_lhs || state->net->use_beta_not)
     insert_state_rete_net_fact(state, true_atom);
   run_prover_single(state);

@@ -144,11 +144,9 @@ void write_proof_node(unsigned int step_no
 #ifdef RETE_STATE_DEBUG_DOT
       fp_err( fprintf(dot_fp, "(Branch:%s:%i)", proof_branch_id, step_no), "Could not write proof node dot info\n");
 #endif
-      if(net->has_factset){
-	fp_err( fprintf(dot_fp, "\\n{" ), "Could not write proof node dot info\n");
-	print_new_facts(rqs, dot_fp);
-	fp_err( fprintf(dot_fp, "}\\n" ), "Could not write proof node dot info\n");
-      }
+      fp_err( fprintf(dot_fp, "\\n{" ), "Could not write proof node dot info\n");
+      print_new_facts(rqs, dot_fp);
+      fp_err( fprintf(dot_fp, "}\\n" ), "Could not write proof node dot info\n");
     } // file open
   } // proof etc. 
   if( verbose || debug){

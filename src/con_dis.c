@@ -260,7 +260,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
 	if(freevars_included(dis->args[j]->free_vars, conj_freevars)){
 	  rete_node* child = NULL;
 	  if(beta_node->n_children == 1){
-	    child = beta_node->children[0];
+	    child = (rete_node*) beta_node->children[0];
 	    assert(child != NULL);
 	  }
 	  beta_node->n_children = 0;

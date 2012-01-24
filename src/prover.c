@@ -194,9 +194,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
     printf("\n");
 #endif
     
-    if(state->net->has_factset){
-      insert_state_fact_set(state->factset, ground, get_current_state_step_no(state), state->constants);
-    }
+    insert_state_fact_set(state->factset, ground, get_current_state_step_no(state), state->constants);
     if(!state->net->factset_lhs || state->net->use_beta_not)
       insert_rete_net_fact(state, ground);
 
@@ -210,10 +208,7 @@ void insert_rete_net_conjunction(rete_net_state* state,
 **/
 bool return_found_model(rete_net_state* state){
   fprintf(stdout, "Found a model of the theory \n");
-  if(state->net->has_factset)
-    print_state_fact_set(state->factset, state->constants, stdout, state->net->th->n_predicates);
-  else
-    fprintf(stdout, "Rerun with \"--print_model\" to show the model.\n");
+  print_state_fact_set(state->factset, state->constants, stdout, state->net->th->n_predicates);
   foundproof = false;
 #ifdef HAVE_PTHREAD
   pthread_cond_broadcast(&prover_done_cond);
@@ -680,8 +675,7 @@ unsigned int prover(const rete_net* rete, bool multithread){
   }
   
   true_atom = create_prop_variable("true", (theory*) rete->th);
-  if(state->net->has_factset)
-    insert_state_fact_set(state->factset, true_atom, get_current_state_step_no(state), state->constants);
+  insert_state_fact_set(state->factset, true_atom, get_current_state_step_no(state), state->constants);
 
   if(!state->net->factset_lhs && state->net->use_beta_not)
     insert_rete_net_fact(state, true_atom);
