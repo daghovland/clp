@@ -121,7 +121,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
     }
   } else {
 
-    assert(node->type == beta_and || node->type == equality);
+    assert(node->type == beta_and || node->type == equality || node->type == beta_not);
     assert(node->n_children == 1);	
     assert(node->left_parent != NULL && node->left_parent->type != alpha);
     switch(node->type){

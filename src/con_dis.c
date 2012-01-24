@@ -246,9 +246,13 @@ rete_node * insert_beta_not_nodes(rete_net* net,
   bool *disjunctions_done = calloc_tester(dis->n_args, sizeof(bool));
   for(j = 0; j < dis->n_args; j++)
     disjunctions_done[j] = false;
-  while(beta_node->left_parent->type != beta_root)
+  assert(beta_node->n_children == 0);
+  while(beta_node->type != beta_root)
     beta_node = (rete_node*) beta_node->left_parent;
-  for(i = 0; i < con->n_args; beta_node = (rete_node*) beta_node->children[0], i++){
+  for(i = 0; i < con->n_args;  i++){
+    assert(beta_node->n_children == 1);
+    assert(beta_node->children[0] != NULL);
+    beta_node = (rete_node*) beta_node->children[0];
     assert(beta_node->type == beta_and);
     conj_freevars = free_atom_variables(con->args[i], conj_freevars);
     for(j = 0; j < dis->n_args; j++){
@@ -259,7 +263,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
 	    child = beta_node->children[0];
 	    assert(child != NULL);
 	  }
-	  //beta_node->n_children = 0;
+	  beta_node->n_children = 0;
 	  rete_node * right_parent = create_rete_conj_node(net, dis->args[j], copy_freevars(dis->free_vars), true, false, axiom_no);
 	  rete_node* left_parent = create_beta_not_node(net, beta_node, right_parent, copy_freevars(dis->free_vars), axiom_no);
 	  assert(left_parent->size_children > 0);
@@ -277,6 +281,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
       }
     }
   }
+  beta_node->n_children = 0;
   return beta_node;
 }
 
