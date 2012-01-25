@@ -44,6 +44,7 @@ freevars* free_conj_variables(const conjunction*, freevars*);
 bool test_conjunction(const conjunction*);
 
 void print_fol_conj(const conjunction*, const constants*, FILE*);
+void print_clpl_conj(const conjunction*, const constants*, FILE*);
 void print_dot_conj(const conjunction*, const constants*, FILE*);
 bool print_coq_conj(const conjunction*, const constants*, FILE*);
 void print_geolog_conj(const conjunction*, const constants*, FILE*);

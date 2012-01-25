@@ -44,6 +44,7 @@ void print_fol_disj(const disjunction*, const constants*, FILE*);
 void print_dot_disj(const disjunction*, const constants*, FILE*);
 void print_coq_disj(const disjunction*, const constants*, FILE*);
 
+void print_clpl_disj(const disjunction*, const constants*, FILE*);
 void print_geolog_disj(const disjunction*, const constants*, FILE*);
 void print_tptp_disj(const disjunction*, const constants*, FILE*);
 

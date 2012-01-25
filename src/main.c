@@ -51,11 +51,13 @@ bool lazy;
 extern char * optarg;
 extern int optind, optopt, opterr;
 bool use_substitution_store;
-bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts, print_tptp;
+bool output_theory;
+bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts, dry_run, multithread_rete;
 strategy strat;
 unsigned long maxsteps;
-typedef enum input_format_type_t {tptp_input, clpl_input, geolog_input} input_format_type;
-input_format_type input_format;
+typedef enum format_type_t {tptp_format, clpl_format, geolog_format} format_type;
+format_type input_format;
+format_type output_format;
 
 /**
    Extracts an non-negative integer commandline argument option
@@ -70,6 +72,34 @@ unsigned long int get_ui_arg_opt(){
   }
   return retval;
 }
+
+/**
+   Extracts an character string commandline argument option
+**/
+format_type get_format_arg_opt(){
+  format_type out;
+  errno = 0;
+  switch(optarg[0]){
+  case 't':
+  case 'T':
+    out = tptp_format;
+    break;
+  case 'g':
+  case 'G':
+    out = geolog_format;
+    break;
+    break;
+  case 'C':
+  case 'c':
+    out = geolog_format;
+    break;
+  default:
+    perror("Error with format argument. Must be one of \"TPTP\", \"CL.pl\", or \"geolog\".\n");
+    exit(EXIT_FAILURE);
+  }
+  return out;
+}
+
 
 /**
    This is the function that is called when the cpu or wall timer expires.
@@ -150,28 +180,42 @@ int file_prover(FILE* f, const char* prefix){
   int retval;
   unsigned int steps;
   switch(input_format){
-  case clpl_input:
+  case clpl_format:
     th = clpl_parser(f);
     break;
-  case geolog_input:
+  case geolog_format:
     th = geolog_parser(f);
     break;
-  case tptp_input: 
+  case tptp_format: 
     th = tptp_parser(f);
     break;
   default:
     perror("Error in enum for file input type\n");
     exit(EXIT_FAILURE);
   }
-  if(print_tptp){
-    print_tptp_theory(th, th->constants, stdout);
-    exit(EXIT_SUCCESS);
+  if(output_theory){
+    switch(output_format){
+    case tptp_format:
+      print_tptp_theory(th, th->constants, stdout);
+      break;
+    case clpl_format:
+      print_clpl_theory(th, th->constants, stdout);
+      break;
+    case geolog_format:
+      print_geolog_theory(th, th->constants, stdout);
+      break;
+    default:
+      perror("Unknown format. Cannot print.\n");
+      exit(EXIT_FAILURE);
+    }
   }
   assert(test_theory(th));
   if(!has_theory_name(th))
     set_theory_name(th, prefix);
-  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq, use_beta_not, factset_lhs, print_model, all_disjuncts, verbose);
+  net = create_rete_net(th, maxsteps, existdom, strat, lazy, coq, use_beta_not, factset_lhs, print_model, all_disjuncts, verbose, multithread_rete);
 
+  if(dry_run)
+    exit(EXIT_SUCCESS);
   if(!factset_lhs){  
     if(debug){
       fp = fopen("rete.dot", "w");
@@ -229,14 +273,16 @@ void print_help(char* exec){
   printf("\t-q, --coq\t\tOutputs coq format proof to a file in the current working directory.\n");
   printf("\t-d, --depth-first\t\tUses a depth-first strategy, similar to in CL.pl. \n");
   printf("\t-f, --factset_lhs\t\tUses standard fact-set method to determine whether the lhs of an instance is satisified. The default is to use rete. Implies -n|--not. Work in progress.\n");
-  printf("\t-P, --print_tptp\t\tOnly outputs the theory in TPTP format. (The prover is not run.)\n");
+  printf("\t-P, --print=TPTP|Geolog|CL.pl\t\tOnly outputs the theory in the chosen format.\n");
   printf("\t-o, --print_model\t\tPrints the model in the case that there is no proof of contradiction. (Implied by factset_lhs.)\n");
+  printf("\t-D, --dry-run\t\tPrevents running the prover proper. Only parses and constructs rete net, possibly outputs theory.\n");
   printf("\t-m, --max=LIMIT\t\tMaximum number of inference steps in the proving process. 0 sets no limit\n");
   printf("\t-C, --CL.pl\t\tParses the input file as in CL.pl. This is the default.\n");
   printf("\t-G, --geolog\t\tParses the input file as in Fisher's geolog.See http://johnrfisher.net/GeologUI/index.html#geolog for a description\n");
   printf("\t-T, --TPTP\t\tParses the input as TPTP simple, and translates to CL. See http://www.cs.miami.edu/~tptp/. Not finished. \n");
-  printf("\t-M, --multithreaded\t\tUses a multithreaded alogithm. Should probably be used with -a|--all-disjuncts.\n");
+  printf("\t-M, --multithreaded\t\tUses a multithreaded algorithm. Should probably be used with -a|--all-disjuncts.\n");
   printf("\t-t, --cpu_timer=LIMIT\t\tSets a limit to total number of seconds of CPU time spent.\n");
+  printf("\t-S, --single-threaded-rete\t\tPrevents the multithreaded rete implementation to run. Probably only interesting for testing.\n");
   printf("\t-w, --wallclocktimer=LIMIT\t\tSets a limit to total number of seconds that may elapse before prover exits.\n");
   printf("\t-a, --all-disjuncts\t\tAlways treats all disjuncts of all treated disjuncts.\n");
   printf("\t-n, --no-beta-not\t\tPrevents construction of beta-not rete nodes for the rhs of rules. \n");
@@ -261,13 +307,14 @@ int main(int argc, char *argv[]){
     {"version", no_argument, NULL, 'V'}, 
     {"verbose", no_argument, NULL, 'v'}, 
     {"proof", no_argument, NULL, 'p'}, 
-    {"print_tptp", no_argument, NULL, 'P'}, 
+    {"print", required_argument, NULL, 'P'}, 
     {"help", no_argument, NULL, 'h'}, 
     {"debug", no_argument, NULL, 'g'}, 
     {"factset_lhs", no_argument, NULL, 'f'}, 
     {"x", no_argument, NULL, 'x'},
     {"max", required_argument, NULL, 'm'}, 
     {"depth-first", no_argument, NULL, 'd'}, 
+    {"dry-run", no_argument, NULL, 'D'}, 
     {"eager", no_argument, NULL, 'e'}, 
     {"multithreaded", no_argument, NULL, 'M'}, 
     {"CL.pl", no_argument, NULL, 'C'}, 
@@ -281,27 +328,30 @@ int main(int argc, char *argv[]){
     {"TPTP", no_argument, NULL, 'T'},
     {"substitution_store", no_argument, NULL, 's'}, 
     {"all-disjuncts", no_argument, NULL, 'a'}, 
+    {"single-threaded-rete", no_argument, NULL, 'S'},
     {0,0,0,0}
   };
-  char shortargs[] = "w:vfVphgdoat:cCsPaT:GeqMnm:";
+  char shortargs[] = "w:vfVphgdoat:cCSsDP:aT:GeqMnm:";
   int longindex;
   char argval;
   verbose = false;
-  print_tptp = false;
   proof = false;
   text = false;
+  input_format = clpl_format;
   debug = false;
   print_model = false;
+  output_theory = false;
   lazy = true;
   coq = false;
   use_beta_not = true;
   multithreaded = false;
+  multithread_rete = true;
   factset_lhs = false;
   all_disjuncts = false;
   use_substitution_store = false;
-  input_format = clpl_input;
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
+  dry_run = false;
   
   while( ( argval = getopt_long(argc, argv, shortargs, &longargs[0], &longindex )) != -1){
     switch(argval){
@@ -311,6 +361,9 @@ int main(int argc, char *argv[]){
       break;
     case 'p':
       proof = true;
+      break;
+    case 'D':
+      dry_run = true;
       break;
     case 's':
       use_substitution_store = true;
@@ -328,8 +381,12 @@ int main(int argc, char *argv[]){
     case 'a':
       all_disjuncts = true;
       break;
+    case 'S':
+      multithread_rete = false;
+      break;
     case 'P':
-      print_tptp = true;
+      output_theory = true;
+      output_format = get_format_arg_opt();
       break;
     case 'w':
       maxtimer = get_ui_arg_opt();
@@ -364,13 +421,13 @@ int main(int argc, char *argv[]){
       text = true;
       break;
     case 'C':
-      input_format = clpl_input;
+      input_format = clpl_format;
       break;
     case 'T':
-      input_format = tptp_input;
+      input_format = tptp_format;
       break;
     case 'G':
-      input_format = geolog_input;
+      input_format = geolog_format;
       break;
     case 'm':
       maxsteps = get_ui_arg_opt();

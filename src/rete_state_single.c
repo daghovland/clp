@@ -24,6 +24,7 @@
 #include "rule_queue_single.h"
 #include "rete_state_single.h"
 #include "rete_worker_queue.h"
+#include "rete_insert_single.h"
 #include "rete_worker.h"
 #include "substitution.h"
 #include "theory.h"
@@ -464,12 +465,12 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
   assert(sel != NULL && sel->val.selector == fact->pred);
   for(i = 0; i < sel->n_children; i++){
     const rete_node* child = sel->children[i];
-#ifdef HAVE_PTHREAD
-    push_rete_worker_queue(state->worker_queues[child->rule_no], fact, child, step);
-#else
-    init_substitution(tmp_sub, state->net->th, step);
-    insert_rete_alpha_fact_single(state->net, state->node_caches, &state->tmp_subs, state->rule_queues[child->axiom_no], child, fact, step, tmp_sub);
-#endif
+    if(state->net->multithread_rete){
+      push_rete_worker_queue(state->worker_queues[child->rule_no], fact, child, step);
+    } else {
+      init_substitution(tmp_sub, state->net->th, step);
+      insert_rete_alpha_fact_single(state->net, state->node_subs, &state->tmp_subs, state->rule_queues[child->rule_no], child, fact, step, tmp_sub, state->net->th->constants);
+    }
   }
   free_substitution(tmp_sub);
 }

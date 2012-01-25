@@ -84,13 +84,13 @@
 /**
    To get loads of debugging output about the rete state, uncomment this
 **/
-//#define  __DEBUG_RETE_STATE 
+#define  __DEBUG_RETE_STATE 
 //#define DEBUG_RETE_INSERT
 /**
    To get dot output of state of rete net at each proof step
 **/
 //#define RETE_STATE_DEBUG_DOT
-//#define RETE_STATE_DEBUG_TXT
+#define RETE_STATE_DEBUG_TXT
 /**
    For debugging the parallel execution involving RETE, uncomment this
 **/

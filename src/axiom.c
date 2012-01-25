@@ -244,11 +244,27 @@ void print_geolog_axiom(const axiom* a, const constants* cs, FILE* stream){
     fprintf(stream, "true");
   else 
     print_geolog_conj(a->lhs, cs,  stream);
-  fprintf(stream,"=>");
+  fprintf(stream," => ");
   if(a->type==goal)
     fprintf(stream, "goal");
   else
     print_geolog_disj(a->rhs, cs, stream);
+  fprintf(stream, ".");
+}
+
+/**
+   Pretty printing in CL.pl format
+**/
+void print_clpl_axiom(const axiom* a, const constants* cs, FILE* stream){
+  if(a->type == fact)
+    fprintf(stream, "true");
+  else 
+    print_clpl_conj(a->lhs, cs,  stream);
+  fprintf(stream,"=>");
+  if(a->type==goal)
+    fprintf(stream, "goal");
+  else
+    print_clpl_disj(a->rhs, cs, stream);
   fprintf(stream, " .");
 }
 

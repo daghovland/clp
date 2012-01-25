@@ -367,6 +367,9 @@ void print_conj(const conjunction * con, const constants* cs, FILE* stream, char
 void print_fol_conj(const conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, "/\\", print_fol_atom);
 }
+void print_clpl_conj(const conjunction *con, const constants* cs, FILE* stream){
+  print_conj(con, cs, stream, ", ", print_fol_atom);
+}
 
 void print_fol_disj(const disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, " \\/ "," ∃",  ":", true, print_fol_conj);
@@ -421,6 +424,9 @@ void print_coq_disj(const disjunction* dis, const constants* cs, FILE* stream){
 **/
 void print_geolog_disj(const disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, ";", " ∃", ":", false, print_geolog_conj);
+}
+void print_clpl_disj(const disjunction *dis, const constants* cs, FILE* stream){
+  print_disj(dis, cs, stream, ";", " ∃", ":", false, print_clpl_conj);
 }
 
 void print_geolog_conj(const conjunction *con, const constants* cs, FILE* stream){

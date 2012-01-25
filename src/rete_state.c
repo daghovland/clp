@@ -90,7 +90,7 @@ rete_net_state* create_rete_state(const rete_net* net, bool verbose){
 }
 
 /**
-   Deletes "state" and much of the linked infromation.
+   Deletes "state" and much of the linked information.
    Uses "orig", which _must_ be above state in the tree, 
    to find out how much to delete.
 

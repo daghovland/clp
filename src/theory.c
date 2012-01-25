@@ -170,12 +170,12 @@ void finalize_theory(theory* th){
    Creates new rete network for the whole theory
 
 **/
-rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts, bool verbose){
+rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdom, strategy strat, bool lazy, bool coq, bool use_beta_not, bool factset_lhs, bool print_model, bool all_disjuncts, bool verbose, bool multithread_rete){
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t p_attr;
 #endif
   unsigned int i;
-  rete_net* net = init_rete(th, maxsteps, lazy, coq);
+  rete_net* net = init_rete(th, maxsteps, lazy, coq, multithread_rete);
   assert(th->finalized);
   net->rule_nodes = calloc_tester(th->n_axioms, sizeof(rete_node*));
   for(i = 0; i < th->n_axioms; i++){
@@ -295,7 +295,13 @@ void print_fol_theory(const theory * th, const constants* cs, FILE* stream){
    Print in geolog input format
 **/
 void print_geolog_theory(const theory* th, const constants* cs, FILE* stream){
-  print_theory(th, cs, stream, print_geolog_axiom, print_geolog_conj, "", ".", " /\\ ");
+  print_theory(th, cs, stream, print_geolog_axiom, print_geolog_conj, "true => ", ".", " , ");
+}
+/**
+   Print in geolog input format
+**/
+void print_clpl_theory(const theory* th, const constants* cs, FILE* stream){
+  print_theory(th, cs, stream, print_clpl_axiom, print_clpl_conj, "", ".", " , ");
 }
 
 /**

@@ -93,6 +93,7 @@ bool test_theory(const theory*);
 
 void delete_theory(theory*);
 void print_fol_theory(const theory*, const constants*, FILE*);
+void print_clpl_theory(const theory*, const constants*, FILE*);
 void print_geolog_theory(const theory*, const constants*, FILE*);
 void print_tptp_theory(const theory*, const constants*, FILE*);
 const predicate* parser_new_predicate(theory*, const char*, size_t);
