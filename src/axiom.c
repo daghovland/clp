@@ -135,7 +135,7 @@ rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_n
 			       !(net->lazy),
 			       true,
 			       axiom_no);
-  if(ax->type != goal && use_beta_not) {
+  if(ax->type != goal && use_beta_not && ax->lhs->n_args > 2) {
     node  = insert_beta_not_nodes(net, 
 				  ax->lhs, 
 				  ax->rhs, 
