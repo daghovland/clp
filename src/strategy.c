@@ -88,8 +88,8 @@ rule_instance* normal_next_instance(rule_queue_state state
 
       axiom_weights[axiom_no] = 
 	(possible_age(state, axiom_no) + rule_previously_applied + 1) 
-	* (rule->rhs->n_args)
-	* (1 + rand() / RAND_DIV);
+	* (rule->rhs->n_args * 10 );
+      //	* (1 + rand() / RAND_DIV);
 #if false
       axiom_weights[axiom_no] = 
 	(possible_age(state, axiom_no) + rule_previously_applied) 
@@ -160,6 +160,14 @@ rule_instance* normal_next_instance(rule_queue_state state
   return NULL;
 }
   
+/**
+   This reads the strategy from a file. The file format constains the number of the axiom and the instantiation/substitution
+ **/
+rule_instance* force_next_instance(rete_net* net){
+  
+}
+
+
 /**
    This strategy chooser tries to emulate CL.pl
 **/
