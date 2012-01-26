@@ -87,8 +87,8 @@ rule_instance* normal_next_instance(rule_queue_state state
       }
 
       axiom_weights[axiom_no] = 
-	(possible_age(state, axiom_no) + rule_previously_applied) 
-	* (rule->rhs->n_args + 1)
+	(possible_age(state, axiom_no) + rule_previously_applied + 1) 
+	* (rule->rhs->n_args)
 	* (1 + rand() / RAND_DIV);
 #if false
       axiom_weights[axiom_no] = 
