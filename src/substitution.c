@@ -309,9 +309,10 @@ bool test_substitution(const substitution* sub){
   
   c = 0;
   for(i = 0; i < sub->allvars->n_vars; i++){
-    if(get_sub_value(sub, i) != NULL){
+    const term* t = get_sub_value(sub, i);
+    if(t != NULL){
       c++;
-      assert(test_term(get_sub_value(sub, i)));
+      assert(test_term(t));
     }
   }
 
@@ -541,7 +542,7 @@ void free_sub_list_iter(sub_list_iter* i){
    Note that for rule nodes, the same substitution is put in the rule queue, and
    pointer equality of these substitutions is important for later removal. 
 **/
-bool insert_substitution(rete_net_state* state, size_t sub_no, substitution* a, const freevars* free_vars, constants* cs){
+bool insert_substitution(rete_net_state* state, unsigned int sub_no, substitution* a, const freevars* free_vars, constants* cs){
   substitution_list* sub_list = state->subs[sub_no];
 
   assert(test_substitution(a));
@@ -590,9 +591,9 @@ int compare_sub_timestamps(const substitution* s1, const substitution* s2){
    Output functions
 **/
 void print_substitution(const substitution* sub, const constants* cs, FILE* f){
-  size_t i;
+  unsigned int i;
   timestamps_iter iter;
-  size_t j = 0;
+  unsigned int j = 0;
   fprintf(f,"[");
   if(sub != NULL){
     for(i = 0; i < sub->allvars->n_vars; i++){
@@ -613,7 +614,7 @@ void print_substitution(const substitution* sub, const constants* cs, FILE* f){
 }
 
 void print_coq_substitution(const substitution* sub, const constants* cs, const freevars* vars, FILE* f){
-  size_t i;
+  unsigned int i;
   for(i = 0; i < vars->n_vars; i++){
     fprintf(f, " ");
     print_coq_term(get_sub_value(sub, vars->vars[i]->var_no),cs, f);

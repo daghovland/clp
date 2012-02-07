@@ -211,7 +211,7 @@ rete_node * create_rete_conj_node(rete_net* net,
 				  const freevars* vars,
 				  bool propagate,
 				  bool in_positive_lhs_part,
-				  size_t axiom_no){
+				  unsigned int axiom_no){
   unsigned int i, j;
   rete_node * right_parent, *left_parent;
 
@@ -289,7 +289,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
    Used by the original "beta-not" implementation, where the beta-not comes last, just before the rule node.
    
 **/
-rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const disjunction* dis, size_t axiom_no){
+rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const disjunction* dis, unsigned int axiom_no){
   unsigned int i;
   rete_node* right_parent;
   assert(dis->n_args > 0);

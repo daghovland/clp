@@ -77,7 +77,7 @@ void init_selector_node(predicate* p, rete_node* n){
 /**
    This is used during construction of the rete net
 **/
-rete_node* get_selector(size_t pred_no, rete_net* net){
+rete_node* get_selector(unsigned int pred_no, rete_net* net){
   rete_node* retval = & net->selectors[pred_no];
   assert(retval->val.selector == net->th->predicates[pred_no]);
   return retval;
@@ -86,7 +86,7 @@ rete_node* get_selector(size_t pred_no, rete_net* net){
 /**
    This is used by the prover proper
 **/
-const rete_node* get_const_selector(size_t pred_no, const rete_net* net){
+const rete_node* get_const_selector(unsigned int pred_no, const rete_net* net){
   const rete_node* retval = & net->selectors[pred_no];
   assert(retval->val.selector == net->th->predicates[pred_no]);
   return retval;
@@ -121,7 +121,7 @@ rete_node* create_store_node(rete_net* net, rete_node* parent, const freevars* v
   return node;
 }
 */
-rete_node* create_beta_left_root(size_t axiom_no){
+rete_node* create_beta_left_root(unsigned int axiom_no){
   return _create_rete_node(beta_root, NULL, NULL, true, axiom_no);
 }
 

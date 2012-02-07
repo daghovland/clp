@@ -69,7 +69,7 @@ void delete_atom(atom* at){
 /**
    Creating rete network from atoms
 **/
-rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* vars, bool propagate, bool in_positive_lhs_part, size_t axiom_no){
+rete_node* create_rete_atom_node(rete_net* net, const atom* a, const freevars* vars, bool propagate, bool in_positive_lhs_part, unsigned int axiom_no){
   unsigned int i;
   rete_node *p;
   p = get_selector(a->pred->pred_no, net);

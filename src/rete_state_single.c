@@ -401,7 +401,7 @@ bool axiom_may_have_new_instance_single_state(rete_state_single* state, size_t a
    When the net becomes lazy, or multithreaded, the "may_have" version
    will be different, while the has_new will wait till a new one comes out.
 **/
-bool axiom_has_new_instance_single(rule_queue_state rqs, size_t axiom_no){
+bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
   rete_state_single* state = rqs.single;
   rule_queue_single* rq = state->rule_queues[axiom_no];
   bool retval = false;
@@ -534,7 +534,7 @@ void print_state_new_fact_store(rete_state_single* state, FILE* f){
 
    This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
 **/
-unsigned int rule_queue_possible_age_single_state(rete_state_single* state, size_t axiom_no){
+unsigned int rule_queue_possible_age_single_state(rete_state_single* state, unsigned int axiom_no){
   rule_queue_single* rq = state->rule_queues[axiom_no];
   rete_worker_queue *wq = state->worker_queues[axiom_no];
   rete_worker *worker = state->workers[axiom_no];
@@ -582,32 +582,32 @@ void print_state_single_rule_queues(rete_state_single* s, FILE* f){
    Interface to strategy, choose_next_instance and rule_queue_state
 **/
 
-bool axiom_may_have_new_instance_single(rule_queue_state rqs, size_t axiom_no){
+bool axiom_may_have_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
   return axiom_may_have_new_instance_single_state(rqs.single, axiom_no);
 }
 
 
-bool is_empty_axiom_rule_queue_single(rule_queue_state rqs, size_t axiom_no){
+bool is_empty_axiom_rule_queue_single(rule_queue_state rqs, unsigned int axiom_no){
   return  is_empty_axiom_rule_queue_single_state(rqs.single, axiom_no);
 }
 
 
-unsigned int axiom_queue_previous_application_single(rule_queue_state rqs, size_t axiom_no){
+unsigned int axiom_queue_previous_application_single(rule_queue_state rqs, unsigned int axiom_no){
   return axiom_queue_previous_application_single_state(rqs.single, axiom_no);
 }
 
 
-rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, size_t axiom_no){
+rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, unsigned int axiom_no){
   return transfer_from_rule_queue_to_history(rqs.single, axiom_no);
 }
 
 
-unsigned int rule_queue_possible_age_single(rule_queue_state rqs, size_t axiom_no){
+unsigned int rule_queue_possible_age_single(rule_queue_state rqs, unsigned int axiom_no){
   return rule_queue_possible_age_single_state(rqs.single, axiom_no);
 }
 
 
-rule_instance* peek_axiom_rule_queue_single(rule_queue_state rqs, size_t axiom_no){
+rule_instance* peek_axiom_rule_queue_single(rule_queue_state rqs, unsigned int axiom_no){
   return peek_axiom_rule_queue_single_state(rqs.single, axiom_no);
 }
 

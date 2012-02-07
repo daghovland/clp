@@ -41,7 +41,6 @@
 #include "rule_instance.h"
 
 typedef unsigned int domain_iter;
-typedef unsigned int constants_iter;
 void insert_domain_elem(rete_net_state*, const term*);
 domain_iter get_domain_iter(rete_net_state*);
 bool domain_iter_has_next(rete_net_state*, domain_iter*);

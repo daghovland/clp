@@ -120,7 +120,7 @@ void delete_axiom(axiom* a){
    propagate value of alpha nodes in the left hand side to the opposite value
 
 **/
-rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, size_t axiom_no, bool use_beta_not){
+rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, unsigned int axiom_no, bool use_beta_not){
   rete_node* node;
   const freevars* rule_free_vars;
   if(ax->type != goal) {

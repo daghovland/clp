@@ -219,7 +219,7 @@ void _remove_rule_instance(rule_instance* ri, rule_queue* rq){
 }
 
 
-unsigned int axiom_queue_previous_application(rule_queue_state rqs, size_t axiom_no){
+unsigned int axiom_queue_previous_application(rule_queue_state rqs, unsigned int axiom_no){
   return (rqs.state)->axiom_inst_queue[axiom_no]->previous_appl;
 }
 
@@ -259,11 +259,11 @@ rule_instance* _peek_rule_queue(const rule_queue* rq){
   return rq->queue[rq->first];
 }
 
-rule_instance* peek_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
+rule_instance* peek_axiom_rule_queue_state(rule_queue_state rqs, unsigned int axiom_no){
   return  peek_axiom_rule_queue(rqs.state, axiom_no);
 }
 
-rule_instance* peek_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+rule_instance* peek_axiom_rule_queue(rete_net_state* state, unsigned int axiom_no){
   rule_queue* rq = state->axiom_inst_queue[axiom_no];
   assert(axiom_no < state->net->th->n_axioms);
   return _peek_rule_queue(rq);
@@ -274,7 +274,7 @@ rule_instance* peek_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
 
    Uses the rule queue as a stack, by taking the most recently added rule instance
 **/
-rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state rqs, size_t axiom_no){
+rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state rqs, unsigned int axiom_no){
   rete_net_state* state = rqs.state;
   substitution_store_mt* store = & state->local_subst_mem;
   substitution_size_info ssi = state->net->th->sub_size_info;
@@ -291,12 +291,12 @@ rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state rqs, size_t axiom_
   return retval;
 }
   
-rule_instance* pop_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
+rule_instance* pop_axiom_rule_queue_state(rule_queue_state rqs, unsigned int axiom_no){
   return pop_axiom_rule_queue(rqs.state, axiom_no);
 }
 
 
-rule_instance* pop_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+rule_instance* pop_axiom_rule_queue(rete_net_state* state, unsigned int axiom_no){
   substitution_store_mt* store = & state->local_subst_mem;
   substitution_size_info ssi = state->net->th->sub_size_info;
   rule_queue* rq = state->axiom_inst_queue[axiom_no];
@@ -317,11 +317,11 @@ size_t size_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
   return state->axiom_inst_queue[axiom_no]->n_queue;
 }
 
-bool is_empty_axiom_rule_queue(rete_net_state* state, size_t axiom_no){
+bool is_empty_axiom_rule_queue(rete_net_state* state, unsigned int axiom_no){
   return (size_axiom_rule_queue(state, axiom_no) == 0);
 }
 
-bool is_empty_axiom_rule_queue_state(rule_queue_state rqs, size_t axiom_no){
+bool is_empty_axiom_rule_queue_state(rule_queue_state rqs, unsigned int axiom_no){
   return is_empty_axiom_rule_queue(rqs.state, axiom_no);
 }
 
@@ -374,7 +374,7 @@ rule_instance* _remove_substitution_rule_instance(rule_queue* rq, const substitu
   return retval;
 }
 
-void remove_rule_instance(rete_net_state* state, const substitution* sub, size_t axiom_no){
+void remove_rule_instance(rete_net_state* state, const substitution* sub, unsigned int axiom_no){
   assert(axiom_no < state->net->th->n_axioms);
 #ifndef NDEBUG
   size_t size_before = state->axiom_inst_queue[axiom_no]->n_queue;

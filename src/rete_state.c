@@ -153,7 +153,7 @@ void delete_full_rete_state(rete_net_state* state){
 
    size_t is the number of the branch, numbered from left to right, starting at 0
 **/
-rete_net_state* split_rete_state(rete_net_state* orig, size_t branch_no){
+rete_net_state* split_rete_state(rete_net_state* orig, unsigned int branch_no){
   unsigned int i;
   size_t orig_size = sizeof(rete_net_state) + orig->net->th->n_axioms * sizeof(rule_queue*);
   size_t n_subs = orig->net->n_subs;
@@ -322,14 +322,14 @@ bool axiom_false_in_fact_set(rete_net_state* state, size_t axiom_no, substitutio
    Otherwise the threaded version will deadlock
 **/
    
-sub_list_iter* get_state_sub_list_iter(rete_net_state* state, size_t sub_no){
+sub_list_iter* get_state_sub_list_iter(rete_net_state* state, unsigned int sub_no){
 #ifdef HAVE_PTHREAD
   pthread_mutex_lock(& state->net->sub_mutexes[sub_no]);
 #endif
   return get_sub_list_iter(state->subs[sub_no]);
 }
 
-void free_state_sub_list_iter(rete_net_state* state, size_t sub_no, sub_list_iter* i){
+void free_state_sub_list_iter(rete_net_state* state, unsigned int sub_no, sub_list_iter* i){
 #ifdef HAVE_PTHREAD
   pthread_mutex_unlock(& state->net->sub_mutexes[sub_no]);
 #endif

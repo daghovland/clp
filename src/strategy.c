@@ -48,14 +48,14 @@
 rule_instance* normal_next_instance(rule_queue_state state
 					 , const rete_net* net
 					 , unsigned int step_no
-					 , bool (*is_empty) (rule_queue_state, size_t)
-					 , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
-					 , bool (*has_new_instance)(rule_queue_state, size_t)
-					 , unsigned int (*possible_age)(rule_queue_state, size_t)
-					 , bool (*may_have)(rule_queue_state, size_t)
-					 , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+					 , bool (*is_empty) (rule_queue_state, unsigned int)
+					 , rule_instance* (*peek_axiom)(rule_queue_state, unsigned int)
+					 , bool (*has_new_instance)(rule_queue_state, unsigned int)
+					 , unsigned int (*possible_age)(rule_queue_state, unsigned int)
+					 , bool (*may_have)(rule_queue_state, unsigned int)
+					 , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
 					 , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
-					 , unsigned int (*previous_application)(rule_queue_state, size_t)
+					 , unsigned int (*previous_application)(rule_queue_state, unsigned int)
 					 )
 {
   unsigned int i;
@@ -63,15 +63,15 @@ rule_instance* normal_next_instance(rule_queue_state state
   bool has_definite = false;
   bool has_definite_non_splitting = false;
   bool may_have_next_rule = false;
-  size_t definite_non_splitting_rule = th->n_axioms;
-  size_t definite_rule = th->n_axioms;
-  size_t lightest_rule = 0;
+  unsigned int definite_non_splitting_rule = th->n_axioms;
+  unsigned int definite_rule = th->n_axioms;
+  unsigned int lightest_rule = 0;
   unsigned int min_weight = 2 * step_no * (1 + RAND_RULE_WEIGHT);
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 50 * (step_no + 1) * (1 + RAND_RULE_WEIGHT);
   for(i = 0; i < net->th->n_axioms; i++){
     const axiom* rule = th->axioms[i];
-    size_t axiom_no = rule->axiom_no;
+    unsigned int axiom_no = rule->axiom_no;
     assert(axiom_no == i);
     if(may_have(state, axiom_no)){
       unsigned int rule_previously_applied = previous_application(state, i);
@@ -173,15 +173,15 @@ rule_instance* force_next_instance(rete_net* net){
 **/
 rule_instance* clpl_next_instance(rule_queue_state state
 				       , const rete_net* net
-				       , bool (*has_new_instance)(rule_queue_state, size_t)
-				       , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				       , bool (*has_new_instance)(rule_queue_state, unsigned int)
+				       , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
 				       )
 {
   unsigned int i;
   rule_instance* retval;
   const theory* th = net->th;
   for(i = 0; i < th->n_axioms; i++){
-    size_t axiom_no = th->axioms[i]->axiom_no;
+    unsigned int axiom_no = th->axioms[i]->axiom_no;
     assert(i == axiom_no);
     if(has_new_instance(state, axiom_no)){
       retval = pop_axiom(state, axiom_no);
@@ -200,14 +200,14 @@ rule_instance* choose_next_instance(rule_queue_state state
 				    , const rete_net* net
 				    , strategy strat
 				    , unsigned int step_no
-				    , bool (*is_empty) (rule_queue_state, size_t)
-				    , rule_instance* (*peek_axiom)(rule_queue_state, size_t)
-				    , bool (*has_new_instance)(rule_queue_state, size_t)
-				    , unsigned int (*possible_age)(rule_queue_state, size_t)
-				    , bool (*may_have)(rule_queue_state, size_t)
-				    , rule_instance* (*pop_axiom)(rule_queue_state, size_t)
+				    , bool (*is_empty) (rule_queue_state, unsigned int)
+				    , rule_instance* (*peek_axiom)(rule_queue_state, unsigned int)
+				    , bool (*has_new_instance)(rule_queue_state, unsigned int)
+				    , unsigned int (*possible_age)(rule_queue_state, unsigned int)
+				    , bool (*may_have)(rule_queue_state, unsigned int)
+				    , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
 				    , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
-				    , unsigned int (*previous_application)(rule_queue_state, size_t)
+				    , unsigned int (*previous_application)(rule_queue_state, unsigned int)
 				    )
 {
   rule_instance* ri;
