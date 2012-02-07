@@ -1,4 +1,4 @@
-/* timestamps.h
+/* timestamp.h
 
    Copyright 2011 
 
@@ -19,11 +19,10 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDED_TIMESTAMPS_H
-#define __INCLUDED_TIMESTAMPS_H
+#ifndef __INCLUDED_TIMESTAMP_H
+#define __INCLUDED_TIMESTAMP_H
 
 #include "common.h"
-#include "substitution_size_info.h"
 
 /**
    Used to keep info about the steps that were necessary to infer a fact
@@ -40,34 +39,8 @@ typedef struct timestamp_t {
   
 
 
-typedef struct timestamps_t {
-  unsigned int n_timestamps;
-  timestamp timestamps[];
-} timestamps;  
-
-typedef struct timestamps_iter_t {
-  unsigned int n;
-  const timestamps* ts;
-} timestamps_iter;
-
 timestamp create_normal_timestamp(unsigned int);
 bool is_normal_timestamp(timestamp);
 int compare_timestamp(timestamp, timestamp);
 
-void init_empty_timestamps(timestamps*, substitution_size_info);
-unsigned int get_n_timestamps(const timestamps*);
-
-void add_normal_timestamp(timestamps*, unsigned int);
-void add_equality_timestamp(timestamps*, unsigned int);
-void add_domain_timestamp(timestamps*, unsigned int);
-void add_timestamp(timestamps*, timestamp);
-void add_timestamps(timestamps* dest, const timestamps* orig);
-
-int compare_timestamps(const timestamps*, const timestamps*);
-
-timestamps_iter get_timestamps_iter(const timestamps*);
-bool has_next_timestamps_iter(const timestamps_iter*);
-timestamp get_next_timestamps_iter(timestamps_iter*);
-void destroy_timestamps_iter(timestamps_iter*);
-bool is_init_timestamp(timestamp);
 #endif
