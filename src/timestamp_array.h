@@ -1,4 +1,4 @@
-/* timestamps.h
+/* timestamp_array.h
 
    Copyright 2011 
 
@@ -19,8 +19,8 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
-#ifndef __INCLUDED_TIMESTAMPS_H
-#define __INCLUDED_TIMESTAMPS_H
+#ifndef __INCLUDED_TIMESTAMP_ARRAY_H
+#define __INCLUDED_TIMESTAMP_ARRAY_H
 
 #include "common.h"
 #include "timestamp.h"

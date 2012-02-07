@@ -1,4 +1,4 @@
-/* constants_struct.h
+/* timestamp.c
 
    Copyright 2011 
 
@@ -18,40 +18,26 @@
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
-
 /**
-   Used by parser and the rete states to keep track of constants
+   timestamps are used in substitutions, to keep
+   track of the steps at which the left-hand side were first inferred.
 **/
-
-#ifndef __INCLUDE_CONSTANTS_STRUCT_H
-#define __INCLUDE_CONSTANTS_STRUCT_H
-
 #include "common.h"
-#include "fresh_constants.h"
-#include "timestamp_array.h"
+#include "timestamp.h"
 
-/**
-   Part of a union-find / disjoint set structure
+timestamp create_normal_timestamp(unsigned int step){
+  timestamp retval;
+  retval.type = normal_timestamp;
+  retval.init_model = false;
+  retval.step = step;
+  return retval;
+}
 
-   http://en.wikipedia.org/wiki/Disjoint-set_data_structure 
-**/
-typedef struct constant_t {
-  const char* name;
-  unsigned int parent;
-  unsigned int rank;
-  timestamps ts;
-} constant;
+bool is_normal_timestamp(timestamp ts){
+  return ts.type == normal_timestamp && ts.step > 0;
+}
 
-/**
-   Used by the rete state to keep track of the constants
-**/
-typedef struct constants_t {
-  fresh_const_counter fresh;
-  constant* constants;
-  size_t size_constants;
-  unsigned int n_constants;
-} constants;
+int compare_timestamp(timestamp ts1, timestamp ts2){
+  return ts1.step - ts2.step;
+}
 
-typedef unsigned int constants_iter ;
-
-#endif

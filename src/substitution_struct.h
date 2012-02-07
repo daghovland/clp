@@ -25,7 +25,7 @@
 #include "common.h"
 #include "term.h"
 #include "variable.h"
-#include "timestamps.h"
+#include "timestamp_array.h"
 /**
    An substitution of variables
    to term values

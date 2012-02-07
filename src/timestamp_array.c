@@ -1,4 +1,4 @@
-/* timestamps.c
+/* timestamp_array.c
 
    Copyright 2011 
 
@@ -19,26 +19,14 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 /**
-   Auxiliary Code for updating state of rete network
+   Arrays of timestamps are used in substitutions, to keep
+   track of the steps at which the left-hand side were first inferred.
+
+   Included from timestamp_list _if_ USE_TIMESTAMP_ARRAY is defined in common.h
+   Otherwise, timestamp_linked_list is used
 **/
 #include "common.h"
-#include "timestamps.h"
-
-timestamp create_normal_timestamp(unsigned int step){
-  timestamp retval;
-  retval.type = normal_timestamp;
-  retval.init_model = false;
-  retval.step = step;
-  return retval;
-}
-
-bool is_normal_timestamp(timestamp ts){
-  return ts.type == normal_timestamp && ts.step > 0;
-}
-
-int compare_timestamp(timestamp ts1, timestamp ts2){
-  return ts1.step - ts2.step;
-}
+#include "timestamp_array.h"
 
 /**
    Initializes already allocated substitution

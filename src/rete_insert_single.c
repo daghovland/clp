@@ -27,7 +27,7 @@
 #include "rete.h"
 #include "rete_insert_single.h"
 #include "substitution.h"
-#include "timestamps.h"
+#include "timestamp_array.h"
 
 /**
    Should test that the timestamps actually refer to rules 

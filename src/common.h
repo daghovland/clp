@@ -37,6 +37,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+/**
+   If defined (not commented) then the original implementation of timestamps is used.
+   Otherwise, the new, linked list, implementation is used
+**/
+#define USE_TIMESTAMP_ARRAY
+
 
 /**
    The name used in the coq proof writer for the set domain
