@@ -1,4 +1,4 @@
-/* timestamp_array.c
+/* timestamp_linked_list.c
 
    Copyright 2011 
 
@@ -26,11 +26,12 @@
    Otherwise, timestamp_linked_list is used
 **/
 #include "common.h"
-#include "timestamp_array_struct.h"
+#include "timestamp_linked_list_struct.h"
 #include "timestamps.h"
 #include "term.h"
 #include "substitution.h"
 #include "rule_instance.h"
+
 
 /**
    Initializes already allocated substitution
@@ -140,7 +141,6 @@ int compare_timestamps(const timestamps* first, const timestamps* last){
   return 0;
 }
 
-
 /**
    Discovers how much space is needed for the timestmaps, substitutions and rule instances
 
@@ -157,5 +157,4 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   ssi.sub_values_offset =  size_timestamps / sizeof(int);
   return ssi;
 }
-
 

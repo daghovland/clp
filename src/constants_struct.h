@@ -28,7 +28,7 @@
 
 #include "common.h"
 #include "fresh_constants.h"
-#include "timestamp_array.h"
+#include "timestamps.h"
 
 /**
    Part of a union-find / disjoint set structure

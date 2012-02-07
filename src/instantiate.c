@@ -129,7 +129,7 @@ bool test_is_atom_instantiation(const atom* a, const substitution* sub){
 atom* instantiate_atom(const atom* orig, const substitution* sub){
   assert(test_atom(orig));
   assert(test_substitution(sub));
-  if (orig->args->n_args > 0){
+  if(orig->args->n_args > 0){
     atom* retval;
     const term_list* ground_args = instantiate_term_list(orig->args, sub);
     assert(test_term_list(ground_args));

@@ -19,6 +19,10 @@
 
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
+/**
+   The init function is in timestamp_array.c or timestamp_linked_list.c
+**/
+
 #include "substitution_size_info.h"
 #include "substitution_struct.h"
 #include "rule_instance.h"
@@ -52,23 +56,5 @@ unsigned int get_max_n_timestamps(substitution_size_info ssi){
 unsigned int get_sub_values_offset(substitution_size_info ssi){
   return ssi.sub_values_offset;
 }
-
-/**
-   Discovers how much space is needed for the timestmaps, substitutions and rule instances
-**/
-substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_lhs_conjuncts){
-  substitution_size_info ssi;
-  unsigned int size_vars, size_timestamps;
-  ssi.max_n_timestamps = max_lhs_conjuncts + 1;
-  size_vars = n_vars * sizeof(term*);
-  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp);
-  assert(sizeof(timestamps) % sizeof(term*) == (size_timestamps + sizeof(timestamps)) % sizeof(term*));
-  ssi.size_substitution = sizeof(substitution) + size_vars + size_timestamps;
-  ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
-  ssi.sub_values_offset =  size_timestamps / sizeof(int);
-  return ssi;
-}
-
-
 
 

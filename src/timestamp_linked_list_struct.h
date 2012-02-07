@@ -1,4 +1,4 @@
-/* timestamp.c
+/* timestamp_linked_list_struct.h
 
    Copyright 2011 
 
@@ -17,33 +17,30 @@
    Foundation, Inc.,
    51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
 
-/*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
+/*   Written 2011-2012 by Dag Hovland, hovlanddag@gmail.com  */
 /**
-   timestamps are used in substitutions, to keep
-   track of the steps at which the left-hand side were first inferred.
+   Included from timestamps.h, depending on USE_TIMESTAMP_ARRAY, defined in common.h
 **/
+
+#ifndef __INCLUDED_TIMESTAMP_LINKED_LIST_STRUCT_H
+#define __INCLUDED_TIMESTAMP_LINKED_LIST_STRUCT_H
+
 #include "common.h"
 #include "timestamp.h"
 
-timestamp create_normal_timestamp(unsigned int step){
-  timestamp retval;
-  retval.type = normal_timestamp;
-  retval.init_model = false;
-  retval.step = step;
-  return retval;
-}
-
-bool is_normal_timestamp(timestamp ts){
-  return ts.type == normal_timestamp && ts.step > 0;
-}
+/**
+   Used to keep info about the steps that were necessary to infer a fact
+**/
 
 
-bool is_init_timestamp(timestamp ts){
-  return ts.init_model || ts.step == 0;
-}
+typedef struct timestamps_t {
+  unsigned int n_timestamps;
+  timestamp timestamps[];
+} timestamps;  
 
+typedef struct timestamps_iter_t {
+  unsigned int n;
+  const timestamps* ts;
+} timestamps_iter;
 
-int compare_timestamp(timestamp ts1, timestamp ts2){
-  return ts1.step - ts2.step;
-}
-
+#endif
