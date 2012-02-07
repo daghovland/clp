@@ -151,8 +151,8 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   unsigned int size_vars, size_timestamps;
   ssi.max_n_timestamps = max_lhs_conjuncts + 1;
   size_vars = n_vars * sizeof(term*);
-  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp);
-  ssi.size_substitution = sizeof(substitution) + size_vars + size_timestamps;
+  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp) * 2 * sizeof(int);
+  ssi.size_substitution = (sizeof(substitution) + size_vars + size_timestamps) * 2;
   ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
   ssi.sub_values_offset =  size_timestamps / sizeof(int);
   return ssi;
