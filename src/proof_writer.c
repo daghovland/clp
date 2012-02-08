@@ -294,7 +294,7 @@ void write_premiss_proof(const rule_instance* ri, timestamp ts, const rete_net* 
     }
     if(is_init_timestamp(premiss_no)){
       fp_err( fprintf(coq_fp, "assumption.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    } else {
+    } else if(premiss_no.step != ts.step) {
       rule_instance* premiss = get_history(premiss_no.step, rqs);
       //if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[i]->pred->is_domain)){
       fp_err( fprintf(coq_fp, "(* Proving conjunct %i of step %i *)\n", i, ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
