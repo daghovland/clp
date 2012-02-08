@@ -77,10 +77,10 @@ bool unify_substitution_terms(const term*, const term*, substitution*, constants
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*, constants*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);
 bool subs_equal_intersection(const substitution*, const substitution*, constants*);
-bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants* cs);
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants* cs, timestamp_store*);
 bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants*);
 substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, constants* cs);
-substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, constants*);
+substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, constants*, timestamp_store*);
 void add_sub_timestamp(substitution*, unsigned int, substitution_size_info, timestamp_store*);
 
 void delete_substitution_list(substitution_list*);

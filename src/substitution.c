@@ -411,13 +411,13 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
 
    Assumes dest is already allocated
 **/
-bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs){
+bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* store){
 #ifndef NDEBUG
   unsigned int n_ts;
 #endif
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs))
     return false;
-  add_timestamps(& dest->sub_ts, & sub2->sub_ts);
+  add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
 #ifndef NDEBUG
   n_ts = get_sub_n_timestamps(dest);
   assert(get_max_n_timestamps(ssi) > n_ts);
@@ -431,7 +431,7 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
    If this is not possible, because they map variables in the intersection of the domain to
    different values, then NULL is returned
 **/
-substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, constants* cs){
+substitution* union_substitutions_with_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
   
   substitution *retval;
 
@@ -441,7 +441,7 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
     retval = alloc_heap_substitution(ssi);
   }
 
-  if(!union_substitutions_struct_with_ts(retval, sub1, sub2, ssi, cs)){
+  if(!union_substitutions_struct_with_ts(retval, sub1, sub2, ssi, cs, ts_store)){
     if(!use_substitution_store)
       free_substitution(retval);
     return NULL;

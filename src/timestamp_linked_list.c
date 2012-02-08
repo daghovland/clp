@@ -136,13 +136,38 @@ void add_timestamp(timestamps* ts, timestamp timestamp, timestamp_store* store){
   }
 }
 
-
-
 /**
    Adds the timestamps in orig to those in dest.
    Called from union_substitutions_struct_with_ts in substitution.c
 **/
-void add_timestamps(timestamps* dest, const timestamps* orig){
+#define __COSTLY_TIMESTAMP_UNON
+
+#ifdef __COSTLY_TIMESTAMP_UNON
+void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
+#ifndef NDEBUG
+  unsigned int n_dest = get_n_timestamps(dest);
+  unsigned int n_orig = get_n_timestamps(orig);
+  unsigned int n_new;
+#endif
+  timestamp_linked_list* orig_el = orig->list;
+  while(orig_el != NULL){
+    if(orig_el->ts.step != dest->first->ts.step)
+      add_timestamp(dest, orig_el->ts, store);
+#ifndef NDEBUG
+    else
+      n_orig--;
+#endif
+    orig_el = orig_el->next;
+  }
+#ifndef NDEBUG
+  n_new = get_n_timestamps(dest);
+  assert(n_dest + n_orig == n_new);
+#endif
+}
+
+#else
+
+void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
 #ifndef NDEBUG
   unsigned int n_dest = get_n_timestamps(dest);
   unsigned int n_orig = get_n_timestamps(orig);
@@ -167,7 +192,7 @@ void add_timestamps(timestamps* dest, const timestamps* orig){
 #endif
   }
 }
-  
+#endif
 
 /**
    Internal function for comparing timestamps on a substition

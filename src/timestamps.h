@@ -46,7 +46,7 @@ void add_normal_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_equality_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_domain_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_timestamp(timestamps*, timestamp, timestamp_store*);
-void add_timestamps(timestamps* dest, const timestamps* orig);
+void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
 
 int compare_timestamps(const timestamps*, const timestamps*);
 
