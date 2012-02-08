@@ -32,6 +32,12 @@
 #include "substitution.h"
 #include "rule_instance.h"
 
+
+#ifndef USE_TIMESTAMP_ARRAY
+#abort
+#endif
+
+
 /**
    Initializes already allocated substitution
    Only used directly by the factset_lhs implementation 
@@ -46,6 +52,10 @@ void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
   }
 }
 
+
+timestamp get_oldest_timestamp(timestamps* ts){
+  return ts->timestamps[0];
+}
 
 timestamps_iter get_timestamps_iter(const timestamps* ts){
   timestamps_iter iter;
@@ -82,32 +92,6 @@ void add_timestamp(timestamps* ts, timestamp timestamp){
   ts->timestamps[ts->n_timestamps] = timestamp;
   ts->n_timestamps ++;  
 }
-
-void add_normal_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = normal_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
-}
-
-void add_equality_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = equality_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
-}
-
-
-void add_domain_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = domain_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
-}
-
 
 
 /**
@@ -151,11 +135,25 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   unsigned int size_vars, size_timestamps;
   ssi.max_n_timestamps = max_lhs_conjuncts + 1;
   size_vars = n_vars * sizeof(term*);
-  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp) * 2 * sizeof(int);
-  ssi.size_substitution = (sizeof(substitution) + size_vars + size_timestamps) * 2;
+  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp);
+  ssi.size_substitution = (sizeof(substitution) + size_vars + size_timestamps);
   ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
   ssi.sub_values_offset =  size_timestamps / sizeof(int);
   return ssi;
 }
 
 
+/**
+   Void functions for aray implementation. Used by linked list
+**/
+timestamp_store* init_timestamp_store(substitution_size_info ssi){
+  return (timestamp_store*) NULL;
+}
+
+timestamp_store_backup backup_timestamp_store(timestamp_store* ts){
+  timestamp_store_backup b;
+  return b;
+}
+timestamp_store* restore_timestamp_store(timestamp_store_backup b){
+  return (timestamp_store*) NULL;
+}

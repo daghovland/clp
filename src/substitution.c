@@ -109,17 +109,17 @@ substitution* create_empty_substitution(const theory* t, substitution_store_mt* 
   return ret_val;
 }
 
-void init_substitution(substitution* sub, const theory* t, signed int timestamp){
+void init_substitution(substitution* sub, const theory* t, signed int timestamp, timestamp_store* store){
   init_empty_substitution(sub, t);
-  add_sub_timestamp(sub, timestamp, t->sub_size_info);
+  add_sub_timestamp(sub, timestamp, t->sub_size_info, store);
 }
 
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t, signed int timestamp, substitution_store_mt* store){
+substitution* create_substitution(const theory* t, signed int timestamp, substitution_store_mt* store, timestamp_store* ts_store){
   substitution* ret_val = get_substitution_memory(t->sub_size_info, store);
-  init_substitution(ret_val, t, timestamp);
+  init_substitution(ret_val, t, timestamp, ts_store);
   assert(test_substitution(ret_val));
   return ret_val;
 }
@@ -129,8 +129,8 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
 **/
-substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store){
-  substitution* sub = create_substitution(t, 1, store);
+substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store, timestamp_store* ts_store){
+  substitution* sub = create_substitution(t, 1, store, ts_store);
   assert(test_substitution(sub));
   return sub;
 }
@@ -412,10 +412,16 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
    Assumes dest is already allocated
 **/
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs){
+#ifndef NDEBUG
+  unsigned int n_ts;
+#endif
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs))
     return false;
   add_timestamps(& dest->sub_ts, & sub2->sub_ts);
-  assert(get_max_n_timestamps(ssi) > get_sub_n_timestamps(dest));
+#ifndef NDEBUG
+  n_ts = get_sub_n_timestamps(dest);
+  assert(get_max_n_timestamps(ssi) > n_ts);
+#endif
   return true;
 }
 
@@ -570,9 +576,8 @@ bool insert_substitution(rete_net_state* state, unsigned int sub_no, substitutio
 
    Necessary for the output of correct coq proofs
 **/
-void add_sub_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi){  
-  add_normal_timestamp(& sub->sub_ts, timestamp);
-  assert(get_max_n_timestamps(ssi) >= get_sub_n_timestamps(sub));
+void add_sub_timestamp(substitution* sub, unsigned int timestamp, substitution_size_info ssi, timestamp_store* store){  
+  add_normal_timestamp(& sub->sub_ts, timestamp, store);
 }
 
 

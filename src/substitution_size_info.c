@@ -20,7 +20,7 @@
 /*   Written 2011 by Dag Hovland, hovlanddag@gmail.com  */
 
 /**
-   The init function is in timestamp_array.c or timestamp_linked_list.c
+   The init function which sets the values is in timestamp_array.c or timestamp_linked_list.c
 **/
 
 #include "substitution_size_info.h"

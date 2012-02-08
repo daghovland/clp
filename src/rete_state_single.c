@@ -44,6 +44,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   rete_state_single* state = malloc_tester(sizeof(rete_state_single));
   state->node_subs = init_substitution_store_array(net->th->sub_size_info, net->n_subs);
   state->tmp_subs = init_substitution_store_mt(ssi);
+  state->timestamp_store = init_timestamp_store(ssi);
   state->verbose = verbose;
   state->net = net;
   state->fresh = init_fresh_const(net->th->vars->n_vars);
@@ -58,7 +59,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   for(i = 0; i < net->th->n_axioms; i++){
     state->rule_queues[i] = initialize_queue_single(ssi, i);
     state->worker_queues[i] = init_rete_worker_queue();
-    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs,  state->rule_queues[i], state->worker_queues[i], state->constants);
+    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs, state->timestamp_store,  state->rule_queues[i], state->worker_queues[i], state->constants);
   }
   state->history = initialize_queue_single(ssi, 0);
   state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
@@ -92,6 +93,7 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   for(i = 0; i < state->net->th->n_axioms; i++)
     wait_for_worker_to_pause(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
+  backup.timestamp_backup = backup_timestamp_store(state->timestamp_store);
   backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
   backup.worker_backups = calloc_tester(state->net->th->n_axioms, sizeof(rete_worker_queue_backup));
   for(i = 0; i < state->net->th->n_axioms; i++){
@@ -161,6 +163,7 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
     wait_for_worker_to_pause(state->workers[i]);
   }
   state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
+  state->timestamp_store = restore_timestamp_store(backup->timestamp_backup);
   for(i = 0; i < backup->state->net->th->n_axioms; i++){
     backup->state->rule_queues[i] = restore_rule_queue_single(backup->state->rule_queues[i], & backup->rq_backups[i]);
     backup->state->worker_queues[i] = restore_rete_worker_queue(backup->state->worker_queues[i], & backup->worker_backups[i]);
@@ -192,6 +195,7 @@ void delete_rete_state_single(rete_state_single* state){
   }
   destroy_rule_queue_single(state->history);
   destroy_substitution_store_mt(& state->tmp_subs);
+  destroy_timestamp_store(state->timestamp_store);
   free(state->rule_queues);
   free(state->worker_queues);
   destroy_constants(state->constants);
@@ -468,7 +472,7 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
     if(state->net->multithread_rete){
       push_rete_worker_queue(state->worker_queues[child->rule_no], fact, child, step);
     } else {
-      init_substitution(tmp_sub, state->net->th, step);
+      init_substitution(tmp_sub, state->net->th, step, state->timestamp_store);
       insert_rete_alpha_fact_single(state->net, state->node_subs, &state->tmp_subs, state->rule_queues[child->rule_no], child, fact, step, tmp_sub, state->net->th->constants);
     }
   }

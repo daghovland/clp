@@ -209,6 +209,7 @@ bool axiom_may_have_new_instance(rule_queue_state rqs, unsigned int axiom_no){
    This avoids a bottleneck that occurs when we force at least one instance on the queue when possible.
 **/
 unsigned int rule_queue_possible_age(rule_queue_state rqs, unsigned int axiom_no){
+  timestamp ts;
   rete_net_state* state = rqs.state;
   if(!is_empty_axiom_rule_queue(state, axiom_no)){
     rule_instance * ri = peek_axiom_rule_queue(state, axiom_no);
@@ -220,6 +221,7 @@ unsigned int rule_queue_possible_age(rule_queue_state rqs, unsigned int axiom_no
     // TODO: This might be a performance hit if the queues become very long. 
     for( new_root = state->sub_alpha_queues[axiom_no].root; new_root->next != root; new_root = new_root->next)
       ;
-    return new_root->sub->sub_ts.timestamps[0].step;
+    ts = get_oldest_timestamp(& new_root->sub->sub_ts);
+    return ts.step;
   }
 }

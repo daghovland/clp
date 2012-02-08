@@ -24,44 +24,59 @@
 
    Included from timestamp_list _if_ USE_TIMESTAMP_ARRAY is defined in common.h
    Otherwise, timestamp_linked_list is used
+
+   If there are n timestamps, there are n elements in the linked list. The oldest/first inserted has next pointer NULL
+   the other n-1 have valid next pointer.
+   
+   New timestamps are added at the end "list"
+   But union of timestamps is done by concatenation, so the order of the timestamps is not necessarily timestamp-ordered
 **/
 #include "common.h"
-#include "timestamp_linked_list_struct.h"
+#ifdef USE_TIMESTAMP_ARRAY
+#abort
+#endif
 #include "timestamps.h"
 #include "term.h"
 #include "substitution.h"
 #include "rule_instance.h"
+#include "error_handling.h"
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 
 /**
    Initializes already allocated substitution
    Only used directly by the factset_lhs implementation 
    in axiom_false_in_fact_set in rete_state.c
+
+   Assumes the memory for the timestamp is already allocated
 **/
 void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
-  unsigned int i;    
-  ts->n_timestamps = 0;
-  for(i = 0; i < get_max_n_timestamps(ssi); i++){
-    ts->timestamps[i].type = normal_timestamp;
-    ts->timestamps[i].step = 0;
-  }
+  ts->list = NULL;
+  ts->first = NULL;
 }
 
+timestamp get_first_timestamp(timestamps* ts){
+  assert(ts != NULL && ts->list != NULL && ts->first != NULL);
+  return ts->first->ts;
+}
 
 timestamps_iter get_timestamps_iter(const timestamps* ts){
   timestamps_iter iter;
-  iter.n = 0;
-  iter.ts = ts;
+  iter.ts = ts->list;
   return iter;
 }
 
 bool has_next_timestamps_iter(const timestamps_iter* iter){
-  return iter->n < iter->ts->n_timestamps;
+  return iter->ts != NULL;
 }
 
 timestamp get_next_timestamps_iter(timestamps_iter* iter){
-  iter->n++;
-  return iter->ts->timestamps[iter->n - 1];
+  assert(iter != NULL);
+  timestamp ts = iter->ts->ts;
+  iter->ts = iter->ts->next;
+  return ts;
 }
 
 void destroy_timestamps_iter(timestamps_iter* iter){
@@ -69,7 +84,38 @@ void destroy_timestamps_iter(timestamps_iter* iter){
 }
  
 unsigned int get_n_timestamps(const timestamps* ts){
-  return ts->n_timestamps;
+  unsigned int n = 0;
+  timestamp_linked_list * el = ts->list;
+  while(el != NULL){
+    el = el->next;
+    n++;
+  }
+  return n;
+}
+
+
+
+timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
+  timestamp_linked_list* retval;
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_lock(& store->lock), "#__FILE__ : #__LINE__: mutex lock");
+#endif
+  if(store->n_timestamp_store >= store->size_timestamp_store){
+    store->n_stores++;
+    store->n_timestamp_store = 0;
+    if(store->n_stores >= store->size_stores){
+      unsigned int i;
+      unsigned int new_size_stores = store->size_stores * 2;
+      store->stores = realloc_tester(store->stores, new_size_stores * sizeof(timestamp_linked_list*));
+      for(i = store->size_stores; i < new_size_stores; i++)
+	store->stores[i] = calloc_tester((store->size_timestamp_store + 1), sizeof(timestamp_linked_list));
+    }
+  }
+  retval =  & store->stores[store->n_stores][store->n_timestamp_store];
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(& store->lock);
+#endif
+  return retval;
 }
 
 /**
@@ -79,34 +125,15 @@ unsigned int get_n_timestamps(const timestamps* ts){
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(timestamps* ts, timestamp timestamp){  
-  ts->timestamps[ts->n_timestamps] = timestamp;
-  ts->n_timestamps ++;  
-}
-
-void add_normal_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = normal_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
-}
-
-void add_equality_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = equality_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
-}
-
-
-void add_domain_timestamp(timestamps* ts, unsigned int step){
-  timestamp t;
-  t.type = domain_timestamp;
-  t.step = step;
-  t.init_model = false;
-  add_timestamp(ts, t);
+void add_timestamp(timestamps* ts, timestamp timestamp, timestamp_store* store){  
+  timestamp_linked_list* new_ts = get_timestamp_memory(store);
+  new_ts->ts = timestamp;
+  new_ts->next = ts->list;
+  ts->list = new_ts;
+  if(ts->first == NULL){
+    assert(ts->list->next == NULL);
+    ts->first = new_ts;
+  }
 }
 
 
@@ -116,9 +143,29 @@ void add_domain_timestamp(timestamps* ts, unsigned int step){
    Called from union_substitutions_struct_with_ts in substitution.c
 **/
 void add_timestamps(timestamps* dest, const timestamps* orig){
-  unsigned int i;
-  for(i = 0; i < orig->n_timestamps; i++)
-    dest->timestamps[dest->n_timestamps++] = orig->timestamps[i];
+#ifndef NDEBUG
+  unsigned int n_dest = get_n_timestamps(dest);
+  unsigned int n_orig = get_n_timestamps(orig);
+  unsigned int n_new;
+#endif
+  if(dest->first == NULL){
+    assert(dest->list == NULL);
+    dest->first = orig->first;
+    dest->list = orig->list;
+  } else if(dest->first != orig->list){
+    #ifndef NDEBUG
+    timestamp_linked_list * el = orig->list;
+    while(el != NULL){
+      assert(el != dest->first);
+      el = el->next;
+    }
+    #endif
+    dest->first->next = orig->list;
+#ifndef NDEBUG
+    n_new = get_n_timestamps(dest);
+    assert(n_dest + n_orig == n_new);
+#endif
+  }
 }
   
 
@@ -132,12 +179,14 @@ void add_timestamps(timestamps* dest, const timestamps* orig){
    and 0 if they are equal
 **/
 int compare_timestamps(const timestamps* first, const timestamps* last){
-  assert(first->n_timestamps == last->n_timestamps);
-  unsigned int i;
-  for(i = 0; i < first->n_timestamps; i++){
-    if(first->timestamps[i].step != last->timestamps[i].step)
-      return first->timestamps[i].step - last->timestamps[i].step;
+  timestamp_linked_list *first_el, *last_el;
+  assert(first_el != NULL || last_el == NULL);
+  while(first_el != NULL){
+    assert(last_el != NULL);
+    if(first_el->ts.step != last_el->ts.step)
+      return first_el->ts.step - last_el->ts.step;
   }
+  assert(last_el == NULL);
   return 0;
 }
 
@@ -151,10 +200,59 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   unsigned int size_vars, size_timestamps;
   ssi.max_n_timestamps = max_lhs_conjuncts + 1;
   size_vars = n_vars * sizeof(term*);
-  size_timestamps = ssi.max_n_timestamps * sizeof(timestamp);
-  ssi.size_substitution = sizeof(substitution) + size_vars + size_timestamps;
-  ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
-  ssi.sub_values_offset =  size_timestamps / sizeof(int);
+  size_timestamps = 0;
+  ssi.size_substitution = sizeof(substitution) + size_vars;
+  ssi.size_rule_instance = sizeof(rule_instance) + size_vars;
+  ssi.sub_values_offset =  0;
   return ssi;
 }
 
+
+/**
+   Called from rete_state_single. 
+   
+   timestamps are in a double array, size_timestamp_store must never be changed after initializing,
+   while size_stores is changed whenever more memory is needed
+**/
+timestamp_store* init_timestamp_store(substitution_size_info ssi){
+  timestamp_store* ts = malloc_tester(sizeof(timestamp_store));
+#ifdef HAVE_PTHREAD
+  pthread_mutexattr_t mutex_attr;
+  pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
+#ifndef NDEBUG
+  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
+#endif
+  pt_err(pthread_mutex_init(& ts->lock, &mutex_attr), "timestamp_linked_list.c: init_timestamp_store: mutex init.\n");
+#endif
+  ts->size_timestamp_store = 1000;
+  ts->n_timestamp_store = 0;
+  ts->size_stores = 1;
+  ts->n_stores = 0;
+  ts->stores = calloc_tester(ts->size_stores, sizeof(timestamp_linked_list*));
+  ts->stores[0] = calloc_tester(ts->size_timestamp_store + 1, sizeof(timestamp_linked_list));
+  return ts;
+}
+
+void destroy_timestamp_store(timestamp_store* store){
+  unsigned int i;
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_destroy(& store->lock), "#__FILE__: #__LINE__: mutexdestroy");;
+#endif
+  for(i = 0; i < store->size_stores; i++)
+    free(store->stores[i]);
+  free(store->stores);
+  free(store);
+}
+
+timestamp_store_backup backup_timestamp_store(timestamp_store* ts){
+  timestamp_store_backup b;
+  b.store = ts;
+  b.n_timestamp_store = ts->n_timestamp_store;
+  b.n_stores = ts->n_stores;
+  return b;
+}
+timestamp_store* restore_timestamp_store(timestamp_store_backup b){
+  b.store->n_timestamp_store = b.n_timestamp_store;
+  b.store->n_stores = b.n_stores;
+  return b.store;
+}

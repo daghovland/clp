@@ -28,6 +28,12 @@
 #include "common.h"
 #include "timestamp.h"
 
+
+#ifndef USE_TIMESTAMP_ARRAY
+#abort
+#endif
+
+
 /**
    Used to keep info about the steps that were necessary to infer a fact
 **/
@@ -43,6 +49,7 @@ typedef struct timestamps_iter_t {
   const timestamps* ts;
 } timestamps_iter;
 
-
+typedef void timestamp_store;
+typedef void timestamp_store_backup;
 
 #endif

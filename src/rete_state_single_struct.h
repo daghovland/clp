@@ -42,6 +42,7 @@ typedef struct rete_state_single_t {
   proof_branch * current_proof_branch;
   proof_branch * root_branch;
   substitution_store_array * node_subs;
+  timestamp_store* timestamp_store;
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
   rule_queue_single * history;
@@ -67,6 +68,7 @@ typedef struct rete_state_backup_t {
   unsigned int cur_step;
   rule_queue_single_backup * rq_backups;
   substitution_store_array_backup * node_sub_backups;
+  timestamp_store_backup timestamp_backup;
   rete_worker_queue_backup * worker_backups;
   fact_store_backup * factset_backups;
   fact_store_iter * new_facts_backups;

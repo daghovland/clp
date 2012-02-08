@@ -24,11 +24,13 @@
 
 #include "common.h"
 #include "timestamp.h"
+
 #ifdef USE_TIMESTAMP_ARRAY
 #include "timestamp_array_struct.h"
 #else
 #include "timestamp_linked_list_struct.h"
 #endif
+
 #include "substitution_size_info.h"
 
 /**
@@ -40,17 +42,24 @@
 void init_empty_timestamps(timestamps*, substitution_size_info);
 unsigned int get_n_timestamps(const timestamps*);
 
-void add_normal_timestamp(timestamps*, unsigned int);
-void add_equality_timestamp(timestamps*, unsigned int);
-void add_domain_timestamp(timestamps*, unsigned int);
-void add_timestamp(timestamps*, timestamp);
+void add_normal_timestamp(timestamps*, unsigned int, timestamp_store*);
+void add_equality_timestamp(timestamps*, unsigned int, timestamp_store*);
+void add_domain_timestamp(timestamps*, unsigned int, timestamp_store*);
+void add_timestamp(timestamps*, timestamp, timestamp_store*);
 void add_timestamps(timestamps* dest, const timestamps* orig);
 
 int compare_timestamps(const timestamps*, const timestamps*);
+
+timestamp get_oldest_timestamp(timestamps*);
 
 timestamps_iter get_timestamps_iter(const timestamps*);
 bool has_next_timestamps_iter(const timestamps_iter*);
 timestamp get_next_timestamps_iter(timestamps_iter*);
 void destroy_timestamps_iter(timestamps_iter*);
 bool is_init_timestamp(timestamp);
+
+timestamp_store* init_timestamp_store(substitution_size_info);
+timestamp_store_backup backup_timestamp_store(timestamp_store*);
+timestamp_store* restore_timestamp_store(timestamp_store_backup);
+void destroy_timestamp_store(timestamp_store*);
 #endif

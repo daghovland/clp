@@ -51,11 +51,11 @@ typedef substitution_list* sub_list_iter;
 
 substitution* create_empty_substitution(const theory*, substitution_store_mt*);
 void init_empty_substitution(substitution*, const theory*);
-void init_substitution(substitution*, const theory*, signed int);
-substitution* create_substitution(const theory*, signed int, substitution_store_mt*);
+void init_substitution(substitution*, const theory*, signed int, timestamp_store*);
+substitution* create_substitution(const theory*, signed int, substitution_store_mt*, timestamp_store*);
 substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info);
 void copy_substitution_struct(substitution*, const substitution*, substitution_size_info);
-substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*);
+substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*, timestamp_store*);
 
 unsigned int get_sub_n_timestamps(const substitution*);
 timestamps_iter get_sub_timestamps_iter(const substitution*);
@@ -81,7 +81,7 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
 bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants*);
 substitution* union_substitutions_one_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, constants* cs);
 substitution* union_substitutions_with_ts(const substitution*, const substitution*, substitution_store_mt* store, substitution_size_info ssi, constants*);
-void add_sub_timestamp(substitution*, unsigned int, substitution_size_info);
+void add_sub_timestamp(substitution*, unsigned int, substitution_size_info, timestamp_store*);
 
 void delete_substitution_list(substitution_list*);
 void delete_substitution_list_below(substitution_list*, substitution_list*);
