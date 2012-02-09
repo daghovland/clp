@@ -301,7 +301,7 @@ void print_rule_queue_single(rule_queue_single* rq, const constants* cs, FILE* f
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
 #endif
-  fprintf(f, "queue with %zi entries: \n", get_rule_queue_single_size(rq));
+  fprintf(f, "queue with %u entries: \n", get_rule_queue_single_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
     fprintf(f, "\t%i: ", j);
     print_rule_instance(get_const_rule_instance_single(rq, i), cs, f);

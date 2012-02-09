@@ -50,6 +50,6 @@ typedef struct timestamps_iter_t {
 } timestamps_iter;
 
 typedef void timestamp_store;
-typedef void timestamp_store_backup;
+typedef int timestamp_store_backup;
 
 #endif

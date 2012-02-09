@@ -61,7 +61,7 @@ typedef struct timestamps_t {
 } timestamps;
 
 typedef struct timestamps_iter_t {
-  const timestamp_linked_list* ts;
+  const timestamp_linked_list* ts_list;
 } timestamps_iter;
 
 typedef struct timestamp_store_t {

@@ -64,18 +64,18 @@ timestamp get_first_timestamp(timestamps* ts){
 
 timestamps_iter get_timestamps_iter(const timestamps* ts){
   timestamps_iter iter;
-  iter.ts = ts->list;
+  iter.ts_list = ts->list;
   return iter;
 }
 
 bool has_next_timestamps_iter(const timestamps_iter* iter){
-  return iter->ts != NULL;
+  return iter->ts_list != NULL;
 }
 
 timestamp get_next_timestamps_iter(timestamps_iter* iter){
   assert(iter != NULL);
-  timestamp ts = iter->ts->ts;
-  iter->ts = iter->ts->next;
+  timestamp ts = iter->ts_list->ts;
+  iter->ts_list = iter->ts_list->next;
   return ts;
 }
 
@@ -125,15 +125,20 @@ timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(timestamps* ts, timestamp timestamp, timestamp_store* store){  
+void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){  
   timestamp_linked_list* new_ts = get_timestamp_memory(store);
-  new_ts->ts = timestamp;
+#ifndef NDEBUG
+  unsigned int orig_ts_len = get_n_timestamps(ts);
+#endif
+  printf("Adds timestamp %i\n", t.step);
+  new_ts->ts = t;
   new_ts->next = ts->list;
   ts->list = new_ts;
   if(ts->first == NULL){
     assert(ts->list->next == NULL);
     ts->first = new_ts;
   }
+  assert(orig_ts_len + 1 == get_n_timestamps(ts));
 }
 
 /**
@@ -149,13 +154,16 @@ void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* s
   unsigned int n_orig = get_n_timestamps(orig);
   unsigned int n_new;
 #endif
+  printf("Union of timestamps.\n");
   timestamp_linked_list* orig_el = orig->list;
   while(orig_el != NULL){
     if(orig_el->ts.step != dest->first->ts.step)
       add_timestamp(dest, orig_el->ts, store);
 #ifndef NDEBUG
-    else
+    else {
+      printf("Same timestamp %u added.\n", orig_el->ts.step);
       n_orig--;
+    }
 #endif
     orig_el = orig_el->next;
   }

@@ -88,7 +88,7 @@ unsigned int get_n_timestamps(const timestamps* ts){
 
    Necessary for the output of correct coq proofs
 **/
-void add_timestamp(timestamps* ts, timestamp timestamp){  
+void add_timestamp(timestamps* ts, timestamp timestamp, timestamp_store* store){  
   ts->timestamps[ts->n_timestamps] = timestamp;
   ts->n_timestamps ++;  
 }
@@ -98,7 +98,7 @@ void add_timestamp(timestamps* ts, timestamp timestamp){
    Adds the timestamps in orig to those in dest.
    Called from union_substitutions_struct_with_ts in substitution.c
 **/
-void add_timestamps(timestamps* dest, const timestamps* orig){
+void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
   unsigned int i;
   for(i = 0; i < orig->n_timestamps; i++)
     dest->timestamps[dest->n_timestamps++] = orig->timestamps[i];
@@ -138,7 +138,7 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   size_timestamps = ssi.max_n_timestamps * sizeof(timestamp);
   ssi.size_substitution = (sizeof(substitution) + size_vars + size_timestamps);
   ssi.size_rule_instance = sizeof(rule_instance) + size_vars + size_timestamps;
-  ssi.sub_values_offset =  size_timestamps / sizeof(int);
+  ssi.sub_values_offset =  size_timestamps / sizeof(term*);
   return ssi;
 }
 
@@ -156,4 +156,6 @@ timestamp_store_backup backup_timestamp_store(timestamp_store* ts){
 }
 timestamp_store* restore_timestamp_store(timestamp_store_backup b){
   return (timestamp_store*) NULL;
+}
+void destroy_timestamp_store(timestamp_store* ts){
 }

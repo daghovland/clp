@@ -434,7 +434,7 @@ void print_dot_rete_node(const rete_node* node, const constants* cs, FILE* strea
 
 void print_rete_net(const rete_net* net, const constants* cs, FILE* stream){
   unsigned int i;
-  fprintf(stream,"%zi predicates: ", net->n_selectors);
+  fprintf(stream,"%u predicates: ", net->n_selectors);
   for(i = 0; i < net->n_selectors; i++){
     fprintf(stream, "%s(%zi)", net->selectors[i].val.selector->name, net->selectors[i].val.selector->arity);
     if(i+1 < net->n_selectors)
