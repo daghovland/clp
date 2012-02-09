@@ -1,21 +1,24 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+# Not tested with autoconf < 2.59, hence this is a prerequisite
 
 AC_PREREQ([2.59])
 AC_INIT([clp], [0.1], [hovland@ifi.uio.no])
 AC_COPYRIGHT([Copyright (C) 2011 University of Oslo, Norway. Author: Dag Hovland])
-AM_INIT_AUTOMAKE([-Wall  -Werror dist-bzip2])
+AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/prover.c])
 AC_CONFIG_HEADERS([config.h])
 
 
 # Checks for programs.
+# MKDIR is not available in version 2.59, hence commented
 
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
 AC_PROG_CPP
-#AC_PROG_MKDIR_P
+m4_ifdef([AC_PROG_MKDIR_P], [AC_PROG_MKDIR_P])
 AC_PROG_YACC
 AM_PROG_LEX
 AC_PROG_CPP
@@ -48,6 +51,7 @@ AC_FUNC_ALLOCA
 AC_CHECK_HEADERS([fcntl.h errno.h unistd.h inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+# The commented macros are not available in autoconf 2.59
 AC_HEADER_STDBOOL
 #AC_TYPE_INT16_T
 #AC_TYPE_INT32_T
