@@ -58,13 +58,13 @@ void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
 }
 
 timestamp get_first_timestamp(timestamps* ts){
-  assert(ts != NULL && ts->list != NULL && ts->first != NULL);
+  assert(ts != NULL && ts->first != NULL);
   return ts->first->ts;
 }
 
 timestamps_iter get_timestamps_iter(const timestamps* ts){
   timestamps_iter iter;
-  iter.ts_list = ts->list;
+  iter.ts_list = ts->first;
   return iter;
 }
 
@@ -75,7 +75,7 @@ bool has_next_timestamps_iter(const timestamps_iter* iter){
 timestamp get_next_timestamps_iter(timestamps_iter* iter){
   assert(iter != NULL);
   timestamp ts = iter->ts_list->ts;
-  iter->ts_list = iter->ts_list->next;
+  iter->ts_list = iter->ts_list->prev;
   return ts;
 }
 
@@ -112,10 +112,22 @@ timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
     }
   }
   retval =  & store->stores[store->n_stores][store->n_timestamp_store];
+  store->n_timestamp_store++;
 #ifdef HAVE_PTHREAD
   pthread_mutex_unlock(& store->lock);
 #endif
   return retval;
+}
+
+/**
+   returns true if there is a timestamp with the given step in lst
+**/
+bool timestamp_is_in_list(timestamp_linked_list* list, timestamp t){
+  if(list == NULL)
+    return false;
+  if(compare_timestamp(list->ts, t) == 0)
+    return true;
+  return(timestamp_is_in_list(list->next, t));
 }
 
 /**
@@ -128,79 +140,36 @@ timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
 void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){  
   timestamp_linked_list* new_ts = get_timestamp_memory(store);
 #ifndef NDEBUG
+  unsigned int new_ts_len;
   unsigned int orig_ts_len = get_n_timestamps(ts);
 #endif
-  printf("Adds timestamp %i\n", t.step);
   new_ts->ts = t;
   new_ts->next = ts->list;
+  new_ts->prev = NULL;
+  if(ts->list != NULL)
+    ts->list->prev = new_ts;
   ts->list = new_ts;
   if(ts->first == NULL){
     assert(ts->list->next == NULL);
     ts->first = new_ts;
   }
-  assert(orig_ts_len + 1 == get_n_timestamps(ts));
+#ifndef NDEBUG
+  new_ts_len = get_n_timestamps(ts);
+  assert(orig_ts_len + 1 == new_ts_len);
+#endif
 }
 
 /**
    Adds the timestamps in orig to those in dest.
    Called from union_substitutions_struct_with_ts in substitution.c
 **/
-#define __COSTLY_TIMESTAMP_UNON
-
-#ifdef __COSTLY_TIMESTAMP_UNON
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
-#ifndef NDEBUG
-  unsigned int n_dest = get_n_timestamps(dest);
-  unsigned int n_orig = get_n_timestamps(orig);
-  unsigned int n_new;
-#endif
-  printf("Union of timestamps.\n");
-  timestamp_linked_list* orig_el = orig->list;
+  timestamp_linked_list* orig_el = orig->first;
   while(orig_el != NULL){
-    if(orig_el->ts.step != dest->first->ts.step)
-      add_timestamp(dest, orig_el->ts, store);
-#ifndef NDEBUG
-    else {
-      printf("Same timestamp %u added.\n", orig_el->ts.step);
-      n_orig--;
-    }
-#endif
-    orig_el = orig_el->next;
-  }
-#ifndef NDEBUG
-  n_new = get_n_timestamps(dest);
-  assert(n_dest + n_orig == n_new);
-#endif
-}
-
-#else
-
-void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
-#ifndef NDEBUG
-  unsigned int n_dest = get_n_timestamps(dest);
-  unsigned int n_orig = get_n_timestamps(orig);
-  unsigned int n_new;
-#endif
-  if(dest->first == NULL){
-    assert(dest->list == NULL);
-    dest->first = orig->first;
-    dest->list = orig->list;
-  } else if(dest->first != orig->list){
-    #ifndef NDEBUG
-    timestamp_linked_list * el = orig->list;
-    while(el != NULL){
-      assert(el != dest->first);
-      el = el->next;
-    }
-    #endif
-    dest->first->next = orig->list;
-#ifndef NDEBUG
-    n_new = get_n_timestamps(dest);
-    assert(n_dest + n_orig == n_new);
-#endif
+    add_timestamp(dest, orig_el->ts, store);
+    orig_el = orig_el->prev;
   }
 }
-#endif
 
 /**
    Internal function for comparing timestamps on a substition
@@ -212,12 +181,15 @@ void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* s
    and 0 if they are equal
 **/
 int compare_timestamps(const timestamps* first, const timestamps* last){
-  timestamp_linked_list *first_el, *last_el;
+  timestamp_linked_list *first_el = first->list;
+  timestamp_linked_list *last_el = last->list;
   assert(first_el != NULL || last_el == NULL);
   while(first_el != NULL){
     assert(last_el != NULL);
     if(first_el->ts.step != last_el->ts.step)
       return first_el->ts.step - last_el->ts.step;
+    first_el = first_el->next;
+    last_el = last_el->next;
   }
   assert(last_el == NULL);
   return 0;

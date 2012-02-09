@@ -48,6 +48,7 @@
 typedef struct timestamp_linked_list_t {
   timestamp ts;
   struct timestamp_linked_list_t* next;
+  struct timestamp_linked_list_t* prev;
 } timestamp_linked_list;  
 
 /**
