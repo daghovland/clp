@@ -55,6 +55,7 @@ bool test_timestamps(const timestamps* ts){
     if(orig_el->next != NULL){
       count++;
       while(orig_el->next != ts->first){
+	assert(orig_el != NULL && orig_el -> next != NULL);
 	orig_el = orig_el->next;
 	count ++;
       }
@@ -69,6 +70,7 @@ bool test_timestamps(const timestamps* ts){
     if(orig_el->prev != NULL){
       count++;
       while(orig_el->prev != ts->list){
+	assert(orig_el != NULL && orig_el->prev != NULL);
 	count ++;
 	orig_el = orig_el->prev;
       }
