@@ -162,11 +162,11 @@ void destroy_rule_queue_single(rule_queue_single* rq){
 /**
    Assigns position pos in the rule queue the according values.
 **/
-void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step){
+void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step, timestamp_store* ts_store){
   assert(pos < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
-  copy_substitution_struct(& ri->sub, sub, rq->ssi);
+  copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store);
   ri->timestamp = step;
   ri->used_in_proof = false;
 }
@@ -191,7 +191,7 @@ bool test_rule_queue_single(rule_queue_single* rq){
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted){
+rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store){
   unsigned int pos;
   //  assert(test_is_instantiation(rule->rhs->free_vars, sub));
 #ifdef HAVE_PTHREAD
@@ -209,12 +209,13 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
       copy_rule_instance_struct(get_rule_instance_single(rq, pos)
 				, get_rule_instance_single(rq, pos-1)
 				, rq->ssi
+				, ts_store
 				);
   } else
     pos = rq->end;
   assert(test_rule_queue_single(rq));
   __sync_add_and_fetch(& rq->end, 1);
-  assign_rule_queue_instance(rq, pos, rule, sub, step);
+  assign_rule_queue_instance(rq, pos, rule, sub, step, ts_store);
   assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
   signal_queue_single(rq);

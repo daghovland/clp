@@ -48,8 +48,11 @@ void add_domain_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_timestamp(timestamps*, timestamp, timestamp_store*);
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
 
+void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
 int compare_timestamps(const timestamps*, const timestamps*);
-
+#ifndef NDEBUG
+bool test_timestamps(const timestamps*);
+#endif
 timestamp get_oldest_timestamp(timestamps*);
 
 timestamps_iter get_timestamps_iter(const timestamps*);

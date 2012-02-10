@@ -268,6 +268,7 @@ void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_q
                             , sub
                             , get_state_step_no_single(state)
                             , state->net->strat == clpl_strategy
+			    , state->timestamp_store
                             );
 }
 
@@ -308,7 +309,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
 
   while(!found_true && has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
-    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info);
+    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store);
     if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, state->constants)){
       if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
 	found_true = true;
@@ -350,10 +351,10 @@ rule_instance* insert_rule_instance_history_single(rete_state_single* state, con
 #ifndef NDEBUG
     fprintf(stderr, "Pushing dummy rule instance on history for step %i\n", step);
 #endif
-    push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
+    push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
   }
   assert(test_rule_instance(ri));
-  return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false);
+  return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
 }
 
 rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int step_no){
@@ -426,7 +427,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
       break;
     } else {
       rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
-      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info);
+      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store);
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq);
 #endif

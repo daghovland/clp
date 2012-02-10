@@ -44,6 +44,41 @@
 #include <pthread.h>
 #endif
 
+#ifndef NDEBUG
+bool test_timestamps(const timestamps* ts){
+  timestamp_linked_list* orig_el = ts->list;
+  unsigned int ts_len = get_n_timestamps(ts);
+  unsigned int count;
+  if(orig_el != NULL){
+    assert(ts->first != NULL);
+    count = 1;
+    if(orig_el->next != NULL){
+      count++;
+      while(orig_el->next != ts->first){
+	orig_el = orig_el->next;
+	count ++;
+      }
+      assert(ts->first->prev == orig_el);
+    }
+    assert(count == ts_len);
+  }
+  orig_el = ts->first;
+  if(orig_el != NULL){
+    assert(ts->list != NULL);
+    count = 1;
+    if(orig_el->prev != NULL){
+      count++;
+      while(orig_el->prev != ts->list){
+	count ++;
+	orig_el = orig_el->prev;
+      }
+      assert(ts->list->next == orig_el);
+    }
+    assert(count == ts_len);
+  }
+  return true;
+}
+#endif
 
 /**
    Initializes already allocated substitution
@@ -52,9 +87,13 @@
 
    Assumes the memory for the timestamp is already allocated
 **/
-void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
+
+void _init_empty_timestamps(timestamps* ts){
   ts->list = NULL;
   ts->first = NULL;
+}
+void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
+  _init_empty_timestamps(ts);
 }
 
 timestamp get_first_timestamp(timestamps* ts){
@@ -92,7 +131,6 @@ unsigned int get_n_timestamps(const timestamps* ts){
   }
   return n;
 }
-
 
 
 timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
@@ -156,6 +194,7 @@ void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){
 #ifndef NDEBUG
   new_ts_len = get_n_timestamps(ts);
   assert(orig_ts_len + 1 == new_ts_len);
+  assert(test_timestamps(ts));
 #endif
 }
 
@@ -169,15 +208,23 @@ void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* s
     add_timestamp(dest, orig_el->ts, store);
     orig_el = orig_el->prev;
   }
+  assert(test_timestamps(orig));
 }
 
+/**
+   Called from copy_substitution_struct in substitution.c
+**/
+void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
+  _init_empty_timestamps(dest);
+  add_timestamps(dest, orig, store);
+}
 /**
    Internal function for comparing timestamps on a substition
 
    They correspond to the times at which the matching for each conjunct
    was introduced to the factset
 
-   Returns positive if first is larger(newer) than last, negative if first is smaller(newer) than last,
+   Returns positive if first is larger(newer) than last, negative if first is smaller(older) than last,
    and 0 if they are equal
 **/
 int compare_timestamps(const timestamps* first, const timestamps* last){

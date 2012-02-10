@@ -137,12 +137,15 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a, su
 
 /**
    Copies a substitution, including terms and timestamps from orig to dest. 
-   Assumes dest and dest->timestamp memory is already allocated. 
+   Assumes dest  memory is already allocated. 
+   dest->sub_ts is overwritten. The previous timestamps are not deallocated, since the 
+   timestamp store takes care of this when backtracking
    Overwrites dest.
 **/
-void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi){
+void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi, timestamp_store* store){
   assert(test_substitution(orig));
   memcpy(dest, orig, get_size_substitution(ssi));
+  copy_timestamps(& dest->sub_ts, & orig->sub_ts, store);
   assert(test_substitution(dest));
 }
 
@@ -151,7 +154,7 @@ void copy_substitution_struct(substitution* dest, const substitution* orig, subs
    Creates a new substitution, either on the heap, or on
    the store
 **/
-substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi){
+substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi, timestamp_store* ts_store){
   substitution* copy;
   
   if(use_substitution_store)
@@ -159,7 +162,7 @@ substitution* copy_substitution(const substitution* orig, substitution_store_mt*
   else 
     copy = alloc_heap_substitution(ssi);
   
-  copy_substitution_struct(copy, orig, ssi);
+  copy_substitution_struct(copy, orig, ssi, ts_store);
 
   assert(test_substitution(orig));
   assert(test_substitution(copy));
@@ -317,6 +320,7 @@ bool test_substitution(const substitution* sub){
   }
 
   assert(c == sub->n_subs);
+  assert(test_timestamps(& sub->sub_ts));
   return true;
 }
 /**
@@ -365,8 +369,8 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
 
    Assumes dest is already allocated
 **/
-bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs){
-  copy_substitution_struct(dest, sub1, ssi);
+bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
+  copy_substitution_struct(dest, sub1, ssi, ts_store);
   return union_substitutions_struct_terms(dest, sub2, cs);
 }
 
@@ -379,7 +383,7 @@ bool union_substitutions_struct_one_ts(substitution* dest, const substitution* s
    The timestamps are only those of sub1. sub2 timestamps are not part of the 
    new substitution
 **/
-substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, constants* cs){
+substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
   substitution *retval;
 
   assert(test_substitution(sub1));
@@ -392,7 +396,7 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
     retval = alloc_heap_substitution(ssi);
   }
   
-  if(!union_substitutions_struct_one_ts(retval, sub1, sub2, ssi, cs)){
+  if(!union_substitutions_struct_one_ts(retval, sub1, sub2, ssi, cs, ts_store)){
     if(!use_substitution_store)
       free_substitution(retval);
     return NULL;
@@ -415,7 +419,7 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
 #ifndef NDEBUG
   unsigned int n_ts;
 #endif
-  if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs))
+  if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs, store))
     return false;
   add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
 #ifndef NDEBUG

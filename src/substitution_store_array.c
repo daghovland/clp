@@ -69,7 +69,7 @@ sub_store_iter get_array_sub_store_iter(substitution_store_array* stores, unsign
    The substitution a is not changed or freed. THe calling function must free it after the call returns
 
 **/
-bool insert_substitution_single(substitution_store_array* stores, unsigned int sub_no, const substitution* a, const freevars* relevant_vars, constants* cs){
+bool insert_substitution_single(substitution_store_array* stores, unsigned int sub_no, const substitution* a, const freevars* relevant_vars, constants* cs, timestamp_store* ts_store){
   sub_store_iter iter = get_array_sub_store_iter(stores, sub_no);
   
   while(has_next_sub_store(&iter)){
@@ -78,7 +78,7 @@ bool insert_substitution_single(substitution_store_array* stores, unsigned int s
       return false;
   }
   destroy_sub_store_iter(&iter);
-  push_substitution_sub_store(get_substitution_store(stores, sub_no), a);
+  push_substitution_sub_store(get_substitution_store(stores, sub_no), a, ts_store);
   return true;
 }
 

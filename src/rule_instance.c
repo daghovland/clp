@@ -22,8 +22,8 @@
 #include "rule_instance.h"
 #include "substitution.h"
 
-void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi){
-  copy_substitution_struct(& dest->sub, & orig->sub, ssi);
+void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store){
+  copy_substitution_struct(& dest->sub, & orig->sub, ssi, ts_store);
   dest->rule = orig->rule;
   dest->timestamp = orig->timestamp;
   dest->used_in_proof = orig->used_in_proof;
@@ -35,9 +35,9 @@ void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, s
   When the prover changes "used_in_proof" to true, it must copy the rule instance, 
   as the other copies must not be changed
 */
-rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi){
+rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store){
   rule_instance* copy = malloc_tester(get_size_rule_instance(ssi));
-  copy_rule_instance_struct(copy, orig, ssi);
+  copy_rule_instance_struct(copy, orig, ssi, ts_store);
   return copy;
 }
 
@@ -49,7 +49,7 @@ rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_i
    Only used when commandline option fact-set is on, 
    that is, when RETE is not used
 **/
-rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi){
+rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi, timestamp_store* ts_store){
   rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));
 
   assert(test_substitution(sub));
@@ -58,7 +58,7 @@ rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, 
   ins->timestamp = 0;
   ins->rule = rule;
 
-  copy_substitution_struct(&(ins->sub), sub, ssi);
+  copy_substitution_struct(&(ins->sub), sub, ssi, ts_store);
   ins->used_in_proof = false;
   return ins;
 }
