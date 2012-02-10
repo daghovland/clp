@@ -141,19 +141,23 @@ timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
   if(store->n_timestamp_store >= store->size_timestamp_store){
     store->n_stores++;
     store->n_timestamp_store = 0;
-    if(store->n_stores >= store->size_stores){
+    while(store->n_stores >= store->size_stores){
       unsigned int i;
       unsigned int new_size_stores = store->size_stores * 2;
       store->stores = realloc_tester(store->stores, new_size_stores * sizeof(timestamp_linked_list*));
       for(i = store->size_stores; i < new_size_stores; i++)
 	store->stores[i] = calloc_tester((store->size_timestamp_store + 1), sizeof(timestamp_linked_list));
+      store->size_stores = new_size_stores;
     }
+    assert(store->n_stores < store->size_stores);
   }
   retval =  & store->stores[store->n_stores][store->n_timestamp_store];
+  assert(retval != NULL);
   store->n_timestamp_store++;
 #ifdef HAVE_PTHREAD
   pthread_mutex_unlock(& store->lock);
 #endif
+  assert(retval != NULL);
   return retval;
 }
 
@@ -181,6 +185,7 @@ void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){
   unsigned int new_ts_len;
   unsigned int orig_ts_len = get_n_timestamps(ts);
 #endif
+  assert(new_ts != NULL);
   new_ts->ts = t;
   new_ts->next = ts->list;
   new_ts->prev = NULL;
@@ -276,11 +281,11 @@ timestamp_store* init_timestamp_store(substitution_size_info ssi){
 #endif
   pt_err(pthread_mutex_init(& ts->lock, &mutex_attr), "timestamp_linked_list.c: init_timestamp_store: mutex init.\n");
 #endif
-  ts->size_timestamp_store = 1000;
+  ts->size_timestamp_store = 1;
   ts->n_timestamp_store = 0;
   ts->size_stores = 1;
   ts->n_stores = 0;
-  ts->stores = calloc_tester(ts->size_stores, sizeof(timestamp_linked_list*));
+  ts->stores = malloc_tester(ts->size_stores * sizeof(timestamp_linked_list*));
   ts->stores[0] = calloc_tester(ts->size_timestamp_store + 1, sizeof(timestamp_linked_list));
   return ts;
 }
