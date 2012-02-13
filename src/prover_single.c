@@ -139,7 +139,9 @@ bool run_prover_single(rete_state_single* state){
       timestamp ts;
       rule_instance* next;
       bool incval;
+      assert(test_rete_state(state));
       next = choose_next_instance_single(state);
+      assert(test_rete_state(state));
       if(next == NULL)
 	return return_found_model_mt(state);
       assert(test_rule_instance(next));

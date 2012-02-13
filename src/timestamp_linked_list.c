@@ -215,6 +215,7 @@ void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* s
     add_timestamp(dest, orig_el->ts, store);
     orig_el = orig_el->prev;
   }
+  assert(test_timestamps(dest));
   assert(test_timestamps(orig));
 }
 

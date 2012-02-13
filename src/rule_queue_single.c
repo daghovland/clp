@@ -193,7 +193,8 @@ bool test_rule_queue_single(rule_queue_single* rq){
 **/
 rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store){
   unsigned int pos;
-  //  assert(test_is_instantiation(rule->rhs->free_vars, sub));
+  assert(test_substitution(sub));
+  assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
 #endif

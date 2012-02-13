@@ -52,6 +52,17 @@ void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
   }
 }
 
+/**
+   This function is void here, since the memory is copied directly when
+   copying a substitution
+**/
+void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store * s){
+  ;
+}
+
+bool test_timestamps(const timestamps* ts){
+  return true;
+}
 
 timestamp get_oldest_timestamp(timestamps* ts){
   return ts->timestamps[0];

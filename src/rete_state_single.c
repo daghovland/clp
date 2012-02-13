@@ -214,6 +214,14 @@ void stop_rete_state_single(rete_state_single* state){
   for(i = 0; i < state->net->th->n_axioms; i++)
     stop_rete_worker(state->workers[i]);
 }
+
+
+bool test_rete_state(rete_state_single* state){
+  unsigned int i;
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    assert(test_rule_queue_single(state->rule_queues[i]));
+  return true;
+}
   
 /**
    This function is at the moment not threadsafe
@@ -354,6 +362,7 @@ rule_instance* insert_rule_instance_history_single(rete_state_single* state, con
     push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
   }
   assert(test_rule_instance(ri));
+  assert(test_rule_queue_single(state->rule_queues[ri->rule->axiom_no]));
   return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
 }
 
@@ -603,6 +612,7 @@ unsigned int axiom_queue_previous_application_single(rule_queue_state rqs, unsig
 
 
 rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, unsigned int axiom_no){
+  assert(test_rule_queue_single(rqs.single->rule_queues[axiom_no]));
   return transfer_from_rule_queue_to_history(rqs.single, axiom_no);
 }
 
