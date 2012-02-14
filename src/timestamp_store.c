@@ -115,10 +115,11 @@ timestamp_store* init_timestamp_store(substitution_size_info ssi){
 
 #ifndef USE_TIMESTAMP_STORE_ARRAY
 void backtrack_timestamp_store(timestamp_store* store, unsigned int limit){
-  for(; store->n_timestamp_store > limit; store->n_timestamp_store--){
+  unsigned int i;
+  for(i = store->n_timestamp_store; i > limit; i--){
     free(store->stores[store->n_timestamp_store]);
   }
-  assert(store->n_timestamp_store == limit);
+  store->n_timestamp_store = limit;
 }
 #endif
 

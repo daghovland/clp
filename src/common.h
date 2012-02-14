@@ -41,12 +41,14 @@
    If defined (not commented) then the original implementation of timestamps is used.
    Otherwise, the new, linked list, implementation is used
 **/
-#define USE_TIMESTAMP_ARRAY
+//#define USE_TIMESTAMP_ARRAY
 /**
    If defined, the array implemetation of memory for timestamps is used. 
-   Otherwise, malloc is used for each timestamp link
+   Otherwise, malloc is used for each timestamp link. 
+   Presently (14 feb 2012) the malloc version has a bug, so should not be used. 
+   I believe it is only interesting for debugging, so should perhaps be removed
 **/
-//#define USE_TIMESTAMP_STORE_ARRAY
+#define USE_TIMESTAMP_STORE_ARRAY
 
 /**
    The name used in the coq proof writer for the set domain
