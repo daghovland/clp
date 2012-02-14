@@ -41,7 +41,7 @@
    If defined (not commented) then the original implementation of timestamps is used.
    Otherwise, the new, linked list, implementation is used
 **/
-//#define USE_TIMESTAMP_ARRAY
+#define USE_TIMESTAMP_ARRAY
 /**
    If defined, the array implemetation of memory for timestamps is used. 
    Otherwise, malloc is used for each timestamp link

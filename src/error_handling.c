@@ -32,6 +32,7 @@
 void fp_err(int retval, const char* msg){
   if(retval < 0){
     perror(msg);
+    assert(false);
     exit(EXIT_FAILURE);
   }
 }
@@ -43,6 +44,7 @@ void fp_err(int retval, const char* msg){
 void sys_err(int retval, const char* msg){
   if(retval != 0){
     perror(msg);
+    assert(false);
     exit(EXIT_FAILURE);
   }
 }
@@ -68,6 +70,7 @@ void pt_err(int errval, const char* msg){
   if(errval != 0){
     errno = errval;
     perror(msg);
+    assert(false);
     exit(EXIT_FAILURE);
   }
 }

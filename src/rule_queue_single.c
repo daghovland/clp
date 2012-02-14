@@ -175,6 +175,8 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const a
 /**
    Tests everything in a queue.
    Only for serious debugging
+
+   The queue _must_ be locked before testing.
 **/
 bool test_rule_queue_single(rule_queue_single* rq){
   unsigned int i;
@@ -195,7 +197,6 @@ bool test_rule_queue_single(rule_queue_single* rq){
 rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store){
   unsigned int pos;
   assert(test_substitution(sub));
-  assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq);
 #endif

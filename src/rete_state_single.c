@@ -218,8 +218,16 @@ void stop_rete_state_single(rete_state_single* state){
 
 bool test_rete_state(rete_state_single* state){
   unsigned int i;
-  for(i = 0; i < state->net->th->n_axioms; i++)
-    assert(test_rule_queue_single(state->rule_queues[i]));
+  for(i = 0; i < state->net->th->n_axioms; i++){
+    rule_queue_single* rq = state->rule_queues[i];
+#ifdef HAVE_PTHREAD
+    lock_queue_single(rq);
+#endif
+    assert(test_rule_queue_single(rq));
+#ifdef HAVE_PTHREAD
+      unlock_queue_single(rq);
+#endif
+  }
   return true;
 }
   
@@ -352,6 +360,8 @@ bool disjunction_true_in_fact_store(rete_state_single* state, const disjunction*
    Returns a pointer to the position in the array
    Note that this pointer may be invalidated on the next call to this function
    (But not before)
+
+   Assumes the queue is locked. 
 **/
 rule_instance* insert_rule_instance_history_single(rete_state_single* state, const rule_instance* ri){
   unsigned int step =  get_state_step_no_single(state) + 1;
@@ -612,7 +622,6 @@ unsigned int axiom_queue_previous_application_single(rule_queue_state rqs, unsig
 
 
 rule_instance* pop_axiom_rule_queue_single(rule_queue_state rqs, unsigned int axiom_no){
-  assert(test_rule_queue_single(rqs.single->rule_queues[axiom_no]));
   return transfer_from_rule_queue_to_history(rqs.single, axiom_no);
 }
 
