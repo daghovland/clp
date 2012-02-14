@@ -29,6 +29,7 @@
 #include "common.h"
 #include "constants_struct.h"
 #include "theory.h"
+#include "timestamps.h"
 
 
 unsigned int parser_new_constant(constants*, const char*);
@@ -40,8 +41,8 @@ void destroy_constants(constants*);
 constants* copy_constants(const constants*);
 constants* backup_constants(const constants*);
 void print_all_constants(constants*, FILE*);
-bool equal_constants(unsigned int, unsigned int, constants*);
-void union_constants(unsigned int, unsigned int, constants*);
+bool equal_constants(unsigned int, unsigned int, constants*, timestamps*, timestamp_store*, bool);
+void union_constants(unsigned int, unsigned int, constants*, unsigned int, timestamp_store*);
 
 constants_iter get_constants_iter(constants*);
 bool constants_iter_has_next(constants*, constants_iter*);

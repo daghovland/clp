@@ -37,6 +37,7 @@
 **/
 typedef struct constant_t {
   const char* name;
+  timestamps steps;
   unsigned int parent;
   unsigned int rank;
   timestamps ts;

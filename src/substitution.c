@@ -186,8 +186,11 @@ const term* find_substitution(const substitution* sub, const variable* key){
    if it does not already occur. 
 
    Fails if the key occurs with a different value
+
+   If update_ts is true, the substitution is updated with new timestamps also 
+   when the equality fails. It is assumed that the substitution is then discarded
 **/
-bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, constants* cs){
+bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, constants* cs, timestamp_store* store, bool update_ts){
   const term* orig_val = get_sub_value(sub, var_no);
 
   assert(test_term(value));
@@ -201,13 +204,13 @@ bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, c
     return true;
   }
   assert(test_term(orig_val));
-  return equal_terms(value, orig_val, cs);
+  return equal_terms(value, orig_val, cs, &sub->sub_ts, store, update_ts);
 }
 
 
 
-bool add_substitution(substitution* sub, variable* var, const term* value, constants* cs){
-  return _add_substitution_no(sub, var->var_no, value, cs);
+bool add_substitution(substitution* sub, variable* var, const term* value, constants* cs, timestamp_store* store, bool update_ts){
+  return _add_substitution_no(sub, var->var_no, value, cs, store, update_ts);
 }
 
 
@@ -233,12 +236,15 @@ void insert_substitution_value(substitution* sub, variable* var, const term* val
    value comes from the inserted fact, 
    while argument comes from the rule / rete node
 
+   The substitution is updated with timestamps in either case, 
+   as it is discarded if there is no unification
+
    TODO:
    11 Aug 2011: The freevars are commented because they seem not to be used. 
    I cannot remember now what they are used for, and they were not deleted elsewhere
 **/
 
-bool unify_substitution_terms(const term* value, const term* argument, substitution* sub, constants* cs){
+bool unify_substitution_terms(const term* value, const term* argument, substitution* sub, constants* cs, timestamp_store* store){
   //  freevars* free_arg_vars = init_freevars();
 
   assert(test_substitution(sub));
@@ -249,27 +255,28 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
   switch(argument->type){
   case variable_term: 
     //del_freevars(free_arg_vars);
-    return add_substitution(sub, argument->val.var, value, cs);
+    return add_substitution(sub, argument->val.var, value, cs, store, true);
   case constant_term:
     //del_freevars(free_arg_vars);
-    return (value->type == constant_term && equal_constants(value->val.constant, argument->val.constant, cs));
+    return (value->type == constant_term && equal_constants(value->val.constant, argument->val.constant, cs, &sub->sub_ts, store, true));
     break;
   case function_term:
     //del_freevars(free_arg_vars);
     return (value->type == function_term 
 	    && value->val.function == argument->val.function 
-	    && unify_substitution_term_lists(value->args, argument->args, sub, cs
+	    && unify_substitution_term_lists(value->args, argument->args, sub, cs, store
 					     ));
     break;
   default:
-    fprintf(stderr, "Unknown term type %i occurred\n", argument->type);
+    fprintf(stderr, "%s: line %i: Unknown term type %i occurred\n", __FILE__, __LINE__, argument->type);
+    assert(false);
     abort();
   }
   //del_freevars(free_arg_vars);
   return false;
 } 
 
-bool unify_substitution_term_lists(const term_list* value, const term_list* arg, substitution* sub, constants* cs){
+bool unify_substitution_term_lists(const term_list* value, const term_list* arg, substitution* sub, constants* cs, timestamp_store* store){
   unsigned int i;
 
   assert(test_substitution(sub));
@@ -277,7 +284,7 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
   if(value->n_args != arg->n_args)
     return false;
   for(i = 0; i < arg->n_args; i++){
-    if(! unify_substitution_terms(value->args[i], arg->args[i], sub, cs))
+    if(! unify_substitution_terms(value->args[i], arg->args[i], sub, cs, store))
       return false;
   }
   return true;
@@ -286,7 +293,7 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
 /**
    Tests whether two substitutions map the intersection of their domains to the same values
 **/
-bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, constants* cs){
+bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, constants* cs, timestamp_store* store, bool update_ts){
   unsigned int i;
 
   assert(test_substitution(sub1));
@@ -296,7 +303,7 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2,
   for(i = 0; i < sub1->allvars->n_vars; i++){
     const term* val1 = get_sub_value(sub1, i);
     const term* val2 = get_sub_value(sub2, i);
-    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs))
+    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, store, update_ts))
 	return false;
   }
   return true;

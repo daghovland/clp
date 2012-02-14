@@ -259,6 +259,9 @@ void recheck_beta_node(const rete_net* net,
     return;
   case equality:
     break;
+  case beta_not:
+    recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->val.beta.right_parent, rule_queue, step, cs);
+    break;
   case beta_and:
     tmp_sub = create_empty_substitution(net->th, tmp_subs);
     iter= get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
@@ -271,7 +274,8 @@ void recheck_beta_node(const rete_net* net,
   case rule:
     break;
   default:
-    fprintf(stderr, "rete_insert_single.c: recheck_beta_node: Invalid node type");
+    fprintf(stderr, "%s, line %i recheck_beta_node: Invalid node type.\n", __FILE__, __LINE__);
+    assert(false);
     exit(EXIT_FAILURE);
   }
   recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
@@ -308,7 +312,7 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
    The substitution sub is a pointer to heap memory which will
    be deallocated or stored in a substitution list. The calling
    function must not touch sub after passing it to this function, as it
-   is stored or deleted as it is.
+   is modified and then stored or deleted
 
    propagate is true when call originates from axiom_has_new_instance in lazy_rule_queue.c, otherwise false.
    true propagate overrides the value of node->propagate

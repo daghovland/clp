@@ -72,6 +72,7 @@ unsigned int insert_constant_name(constants * consts, const char* name){
   strcpy((char*) new_c->name, name);
   new_c->rank = 0;
   new_c->parent = new_const_ind;
+  init_empty_timestamp_linked_list(& new_c->steps, false);
   return new_const_ind;
 }
 
@@ -96,9 +97,11 @@ const term* get_fresh_constant(variable* var, constants* constants){
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
-unsigned int find_constant_root(unsigned int c, constants* cs){
+unsigned int find_constant_root(unsigned int c, constants* cs, timestamps* ts, timestamp_store* store, bool update_ts){
   if(cs->constants[c].parent != c)
-    cs->constants[c].parent = find_constant_root(cs->constants[c].parent, cs);
+    cs->constants[c].parent = find_constant_root(cs->constants[c].parent, cs, ts, store, update_ts);
+  if(update_ts)
+    add_timestamps(ts, & cs->constants[c].steps, store);
   return cs->constants[c].parent;
 }
 
@@ -107,29 +110,51 @@ unsigned int find_constant_root(unsigned int c, constants* cs){
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
-void union_constants(unsigned int c1, unsigned int c2, constants* consts){
-  unsigned int c1_root = find_constant_root(c1, consts);
-  unsigned int c2_root = find_constant_root(c2, consts);
+void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsigned int step, timestamp_store* store){
+  timestamps* tmp1 = malloc_tester(sizeof(timestamps));
+  timestamps* tmp2 = malloc_tester(sizeof(timestamps));
+  unsigned int c1_root = find_constant_root(c1, consts, tmp1, store);
+  unsigned int c2_root = find_constant_root(c2, consts, tmp2, store);
   if(c1_root == c2_root) 
     return;
-  if(consts->constants[c1_root].rank < consts->constants[c2_root].rank)
+  if(consts->constants[c1_root].rank < consts->constants[c2_root].rank){
     consts->constants[c1_root].parent = c2_root;
-  else if(consts->constants[c1_root].rank > consts->constants[c2_root].rank)
+    add_timestamp(consts->constants[c1_root].steps, step, store);
+    add_timestamps(consts->constants[c1_root].steps, tmp2, store);
+  } else {
     consts->constants[c2_root].parent = c1_root;
-  else {
-    consts->constants[c2_root].parent = c1_root;
-    consts->constants[c1_root].rank++;
+    add_timestamp(consts->constants[c2_root].steps, step, store);
+    add_timestamps(consts->constants[c2_root].steps, tmp1, store);
+    if(!(consts->constants[c1_root].rank > consts->constants[c2_root].rank))
+      consts->constants[c1_root].rank++;
   }
+  free(tmp1);
+  free(tmp2);
 }
 
 
 /**
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
+
+   If update_ts is true, the timestamps of the steps needed to infer the equality are added to ts, even if they are not equal
+   It is assumed that the timestamps are discarded if the constants are unequal
 **/
-bool equal_constants(unsigned int c1, unsigned int c2, constants* consts){
-  unsigned int p1 = find_constant_root(c1, consts);
-  unsigned int p2 = find_constant_root(c2, consts);
+bool equal_constants(unsigned int c1, unsigned int c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
+#if false
+  timestamp_linked_list* old_list = ts->list;
+  assert(old_list->prev == NULL);
+#endif
+  unsigned int p1 = find_constant_root(c1, consts, ts, store, update_ts);
+  unsigned int p2 = find_constant_root(c2, consts, ts, store, update_ts);
+#if false
+  if( update_ts && p1 != p2 ){
+    ts->list = old_list;
+    old_list->prev = NULL;
+    if(old_list == NULL)
+      ts->first = NULL;
+  }
+#endif
   return p1 == p2;
 }
 

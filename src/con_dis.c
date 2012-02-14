@@ -253,7 +253,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
     assert(beta_node->n_children == 1);
     assert(beta_node->children[0] != NULL);
     beta_node = (rete_node*) beta_node->children[0];
-    assert(beta_node->type == beta_and);
+    assert(beta_node->type == beta_and || beta_node->type == equality);
     conj_freevars = free_atom_variables(con->args[i], conj_freevars);
     for(j = 0; j < dis->n_args; j++){
       if(!disjunctions_done[j]){

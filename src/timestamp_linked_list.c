@@ -90,13 +90,13 @@ bool test_timestamps(const timestamps* ts){
    Assumes the memory for the timestamp is already allocated
 **/
 
-void _init_empty_timestamps(timestamps* ts, bool permanent){
+void init_empty_timestamp_linked_list(timestamps* ts, bool permanent){
   ts->list = NULL;
   ts->first = NULL;
   ts->permanent = permanent;
 }
 void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
-  _init_empty_timestamps(ts, false);
+  init_empty_timestamp_linked_list(ts, false);
 }
 
 timestamp get_first_timestamp(timestamps* ts){
