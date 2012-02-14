@@ -28,7 +28,7 @@
 #ifdef USE_TIMESTAMP_ARRAY
 #include "timestamp_array_struct.h"
 #else
-#include "timestamp_linked_list_struct.h"
+#include "timestamp_linked_list.h"
 #endif
 
 #include "substitution_size_info.h"
@@ -48,7 +48,7 @@ void add_domain_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_timestamp(timestamps*, timestamp, timestamp_store*);
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
 
-void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
+void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*, bool permanent);
 int compare_timestamps(const timestamps*, const timestamps*);
 #ifndef NDEBUG
 bool test_timestamps(const timestamps*);

@@ -54,7 +54,7 @@ void init_empty_substitution(substitution*, const theory*);
 void init_substitution(substitution*, const theory*, signed int, timestamp_store*);
 substitution* create_substitution(const theory*, signed int, substitution_store_mt*, timestamp_store*);
 substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info, timestamp_store*);
-void copy_substitution_struct(substitution*, const substitution*, substitution_size_info, timestamp_store*);
+void copy_substitution_struct(substitution*, const substitution*, substitution_size_info, timestamp_store*, bool permanent);
 substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*, timestamp_store*);
 
 unsigned int get_sub_n_timestamps(const substitution*);

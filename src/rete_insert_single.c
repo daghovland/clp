@@ -263,7 +263,7 @@ void recheck_beta_node(const rete_net* net,
     tmp_sub = create_empty_substitution(net->th, tmp_subs);
     iter= get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
     while(has_next_sub_store(& iter)){
-      copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store);
+      copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store, false);
       insert_rete_alpha_beta(net, node_caches, tmp_subs, ts_store, node, rule_queue, step, tmp_sub, cs);
     }
     destroy_sub_store_iter(& iter);
@@ -298,7 +298,7 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
   substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++){
-    copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store);
+    copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store, false);
     insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  ts_store, rule_queue, node->children[i], fact, step, tmp_sub, cs);
   }
   free_substitution(tmp_sub);

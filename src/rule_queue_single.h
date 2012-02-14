@@ -39,6 +39,9 @@
    previous_appl is used by the strategy, and indicates the
    timestamp of the previous time instances were removed from the queue. 
    n_appl indicates how many times instances have been removed from the queue.
+
+   permanent is true for the queue used for the history in rete_state_single. 
+   It leads to the timestamps not being freed on backtracking
 **/
 typedef struct rule_queue_single_t {
 #ifdef HAVE_PTHREAD
@@ -46,6 +49,7 @@ typedef struct rule_queue_single_t {
   pthread_cond_t queue_cond;
 #endif
   char * queue;
+  bool permanent;
   size_t size_queue;
   size_t first;
   size_t end;
@@ -63,7 +67,7 @@ typedef struct rule_queue_single_backup_t {
   unsigned int n_appl;
 } rule_queue_single_backup;
 
-rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int);
+rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int, bool permanent);
 void destroy_rule_queue_single(rule_queue_single*);
 
 rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool, timestamp_store*);

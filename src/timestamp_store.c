@@ -31,10 +31,9 @@
    New timestamps are added at the end "list"
    But union of timestamps is done by concatenation, so the order of the timestamps is not necessarily timestamp-ordered
 **/
+#ifndef USE_TIMESTAMP_ARRAY
+
 #include "common.h"
-#ifdef USE_TIMESTAMP_ARRAY
-#abort
-#endif
 #include "timestamps.h"
 #include "term.h"
 #include "substitution.h"
@@ -44,12 +43,10 @@
 #include <pthread.h>
 #endif
 
-timestamp_linked_list* get_perm_timestamp_memory(void){
-  return malloc_tester(sizeof(timestamp_linked_list));
-}
-
-timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
+timestamp_linked_list* get_timestamp_memory(timestamp_store* store, bool permanent){
   timestamp_linked_list* retval;
+  if(permanent)
+    return malloc_tester(sizeof(timestamp_linked_list));
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& store->lock), "#__FILE__ : #__LINE__: mutex lock");
 #endif
@@ -119,7 +116,7 @@ timestamp_store* init_timestamp_store(substitution_size_info ssi){
 #ifndef USE_TIMESTAMP_STORE_ARRAY
 void backtrack_timestamp_store(timestamp_store* store, unsigned int limit){
   for(; store->n_timestamp_store > limit; store->n_timestamp_store--){
-    free(store->stores[store->n_timestamp_store]);
+    //free(store->stores[store->n_timestamp_store]);
   }
   assert(store->n_timestamp_store == limit);
 }
@@ -159,3 +156,5 @@ timestamp_store* restore_timestamp_store(timestamp_store_backup b){
 #endif
   return b.store;
 }
+
+#endif

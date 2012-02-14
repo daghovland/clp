@@ -90,12 +90,13 @@ bool test_timestamps(const timestamps* ts){
    Assumes the memory for the timestamp is already allocated
 **/
 
-void _init_empty_timestamps(timestamps* ts){
+void _init_empty_timestamps(timestamps* ts, bool permanent){
   ts->list = NULL;
   ts->first = NULL;
+  ts->permanent = permanent;
 }
 void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
-  _init_empty_timestamps(ts);
+  _init_empty_timestamps(ts, false);
 }
 
 timestamp get_first_timestamp(timestamps* ts){
@@ -154,7 +155,7 @@ bool timestamp_is_in_list(timestamp_linked_list* list, timestamp t){
    Necessary for the output of correct coq proofs
 **/
 void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){  
-  timestamp_linked_list* new_ts = get_timestamp_memory(store);
+  timestamp_linked_list* new_ts = get_timestamp_memory(store, ts->permanent);
 #ifndef NDEBUG
   unsigned int new_ts_len;
   unsigned int orig_ts_len = get_n_timestamps(ts);
@@ -194,8 +195,8 @@ void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* s
 /**
    Called from copy_substitution_struct in substitution.c
 **/
-void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
-  _init_empty_timestamps(dest);
+void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store, bool permanent){
+  _init_empty_timestamps(dest, permanent);
   add_timestamps(dest, orig, store);
 }
 /**

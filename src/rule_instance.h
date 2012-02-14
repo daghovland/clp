@@ -38,7 +38,7 @@ typedef struct rule_instance_t {
 rule_instance* create_rule_instance(const axiom*, const substitution*, substitution_size_info, timestamp_store*);
 rule_instance* create_dummy_rule_instance(substitution_size_info);
 void delete_dummy_rule_instance(rule_instance*);
-void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store*);
+void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store*, bool permanent);
 rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi, timestamp_store*);
 
 bool test_rule_instance(const rule_instance*);

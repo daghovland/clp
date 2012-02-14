@@ -51,7 +51,9 @@ void add_ri_stack(rule_instance_stack* dest, rule_instance_stack* src){
   dest->n_stack += src->n_stack;
 }
     
-
+/**
+   This is only called to from rete_state_single to push stuff on the stack for history
+**/
 void push_ri_stack(rule_instance_stack* ris, timestamp ri, timestamp step_no, timestamp pusher){
   while(ris->n_stack >= ris->size_stack - 1){
     ris->size_stack *= 2;

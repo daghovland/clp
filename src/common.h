@@ -46,7 +46,7 @@
    If defined, the array implemetation of memory for timestamps is used. 
    Otherwise, malloc is used for each timestamp link
 **/
-#define USE_TIMESTAMP_STORE_ARRAY
+//#define USE_TIMESTAMP_STORE_ARRAY
 
 /**
    The name used in the coq proof writer for the set domain

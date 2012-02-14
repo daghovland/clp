@@ -57,11 +57,11 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->worker_queues = calloc_tester(net->th->n_axioms, sizeof(rete_worker_queue*));
   state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
   for(i = 0; i < net->th->n_axioms; i++){
-    state->rule_queues[i] = initialize_queue_single(ssi, i);
+    state->rule_queues[i] = initialize_queue_single(ssi, i, false);
     state->worker_queues[i] = init_rete_worker_queue();
     state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs, state->timestamp_store,  state->rule_queues[i], state->worker_queues[i], state->constants);
   }
-  state->history = initialize_queue_single(ssi, 0);
+  state->history = initialize_queue_single(ssi, 0, true);
   state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
   state->new_facts_iters = calloc_tester(net->th->n_predicates, sizeof(fact_store_iter));
   for(i = 0; i < net->th->n_predicates; i++){
@@ -317,7 +317,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
 
   while(!found_true && has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
-    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store);
+    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store, false);
     if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, state->constants)){
       if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
 	found_true = true;
@@ -436,7 +436,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
       break;
     } else {
       rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
-      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store);
+      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store, false);
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq);
 #endif

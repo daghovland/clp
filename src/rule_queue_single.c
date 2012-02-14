@@ -99,7 +99,7 @@ void check_rq_too_small(rule_queue_single* rq){
 
    The axiom_no is only for debugging purposes
  **/
-rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no){
+rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no, bool permanent){
   rule_queue_single* rq = malloc_tester(sizeof(rule_queue_single));
   rq->size_queue = RULE_QUEUE_INIT_SIZE;
   rq->queue = malloc_tester(get_rq_size_t(rq->size_queue, ssi));
@@ -112,6 +112,7 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned 
   rq->previous_appl = 0;
   rq->n_appl = 0;
   rq->axiom_no = axiom_no;
+  rq->permanent = permanent;
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
@@ -166,7 +167,7 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const a
   assert(pos < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
-  copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store);
+  copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store, rq->permanent);
   ri->timestamp = step;
   ri->used_in_proof = false;
 }
@@ -211,6 +212,7 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
 				, get_rule_instance_single(rq, pos-1)
 				, rq->ssi
 				, ts_store
+				, rq->permanent
 				);
   } else
     pos = rq->end;

@@ -59,6 +59,7 @@ typedef struct timestamp_linked_list_t {
 typedef struct timestamps_t {
   timestamp_linked_list* list;
   timestamp_linked_list* first;
+  bool permanent;
 } timestamps;
 
 typedef struct timestamps_iter_t {
@@ -89,8 +90,7 @@ typedef struct timestamp_store_backup_t {
 
 
 
-timestamp_linked_list* get_timestamp_memory(timestamp_store* store)
-timestamp_linked_list* get_perm_timestamp_memory(void);
+timestamp_linked_list* get_timestamp_memory(timestamp_store* store, bool permanent);
 
 
 #endif
