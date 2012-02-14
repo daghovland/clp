@@ -65,21 +65,32 @@ typedef struct timestamps_iter_t {
   const timestamp_linked_list* ts_list;
 } timestamps_iter;
 
+
 typedef struct timestamp_store_t {
 #ifdef HAVE_PTHREAD
   pthread_mutex_t lock;
 #endif
   unsigned int size_timestamp_store;
   unsigned int n_timestamp_store;
+#ifdef USE_TIMESTAMP_STORE_ARRAY
   unsigned int n_stores;
   unsigned int size_stores;
+#endif
   timestamp_linked_list **stores;
 } timestamp_store;
 
 typedef struct timestamp_store_backup_t {
   timestamp_store* store;
   unsigned int n_timestamp_store;
+#ifdef USE_TIMESTAMP_STORE_ARRAY
   unsigned int n_stores;
+#endif
 } timestamp_store_backup;
+
+
+
+timestamp_linked_list* get_timestamp_memory(timestamp_store* store)
+timestamp_linked_list* get_perm_timestamp_memory(void);
+
 
 #endif

@@ -135,34 +135,6 @@ unsigned int get_n_timestamps(const timestamps* ts){
 }
 
 
-timestamp_linked_list* get_timestamp_memory(timestamp_store* store){
-  timestamp_linked_list* retval;
-#ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_lock(& store->lock), "#__FILE__ : #__LINE__: mutex lock");
-#endif
-  if(store->n_timestamp_store >= store->size_timestamp_store){
-    store->n_stores++;
-    store->n_timestamp_store = 0;
-    while(store->n_stores >= store->size_stores){
-      unsigned int i;
-      unsigned int new_size_stores = store->size_stores * 2;
-      store->stores = realloc_tester(store->stores, new_size_stores * sizeof(timestamp_linked_list*));
-      for(i = store->size_stores; i < new_size_stores; i++)
-	store->stores[i] = calloc_tester((store->size_timestamp_store + 1), sizeof(timestamp_linked_list));
-      store->size_stores = new_size_stores;
-    }
-    assert(store->n_stores < store->size_stores);
-  }
-  retval =  & store->stores[store->n_stores][store->n_timestamp_store];
-  assert(retval != NULL);
-  store->n_timestamp_store++;
-#ifdef HAVE_PTHREAD
-  pthread_mutex_unlock(& store->lock);
-#endif
-  assert(retval != NULL);
-  return retval;
-}
-
 /**
    returns true if there is a timestamp with the given step in lst
 **/
@@ -267,52 +239,3 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   return ssi;
 }
 
-
-/**
-   Called from rete_state_single. 
-   
-   timestamps are in a double array, size_timestamp_store must never be changed after initializing,
-   while size_stores is changed whenever more memory is needed
-**/
-timestamp_store* init_timestamp_store(substitution_size_info ssi){
-  timestamp_store* ts = malloc_tester(sizeof(timestamp_store));
-#ifdef HAVE_PTHREAD
-  pthread_mutexattr_t mutex_attr;
-  pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
-#ifndef NDEBUG
-  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
-#endif
-  pt_err(pthread_mutex_init(& ts->lock, &mutex_attr), "timestamp_linked_list.c: init_timestamp_store: mutex init.\n");
-#endif
-  ts->size_timestamp_store = 1;
-  ts->n_timestamp_store = 0;
-  ts->size_stores = 1;
-  ts->n_stores = 0;
-  ts->stores = malloc_tester(ts->size_stores * sizeof(timestamp_linked_list*));
-  ts->stores[0] = calloc_tester(ts->size_timestamp_store + 1, sizeof(timestamp_linked_list));
-  return ts;
-}
-
-void destroy_timestamp_store(timestamp_store* store){
-  unsigned int i;
-#ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_destroy(& store->lock), "#__FILE__: #__LINE__: mutexdestroy");;
-#endif
-  for(i = 0; i < store->size_stores; i++)
-    free(store->stores[i]);
-  free(store->stores);
-  free(store);
-}
-
-timestamp_store_backup backup_timestamp_store(timestamp_store* ts){
-  timestamp_store_backup b;
-  b.store = ts;
-  b.n_timestamp_store = ts->n_timestamp_store;
-  b.n_stores = ts->n_stores;
-  return b;
-}
-timestamp_store* restore_timestamp_store(timestamp_store_backup b){
-  b.store->n_timestamp_store = b.n_timestamp_store;
-  b.store->n_stores = b.n_stores;
-  return b.store;
-}
