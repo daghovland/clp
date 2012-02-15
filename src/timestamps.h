@@ -43,7 +43,8 @@ void init_empty_timestamps(timestamps*, substitution_size_info);
 unsigned int get_n_timestamps(const timestamps*);
 
 void add_normal_timestamp(timestamps*, unsigned int, timestamp_store*);
-void add_equality_timestamp(timestamps*, unsigned int, timestamp_store*);
+void add_equality_timestamp(timestamps*, unsigned int, timestamp_store*, bool);
+void add_reflexivity_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_domain_timestamp(timestamps*, unsigned int, timestamp_store*);
 void add_timestamp(timestamps*, timestamp, timestamp_store*);
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store*);
@@ -57,6 +58,7 @@ timestamp get_oldest_timestamp(timestamps*);
 
 timestamps_iter get_timestamps_iter(const timestamps*);
 bool has_next_timestamps_iter(const timestamps_iter*);
+bool has_next_non_eq_timestamps_iter(const timestamps_iter*);
 timestamp get_next_timestamps_iter(timestamps_iter*);
 void destroy_timestamps_iter(timestamps_iter*);
 bool is_init_timestamp(timestamp);

@@ -46,11 +46,24 @@ void add_normal_timestamp(timestamps* ts, unsigned int step, timestamp_store* st
   add_timestamp(ts, t, store);
 }
 
-void add_equality_timestamp(timestamps* ts, unsigned int step, timestamp_store* store){
+void add_equality_timestamp(timestamps* ts, unsigned int step, timestamp_store* store, bool normal_rewrite){
   timestamp t;
   t.type = equality_timestamp;
   t.step = step;
   t.init_model = false;
+  if(normal_rewrite)
+    t.tactic = rewrite_tactic;
+  else
+    t.tactic = inv_rewrite_tactic;
+  add_timestamp(ts, t, store);
+}
+void add_reflexivity_timestamp(timestamps* ts, unsigned int step, timestamp_store* store){
+  timestamp t;
+  t.type = equality_timestamp;
+  t.step = step;
+  t.init_model = false;
+  t.tactic = reflexivity_tactic;
+  t.tactic = reflexivity_tactic;
   add_timestamp(ts, t, store);
 }
 

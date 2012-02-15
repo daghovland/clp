@@ -293,7 +293,7 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
 /**
    Tests whether two substitutions map the intersection of their domains to the same values
 **/
-bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, constants* cs, timestamp_store* store, bool update_ts){
+bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, constants* cs){
   unsigned int i;
 
   assert(test_substitution(sub1));
@@ -303,7 +303,7 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2,
   for(i = 0; i < sub1->allvars->n_vars; i++){
     const term* val1 = get_sub_value(sub1, i);
     const term* val2 = get_sub_value(sub2, i);
-    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, store, update_ts))
+    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, NULL, NULL, false))
 	return false;
   }
   return true;
@@ -348,8 +348,10 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub){
    Otherwise returns false. Does not allocate or deallocate any memory.
 
    Called from the different union_substitution... functions below
+
+   Timestamps of dest are updated in any case.
 **/
-bool union_substitutions_struct_terms(substitution* dest, const substitution* orig, constants* cs){
+bool union_substitutions_struct_terms(substitution* dest, const substitution* orig, constants* cs, timestamp_store* store){
   unsigned int i;
   for(i = 0; i < dest->allvars->n_vars; i++){
     const term* val1 = get_sub_value(dest, i);
@@ -359,7 +361,7 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
 	dest->n_subs++;
 	set_sub_value(dest, i, val2);
       }
-    } else if(val2 != NULL && !equal_terms(val1, val2, cs)){
+    } else if(val2 != NULL && !equal_terms(val1, val2, cs, &dest->sub_ts, store, true)){
       assert(! subs_equal_intersection(dest, orig, cs));
       return false;
     }
@@ -374,11 +376,12 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
    Only timestamps from sub1 is kept.
    This is used by the rhs-part of the rete network.
 
-   Assumes dest is already allocated
+   Assumes dest is already allocated. 
+   Timestamps of dest are updated. Must not be used if return-value is false
 **/
 bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
   copy_substitution_struct(dest, sub1, ssi, ts_store, false);
-  return union_substitutions_struct_terms(dest, sub2, cs);
+  return union_substitutions_struct_terms(dest, sub2, cs, ts_store);
 }
 
 /**
@@ -423,16 +426,9 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
    Assumes dest is already allocated
 **/
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* store){
-#ifndef NDEBUG
-  unsigned int n_ts;
-#endif
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs, store))
     return false;
   add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
-#ifndef NDEBUG
-  n_ts = get_sub_n_timestamps(dest);
-  assert(get_max_n_timestamps(ssi) > n_ts);
-#endif
   return true;
 }
 
@@ -462,6 +458,8 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
 
 /**
    Test whether two substitutions are the same for the set of variables given
+
+   The timestamps are not added 
 **/
 bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs){
   unsigned int i;
@@ -472,7 +470,7 @@ bool equal_substitutions(const substitution* a, const substitution* b, const fre
     const term* t2 = find_substitution(b, vars->vars[i]);
     if( t1 == NULL && t2 == NULL)
       continue;
-    if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2, cs))
+    if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2, cs, NULL, NULL, false))
       continue;
     return false;
   }

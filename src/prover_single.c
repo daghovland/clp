@@ -92,7 +92,12 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     if(ground->pred->is_equality){
-      union_constants(ground->args->args[0]->val.constant, ground->args->args[1]->val.constant, state->constants, get_state_step_no_single(state));
+      union_constants(ground->args->args[0]->val.constant
+		      , ground->args->args[1]->val.constant
+		      , state->constants
+		      , get_state_step_no_single(state)
+		      , state->timestamp_store
+		      );
       recheck_rete_state_net(state);
     }
     else

@@ -36,6 +36,15 @@ timestamp create_normal_timestamp(unsigned int step){
 bool is_normal_timestamp(timestamp ts){
   return ts.type == normal_timestamp && ts.step > 0;
 }
+bool is_equality_timestamp(timestamp ts){
+  return ts.type == equality_timestamp;
+}
+bool is_inv_rewrite_timestamp(timestamp ts){
+  return ts.type == equality_timestamp && ts.tactic == inv_rewrite_tactic;
+}
+bool is_reflexivity_timestamp(timestamp ts){
+  return ts.type == equality_timestamp && ts.tactic == reflexivity_tactic;
+}
 
 
 bool is_init_timestamp(timestamp ts){

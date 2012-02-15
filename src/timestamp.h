@@ -31,16 +31,24 @@
 typedef enum timestamp_type_t { normal_timestamp, equality_timestamp, domain_timestamp } 
   timestamp_type;
 
+typedef enum equality_tactic_t { reflexivity_tactic, rewrite_tactic, inv_rewrite_tactic }
+  equality_tactic;
+
 typedef struct timestamp_t {
   timestamp_type type;
   signed int step;
   bool init_model;
+  equality_tactic tactic;
 } timestamp;
   
 
 
 timestamp create_normal_timestamp(unsigned int);
 bool is_normal_timestamp(timestamp);
+bool is_equality_timestamp(timestamp);
+bool is_inv_rewrite_timestamp(timestamp);
+bool is_reflexivity_timestamp(timestamp);
 int compare_timestamp(timestamp, timestamp);
+
 
 #endif

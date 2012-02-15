@@ -114,6 +114,10 @@ bool has_next_timestamps_iter(const timestamps_iter* iter){
   return iter->ts_list != NULL;
 }
 
+bool has_next_non_eq_timestamps_iter(const timestamps_iter* iter){
+  return iter->ts_list != NULL && !is_equality_timestamp(iter->ts_list->ts);
+}
+
 timestamp get_next_timestamps_iter(timestamps_iter* iter){
   assert(iter != NULL);
   timestamp ts = iter->ts_list->ts;
@@ -184,19 +188,20 @@ void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){
 **/
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
   timestamp_linked_list* orig_el = orig->first;
+  assert(test_timestamps(dest));
+  assert(test_timestamps(orig));
   while(orig_el != NULL){
     add_timestamp(dest, orig_el->ts, store);
     orig_el = orig_el->prev;
   }
   assert(test_timestamps(dest));
-  assert(test_timestamps(orig));
 }
 
 /**
    Called from copy_substitution_struct in substitution.c
 **/
 void copy_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store, bool permanent){
-  _init_empty_timestamps(dest, permanent);
+  init_empty_timestamp_linked_list(dest, permanent);
   add_timestamps(dest, orig, store);
 }
 /**

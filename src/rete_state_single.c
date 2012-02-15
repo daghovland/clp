@@ -341,6 +341,8 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
    Returns true if the conjunction is true in the factset.
    In that case, the given substitution is extended to such an instance.
    sub must have been instantiated and later freed by the calling function.
+
+   Note that timestamp info is not added
 **/
 bool conjunction_true_in_fact_store(rete_state_single* state, const conjunction* con, const substitution* sub){
   return remaining_conjunction_true_in_fact_store(state, con, 0, sub);
@@ -397,7 +399,7 @@ void check_used_rule_instances_coq_single(rule_instance* ri, rete_state_single* 
       //    fprintf(stdout, "Setting step %i to used from step %i\n", historic_ts, current_ts);
        while(has_next_timestamps_iter(&iter)){
 	timestamp premiss_no = get_next_timestamps_iter(&iter);
-	if(is_normal_timestamp(premiss_no)){
+	if(is_normal_timestamp(premiss_no) || is_equality_timestamp(premiss_no)){
 	  rule_instance* premiss_ri = get_historic_rule_instance(state, premiss_no.step);
 	  proof_branch* br = branch;
 	  assert(compare_timestamp(br->end_step, premiss_no) >= 0);
@@ -509,7 +511,7 @@ bool insert_state_factset_single(rete_state_single* state, const atom* ground){
   fact_store_iter iter = get_fact_store_iter(& state->factsets[pred_no]);
   while(has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
-    if(equal_atoms(fact, ground, state->constants)){
+    if(equal_atoms(fact, ground, state->constants, NULL, NULL, false)){
       already_in_factset = true;
       break;
     }

@@ -80,7 +80,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				 const rete_node* parent, 
 				 const rete_node* node, 
 				 unsigned int step, 
-				 const substitution* sub,
+				 substitution* sub,
 				 constants* cs
 				 )
 {
@@ -132,7 +132,8 @@ void insert_rete_beta_sub_single(const rete_net* net,
       c1 = get_instantiated_constant(t1, sub);
       t2 = node->val.equality.t2;
       c2 = get_instantiated_constant(t2, sub);
-      if(equal_constants(c1, c2, cs))
+      add_reflexivity_timestamp(&sub->sub_ts, step, ts_store);
+      if(equal_constants(c1, c2, cs, &sub->sub_ts, ts_store, true))
 	insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
       break;
     case beta_and:
@@ -344,7 +345,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
     assert(node->val.alpha.argument_no < fact->args->n_args);
     arg = fact->args->args[node->val.alpha.argument_no];
     assert(test_term(arg));
-    if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, cs))
+    if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, cs, ts_store))
       ret_val = false;
     else
       insert_rete_alpha_fact_children_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, fact, step, sub, cs);

@@ -265,17 +265,27 @@ void write_elim_usage_proof(const rete_net* net, rule_instance* ri, timestamp ts
   }
 }
 
+const char* get_tactic_name(timestamp ts){
+  if(is_normal_timestamp(ts))
+    return "apply";
+  else if(is_inv_rewrite_timestamp(ts))
+    return "rewrite <-";
+  else
+    return "rewrite";
+}
+
 /**
    Called from run_prover when seeing a goal rule instance
 **/
 void write_goal_proof_step(const rule_instance* ri, const rete_net* net, timestamp ts, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs, const constants* cs){  
+  
   if(ri->rule->type == fact && ri->rule->rhs->n_args <= 1 && !ri->rule->is_existential){
     fp_err( fprintf(coq_fp, "(* Using fact #%i*)\n", ri->rule->axiom_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    fp_err( fprintf(coq_fp, "apply %s.\n", ri->rule->name), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    fp_err( fprintf(coq_fp, "%s %s.\n", get_tactic_name(ts), ri->rule->name), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
   } else {
     if(ri->rule->rhs->n_args > 1 || ri->rule->is_existential){
       fp_err( fprintf(coq_fp, "(* Applying from step #%i*)\n", ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-      fp_err( fprintf(coq_fp, "apply H_%i.\n", ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+      fp_err( fprintf(coq_fp, "%s H_%i.\n", get_tactic_name(ts), ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     } else {
       write_goal_proof(ri, net, ts, get_history, rqs, cs);
     }
@@ -284,23 +294,24 @@ void write_goal_proof_step(const rule_instance* ri, const rete_net* net, timesta
 
 
 void write_premiss_proof(const rule_instance* ri, timestamp ts, const rete_net* net, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs, const constants* cs){
-  unsigned int i = 0;
+  unsigned int i = 1;
   timestamps_iter iter = get_sub_timestamps_iter(&ri->sub);
   while(has_next_timestamps_iter(&iter)){
     timestamp premiss_no = get_next_timestamps_iter(&iter);
-    i++;
-    if(has_next_timestamps_iter(&iter)){
+    if(!is_equality_timestamp(premiss_no) && has_next_timestamps_iter(&iter))
       fp_err( fprintf(coq_fp, "split.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    }
-    if(is_init_timestamp(premiss_no)){
+    if (is_reflexivity_timestamp(ts))
+      fp_err( fprintf(coq_fp, "reflexivity.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    else if(is_init_timestamp(premiss_no)){
       fp_err( fprintf(coq_fp, "assumption.\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     } else if(premiss_no.step != ts.step) {
       rule_instance* premiss = get_history(premiss_no.step, rqs);
       //if(!(a->type == fact && a->rhs->n_args == 1 && a->rhs->args[0]->n_args == 1 && a->rhs->args[0]->args[i]->pred->is_domain)){
       fp_err( fprintf(coq_fp, "(* Proving conjunct %i of step %i *)\n", i, ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-      
       write_goal_proof_step(premiss, net, premiss_no, get_history, rqs, cs);
     }
+    if(!is_equality_timestamp(premiss_no))
+      i++;
   } // end while
   destroy_timestamps_iter(&iter);
 }
@@ -308,7 +319,7 @@ void write_premiss_proof(const rule_instance* ri, timestamp ts, const rete_net* 
 void write_goal_proof(const rule_instance* ri, const rete_net* net, timestamp ts, rule_instance * (* get_history)(unsigned int, rule_queue_state), rule_queue_state rqs, const constants* cs){
   if(net->coq){
     fp_err( fprintf(coq_fp, "(* Applying fact from step %i *)\n", ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
-    fp_err( fprintf(coq_fp, "apply ("), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
+    fp_err( fprintf(coq_fp, "%s (", get_tactic_name(ts)), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     print_coq_rule_instance(ri, cs, coq_fp);
     fp_err( fprintf(coq_fp, ").\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     write_premiss_proof(ri, ts, net, get_history, rqs, cs);

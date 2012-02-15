@@ -114,7 +114,7 @@ void print_fact_set(fact_set* fs, const constants* cs,  FILE* f){
 bool is_in_fact_set(const fact_set* fs, const atom* fact, constants* cs){
   while(fs != NULL){
     assert(fact->pred->pred_no == fs->fact->pred->pred_no);
-    if(equal_atoms(fs->fact, fact, cs))
+    if(equal_atoms(fs->fact, fact, cs, NULL, NULL, false))
       return true;
     fs = fs->next;
   }
@@ -129,7 +129,7 @@ bool is_in_fact_set(const fact_set* fs, const atom* fact, constants* cs){
 bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub, constants* cs){
   while(fs != NULL){
     assert(a->pred->pred_no == fs->fact->pred->pred_no);
-    if(equal_atoms(fs->fact, a, cs)){
+    if(equal_atoms(fs->fact, a, cs, NULL, NULL, false)){
       return true;
     }
     fs = fs->next;

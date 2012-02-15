@@ -111,20 +111,22 @@ unsigned int find_constant_root(unsigned int c, constants* cs, timestamps* ts, t
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
 void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsigned int step, timestamp_store* store){
-  timestamps* tmp1 = malloc_tester(sizeof(timestamps));
+  timestamps * tmp1 = malloc_tester(sizeof(timestamps));
   timestamps* tmp2 = malloc_tester(sizeof(timestamps));
-  unsigned int c1_root = find_constant_root(c1, consts, tmp1, store);
-  unsigned int c2_root = find_constant_root(c2, consts, tmp2, store);
+  init_empty_timestamp_linked_list(tmp1, false);
+  init_empty_timestamp_linked_list(tmp2, false);
+  unsigned int c1_root = find_constant_root(c1, consts, tmp1, store, true);
+  unsigned int c2_root = find_constant_root(c2, consts, tmp2, store, true);
   if(c1_root == c2_root) 
     return;
   if(consts->constants[c1_root].rank < consts->constants[c2_root].rank){
     consts->constants[c1_root].parent = c2_root;
-    add_timestamp(consts->constants[c1_root].steps, step, store);
-    add_timestamps(consts->constants[c1_root].steps, tmp2, store);
+    add_equality_timestamp(& consts->constants[c1_root].steps, step, store, true);
+    add_timestamps(& consts->constants[c1_root].steps, tmp2, store);
   } else {
     consts->constants[c2_root].parent = c1_root;
-    add_timestamp(consts->constants[c2_root].steps, step, store);
-    add_timestamps(consts->constants[c2_root].steps, tmp1, store);
+    add_equality_timestamp(& consts->constants[c2_root].steps, step, store, false);
+    add_timestamps(& consts->constants[c2_root].steps, tmp1, store);
     if(!(consts->constants[c1_root].rank > consts->constants[c2_root].rank))
       consts->constants[c1_root].rank++;
   }
@@ -211,7 +213,7 @@ void print_all_constants(constants* cs, FILE* stream){
   for(i = 0; i < cs->n_constants; i++)
     size_partition[i] = 0;
   for(i = 0; i < cs->n_constants; i++){
-    unsigned int p = find_constant_root(i, cs);
+    unsigned int p = find_constant_root(i, cs, NULL, NULL, false);
     partitions[p][size_partition[p]] = i;
     size_partition[p]++;
   }

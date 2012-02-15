@@ -179,6 +179,10 @@ void fresh_exist_constants(const conjunction* con, substitution* sub, constants*
    the instantiation of at
 
    If this is not possible, it returns false
+
+   Note that timestamps are not added, since this is only called from 
+   rete_state_single to find out whether the right hand side of a rule instance is true in 
+   the factset
 **/
 bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, constants*);
 
@@ -191,15 +195,15 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
   switch(t->type){
   case constant_term: 
     return (ground->type == constant_term 
-	    && equal_constants(t->val.constant, ground->val.constant, cs));
+	    && equal_constants(t->val.constant, ground->val.constant, cs, NULL, NULL, false));
     break;
   case variable_term:
     val = find_substitution(sub, t->val.var);
     if (val == NULL){
-      add_substitution(sub, t->val.var, ground, cs);
+      add_substitution(sub, t->val.var, ground, cs, NULL, false);
       return true;
     }
-    return equal_terms(val, ground, cs);
+    return equal_terms(val, ground, cs, NULL, NULL, false);
     break;
   case function_term: 
     return (ground->type == function_term 
