@@ -29,7 +29,7 @@ void fp_err(int retval, const char* msg);
 void sys_err(int retval, const char* msg);
 FILE* file_err(FILE* retval, const char* msg);
 #ifdef HAVE_PTHREAD
-void pt_err(int , const char* );
+void pt_err(int , const char*, int, const char* );
 #endif
 
 

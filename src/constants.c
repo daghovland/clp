@@ -42,11 +42,15 @@ void destroy_constants(constants* c){
   free(c);
 }
 
-constants* copy_constants(const constants * orig){
+constants* copy_constants(const constants * orig, timestamp_store* ts_store){
+  unsigned int i;
   constants* copy = malloc_tester(sizeof(constants));
   copy = memcpy(copy, orig, sizeof(constants));
   copy->constants = calloc_tester(orig->size_constants, sizeof(constant));
   memcpy(copy->constants, orig->constants, orig->size_constants * sizeof(constant));
+  assert(copy->n_constants == orig->n_constants);
+  for(i = 0; i < copy->n_constants; i++)
+    copy_timestamps(& copy->constants[i].steps, & orig->constants[i].steps, ts_store, false);
   return copy;
 }
 
@@ -115,6 +119,9 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
   timestamps* tmp2 = malloc_tester(sizeof(timestamps));
   init_empty_timestamp_linked_list(tmp1, false);
   init_empty_timestamp_linked_list(tmp2, false);
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_lock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+#endif
   unsigned int c1_root = find_constant_root(c1, consts, tmp1, store, true);
   unsigned int c2_root = find_constant_root(c2, consts, tmp2, store, true);
   if(c1_root == c2_root) 
@@ -130,6 +137,9 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
     if(!(consts->constants[c1_root].rank > consts->constants[c2_root].rank))
       consts->constants[c1_root].rank++;
   }
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_unlock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+#endif
   free(tmp1);
   free(tmp2);
 }
@@ -147,8 +157,14 @@ bool equal_constants(unsigned int c1, unsigned int c2, constants* consts, timest
   timestamp_linked_list* old_list = ts->list;
   assert(old_list->prev == NULL);
 #endif
+  if(c1 == c2)
+    return true;
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_lock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+#endif
   unsigned int p1 = find_constant_root(c1, consts, ts, store, update_ts);
   unsigned int p2 = find_constant_root(c2, consts, ts, store, update_ts);
+
 #if false
   if( update_ts && p1 != p2 ){
     ts->list = old_list;
@@ -157,14 +173,17 @@ bool equal_constants(unsigned int c1, unsigned int c2, constants* consts, timest
       ts->first = NULL;
   }
 #endif
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_unlock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+#endif
   return p1 == p2;
 }
 
 /**
    Called from rete_state when in a disjunctive split. 
 **/
-constants* backup_constants(const constants* orig){
-  return copy_constants(orig);
+constants* backup_constants(const constants* orig, timestamp_store* ts_store){
+  return copy_constants(orig,ts_store);
 }
 
 /**

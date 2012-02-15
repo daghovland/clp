@@ -72,11 +72,11 @@ unsigned int get_timestamp_rete_worker_queue(rete_worker_queue*);
 void unpop_rete_worker_queue(rete_worker_queue*);
 
 #ifdef HAVE_PTHREAD
-void lock_worker_queue(rete_worker_queue*);
-void unlock_worker_queue(rete_worker_queue*);
-void signal_worker_queue(rete_worker_queue*);
-void broadcast_worker_queue(rete_worker_queue*);
-void wait_worker_queue(rete_worker_queue*);
+void lock_worker_queue(rete_worker_queue*, const char*, int);
+void unlock_worker_queue(rete_worker_queue*, const char*, int);
+void signal_worker_queue(rete_worker_queue*, const char*, int);
+void broadcast_worker_queue(rete_worker_queue*, const char*, int);
+void wait_worker_queue(rete_worker_queue*, const char*, int);
 #endif
 
 rete_worker_queue_backup backup_rete_worker_queue(rete_worker_queue*);

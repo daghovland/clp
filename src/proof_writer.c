@@ -60,7 +60,7 @@ void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
     dotfilename = malloc_tester(strlen(filenameprefix) + 6);
     sprintf(dotfilename, "%s.dot", filenameprefix);
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_lock(& dot_file_lock), "Could not get lock on dot proof file\n");
+    pt_err(pthread_mutex_lock(& dot_file_lock), __FILE__, __LINE__, "Could not get lock on dot proof file\n");
 #endif
     if(file_open){
       assert(dot_fp != NULL);
@@ -70,7 +70,7 @@ void end_proof_dot_writer(const char* filenameprefix, const rete_net* net){
       file_open = false;
     }
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_unlock(&dot_file_lock), "Could not release lock on dot proof file\n");
+    pt_err(pthread_mutex_unlock(&dot_file_lock),  __FILE__, __LINE__, "Could not release lock on dot proof file\n");
 #endif  
     free(dotfilename);
   } // if proof etc. 
@@ -131,7 +131,7 @@ void write_proof_node(unsigned int step_no
 
   if(proof){
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_lock(&dot_file_lock), "Could not get lock on dot proof file\n");
+    pt_err(pthread_mutex_lock(&dot_file_lock),  __FILE__, __LINE__, "Could not get lock on dot proof file\n");
 #endif
     if(file_open){
       assert(dot_fp != NULL);
@@ -175,7 +175,7 @@ void write_proof_node(unsigned int step_no
       
 #endif
 #ifdef HAVE_PTHREAD
-      pt_err(pthread_mutex_unlock(&dot_file_lock), "Could not release lock on dot proof file\n");
+      pt_err(pthread_mutex_unlock(&dot_file_lock),  __FILE__, __LINE__, "Could not release lock on dot proof file\n");
 #endif
     }// file open
   }// proof || dot
@@ -184,11 +184,11 @@ void write_proof_edge(const char*  proof_branch_1, unsigned int step_no_1, const
   if(proof){
     assert(dot_fp != NULL);
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_lock(&dot_file_lock), "Could not get lock on dot proof file\n");
+    pt_err(pthread_mutex_lock(&dot_file_lock),  __FILE__, __LINE__, "Could not get lock on dot proof file\n");
 #endif
     fp_err( fprintf(dot_fp, "\n n%ss%i -> n%ss%i \n", proof_branch_1, step_no_1, proof_branch_2, step_no_2 + 1 ), "Could not write proof node dot info\n");
 #ifdef HAVE_PTHREAD
-    pt_err(pthread_mutex_unlock(&dot_file_lock), "Could not release lock on dot proof file\n");
+    pt_err(pthread_mutex_unlock(&dot_file_lock),  __FILE__, __LINE__,"Could not release lock on dot proof file\n");
 #endif
   }
 }

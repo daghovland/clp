@@ -29,27 +29,27 @@
 /**
    pthread functionality for locking, signaling etc. 
 **/
-void lock_worker_queue(rete_worker_queue* rq){
-  pt_err(pthread_mutex_lock(& rq->queue_mutex), "rete_worker_queue.c: lock_worker_queue: mutex_lock");
+void lock_worker_queue(rete_worker_queue* rq, const char* filename, int line){
+  pt_err(pthread_mutex_lock(& rq->queue_mutex), filename, line, "rete_worker_queue.c: lock_worker_queue: mutex_lock");
 }
 
-void unlock_worker_queue(rete_worker_queue* rq){
-  pt_err(pthread_mutex_unlock(& rq->queue_mutex), "rete_worker_queue.c: unlock_worker_queue: mutex_unlock");
+void unlock_worker_queue(rete_worker_queue* rq, const char* filename, int line){
+  pt_err(pthread_mutex_unlock(& rq->queue_mutex), filename, line,  "rete_worker_queue.c: unlock_worker_queue: mutex_unlock");
 }
 
-void wait_worker_queue(rete_worker_queue* wq){
-  pt_err(pthread_cond_wait(& wq->queue_cond, & wq->queue_mutex), "rete_worker_queue.c: wait_worker_queue: cond wait");
-}
-
-
-void signal_worker_queue(rete_worker_queue* rq){
-  pt_err(pthread_cond_signal(& rq->queue_cond), "rete_worker_queue.c: signal_worker_queue: cond signal");
+void wait_worker_queue(rete_worker_queue* wq, const char* filename, int line){
+  pt_err(pthread_cond_wait(& wq->queue_cond, & wq->queue_mutex), filename, line,  "rete_worker_queue.c: wait_worker_queue: cond wait");
 }
 
 
+void signal_worker_queue(rete_worker_queue* rq, const char* filename, int line){
+  pt_err(pthread_cond_signal(& rq->queue_cond), filename, line,  "rete_worker_queue.c: signal_worker_queue: cond signal");
+}
 
-void broadcast_worker_queue(rete_worker_queue* rq){
-  pt_err(pthread_cond_broadcast(& rq->queue_cond), "rete_worker_queue.c: broadcast_worker_queue: cond wait");
+
+
+void broadcast_worker_queue(rete_worker_queue* rq, const char* filename, int line){
+  pt_err(pthread_cond_broadcast(& rq->queue_cond), filename, line,  "rete_worker_queue.c: broadcast_worker_queue: cond wait");
 }
 
 #endif
@@ -95,13 +95,13 @@ rete_worker_queue* init_rete_worker_queue(void){
   rq->end = 0;
 
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutexattr_init(&mutex_attr), "rete_worker_queue.c: initialize_queue_single: mutex attr init");
+  pt_err(pthread_mutexattr_init(&mutex_attr),__FILE__, __LINE__, "rete_worker_queue.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
-  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rete_worker_queue.c: initialize_queue_single: mutex attr settype");
+  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP), __FILE__, __LINE__,  "rete_worker_queue.c: initialize_queue_single: mutex attr settype");
 #endif
-  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr),   "rete_worker_queue.c: initialize_queue_single: mutex init");
-  pt_err(pthread_mutexattr_destroy(&mutex_attr),   "rete_worker_queue.c: initialize_queue_single: mutexattr destroy");
-  pt_err(pthread_cond_init(& rq->queue_cond, NULL),   "rete_worker_queue.c: initialize_queue_single: cond init");
+  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr), __FILE__, __LINE__,   "rete_worker_queue.c: initialize_queue_single: mutex init");
+  pt_err(pthread_mutexattr_destroy(&mutex_attr), __FILE__, __LINE__,   "rete_worker_queue.c: initialize_queue_single: mutexattr destroy");
+  pt_err(pthread_cond_init(& rq->queue_cond, NULL), __FILE__, __LINE__,   "rete_worker_queue.c: initialize_queue_single: cond init");
 #endif
   return rq;
 }
@@ -129,8 +129,8 @@ const worker_queue_elem* get_const_worker_queue_elem(const rete_worker_queue* rq
 **/
 void destroy_rete_worker_queue(rete_worker_queue* rq){
 #ifdef HAVE_PTHREAD
-  pt_err( pthread_mutex_destroy(&rq->queue_mutex), "rete_worker_queue.c: destroy_rete_worker_queue: mutex destroy");
-  pt_err( pthread_cond_destroy(&rq->queue_cond),  "rete_worker_queue.c: destroy_rete_worker_queue: cond destroy");
+  pt_err( pthread_mutex_destroy(&rq->queue_mutex),__FILE__, __LINE__,  "rete_worker_queue.c: destroy_rete_worker_queue: mutex destroy");
+  pt_err( pthread_cond_destroy(&rq->queue_cond),__FILE__, __LINE__,   "rete_worker_queue.c: destroy_rete_worker_queue: cond destroy");
   
 #endif
   free(rq->queue);
@@ -155,15 +155,15 @@ void assign_worker_queue_elem(rete_worker_queue* rq, unsigned int pos, const ato
 void push_rete_worker_queue(rete_worker_queue * rq, const atom* fact, const rete_node * alpha, unsigned int step){
   unsigned int pos;
 #ifdef HAVE_PTHREAD
-  lock_worker_queue(rq);
+  lock_worker_queue(rq, __FILE__, __LINE__ );
 #endif
   check_worker_queue_too_small(rq);
   pos = rq->end;
   rq->end ++;
   assign_worker_queue_elem(rq, pos, fact, alpha, step);
 #ifdef HAVE_PTHREAD
-  signal_worker_queue(rq);
-  unlock_worker_queue(rq);
+  signal_worker_queue(rq, __FILE__, __LINE__ );
+  unlock_worker_queue(rq, __FILE__, __LINE__ );
 #endif
 }
 

@@ -44,11 +44,11 @@ bool worker_should_pop(rete_worker* worker){
 
 bool worker_may_have_new_instance(rete_worker* worker){
   bool retval;
-  lock_worker_queue(worker->work);
+  lock_worker_queue(worker->work, __FILE__, __LINE__);
   retval =  ! rule_queue_single_is_empty(worker->output)
     || ! rete_worker_queue_is_empty(worker->work)
     || rete_worker_is_working(worker);
-  unlock_worker_queue(worker->work);
+  unlock_worker_queue(worker->work, __FILE__, __LINE__);
   return retval;
 }
 
@@ -65,12 +65,12 @@ bool read_recheck_net(rete_worker* w){
 **/
 void set_recheck_net(rete_worker* w){
 #ifdef HAVE_PTHREAD
-  lock_worker_queue(w->work);
+  lock_worker_queue(w->work, __FILE__, __LINE__);
 #endif
   w->recheck_net = true;
 #ifdef HAVE_PTHREAD
-  signal_worker_queue(w->work);
-  unlock_worker_queue(w->work);
+  signal_worker_queue(w->work, __FILE__, __LINE__);
+  unlock_worker_queue(w->work, __FILE__, __LINE__);
 #endif
 }
 
@@ -79,15 +79,15 @@ void set_recheck_net(rete_worker* w){
    Waits for new elements to be added to the queue
 **/
 void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, const rete_node ** alpha, unsigned int * step){
-  lock_worker_queue(worker->work);
+  lock_worker_queue(worker->work, __FILE__, __LINE__);
   while(worker_wait_for_pop(worker))
-    wait_worker_queue(worker->work);
+    wait_worker_queue(worker->work, __FILE__, __LINE__);
   if(worker_should_pop(worker)){
     pop_rete_worker_queue(worker->work, fact, alpha, step);
     __sync_lock_test_and_set(&worker->state, has_popped);
     worker->step = *step;
   }
-  unlock_worker_queue(worker->work);
+  unlock_worker_queue(worker->work, __FILE__, __LINE__);
 }
 
 
@@ -112,10 +112,10 @@ void * queue_worker_routine(void* arg){
   rete_worker * worker = arg;
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
   while(!worker->stop_signalled){
-    lock_worker_queue(worker->work);
+    lock_worker_queue(worker->work, __FILE__, __LINE__);
     while(worker_pause(worker))
-      wait_worker_queue(worker->work);
-    unlock_worker_queue(worker->work);
+      wait_worker_queue(worker->work, __FILE__, __LINE__);
+    unlock_worker_queue(worker->work, __FILE__, __LINE__);
     if(worker->stop_signalled)
       break;
     if(read_recheck_net(worker)){
@@ -130,13 +130,13 @@ void * queue_worker_routine(void* arg){
     }
     __sync_lock_test_and_set(& worker->state, waiting);
     if(!worker->pause_signalled && !worker->stop_signalled){
-      lock_queue_single(worker->output);
-      signal_queue_single(worker->output);
-      unlock_queue_single(worker->output);
+      lock_queue_single(worker->output, __FILE__, __LINE__);
+      signal_queue_single(worker->output, __FILE__, __LINE__);
+      unlock_queue_single(worker->output, __FILE__, __LINE__);
     } else {
-      lock_worker_queue(worker->work);
-      signal_worker_queue(worker->work);
-      unlock_worker_queue(worker->work);
+      lock_worker_queue(worker->work, __FILE__, __LINE__);
+      signal_worker_queue(worker->work, __FILE__, __LINE__);
+      unlock_worker_queue(worker->work, __FILE__, __LINE__);
     }
   }
   return NULL;
@@ -150,19 +150,19 @@ void start_worker_thread(rete_worker* worker){
   pthread_attr_t attr;
   int errval;
   size_t stacksize = 10000;
-  pt_err(pthread_attr_init(&attr), "rete_worker.c: start_worker_thread: attr init");
+  pt_err(pthread_attr_init(&attr), __FILE__, __LINE__, "rete_worker.c: start_worker_thread: attr init");
   pthread_attr_setstacksize(&attr, stacksize); 
   errval = pthread_create(& worker->tid, &attr, queue_worker_routine, worker);
   if(errval != 0){
-    fprintf(stderr,"rete_worker.c: start_worker_thread: %s\n", strerror(errval));
+    fprintf(stderr,"%s: line %i: start_worker_thread: %s\n", __FILE__, __LINE__, strerror(errval));
     if(errval == EAGAIN){
       fprintf(stderr, "Insufficient resources to run all the threads in the rete network. Try increasing the limits on number of processes or on the virtual memory. You can also try limiting the stack memory, by running ulimit -Ss <limit>\n");
       show_limit(RLIMIT_NPROC, stdout, "Process");
       show_limit(RLIMIT_STACK, stdout, "Stack");
     }
   }
-  pt_err(errval, "rete_worker.c: start_worker_thread: create thread");
-  pt_err(pthread_attr_destroy(&attr), "rete_worker.c: start_worker_thread: attr init");
+  pt_err(errval, __FILE__, __LINE__, "rete_worker.c: start_worker_thread: create thread");
+  pt_err(pthread_attr_destroy(&attr), __FILE__, __LINE__, "rete_worker.c: start_worker_thread: attr init");
 }
 /**
    Creates the initial queue containing
@@ -198,9 +198,9 @@ void stop_rete_worker(rete_worker* worker){
   int join_rv;
   if(!worker->stop_signalled){
     worker->stop_signalled = true;
-    lock_worker_queue(worker->work);
-    signal_worker_queue(worker->work);
-    unlock_worker_queue(worker->work);
+    lock_worker_queue(worker->work, __FILE__, __LINE__);
+    signal_worker_queue(worker->work, __FILE__, __LINE__);
+    unlock_worker_queue(worker->work, __FILE__, __LINE__);
     
     join_rv = pthread_join(worker->tid, &t_retval);
     if(join_rv != 0)
@@ -215,9 +215,9 @@ void stop_rete_worker(rete_worker* worker){
 void pause_rete_worker(rete_worker* worker){
   bool already_paused = __sync_lock_test_and_set(&worker->pause_signalled, true);
   assert(!already_paused);
-  lock_worker_queue(worker->work);
-  signal_worker_queue(worker->work);
-  unlock_worker_queue(worker->work);
+  lock_worker_queue(worker->work, __FILE__, __LINE__);
+  signal_worker_queue(worker->work, __FILE__, __LINE__);
+  unlock_worker_queue(worker->work, __FILE__, __LINE__);
 }
 
 /**
@@ -234,9 +234,9 @@ void restart_rete_worker(rete_worker* rq){
 void continue_rete_worker(rete_worker* worker){
   bool was_paused = __sync_lock_test_and_set(&worker->pause_signalled, false);
   assert(was_paused);
-  lock_worker_queue(worker->work);
-  signal_worker_queue(worker->work);
-  unlock_worker_queue(worker->work);
+  lock_worker_queue(worker->work, __FILE__, __LINE__);
+  signal_worker_queue(worker->work, __FILE__, __LINE__);
+  unlock_worker_queue(worker->work, __FILE__, __LINE__);
 }
 
 
@@ -258,10 +258,10 @@ bool rete_worker_is_working(rete_worker* rq){
    is again paused
 **/
 void wait_for_worker_to_pause(rete_worker* worker){
-  lock_worker_queue(worker->work);
+  lock_worker_queue(worker->work, __FILE__, __LINE__);
   while(worker->state != waiting)
-    wait_worker_queue(worker->work);
-  unlock_worker_queue(worker->work);
+    wait_worker_queue(worker->work, __FILE__, __LINE__);
+  unlock_worker_queue(worker->work, __FILE__, __LINE__);
 }
 
 unsigned int get_worker_step(rete_worker* rq){

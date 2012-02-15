@@ -92,6 +92,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
     printf("\n");
 #endif
     if(ground->pred->is_equality){
+      pause_rete_state_workers(state);
       union_constants(ground->args->args[0]->val.constant
 		      , ground->args->args[1]->val.constant
 		      , state->constants

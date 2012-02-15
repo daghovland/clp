@@ -29,6 +29,9 @@
 #include "common.h"
 #include "fresh_constants.h"
 #include "timestamps.h"
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 /**
    Part of a union-find / disjoint set structure
@@ -50,6 +53,9 @@ typedef struct constants_t {
   fresh_const_counter fresh;
   constant* constants;
   size_t size_constants;
+#ifdef HAVE_PTHREAD
+  pthread_mutex_t constants_mutex;
+#endif
   unsigned int n_constants;
 } constants;
 

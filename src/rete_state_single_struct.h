@@ -68,6 +68,7 @@ typedef struct rete_state_backup_t {
   unsigned int cur_step;
   rule_queue_single_backup * rq_backups;
   substitution_store_array_backup * node_sub_backups;
+  constants* constants;
   timestamp_store_backup timestamp_backup;
   rete_worker_queue_backup * worker_backups;
   fact_store_backup * factset_backups;

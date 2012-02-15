@@ -31,7 +31,7 @@
 rete_state_single* create_rete_state_single(const rete_net*, bool);
 void stop_rete_state_single(rete_state_single*);
 void delete_rete_state_single(rete_state_single*);
-
+void pause_rete_state_workers(rete_state_single*);
 bool test_rete_state(rete_state_single*);
 
 rule_instance* choose_next_instance_single(rete_state_single*);

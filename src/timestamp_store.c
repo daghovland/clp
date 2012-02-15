@@ -48,7 +48,7 @@ timestamp_linked_list* get_timestamp_memory(timestamp_store* store, bool permane
   if(permanent)
     return malloc_tester(sizeof(timestamp_linked_list));
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_lock(& store->lock), "#__FILE__ : #__LINE__: mutex lock");
+  pt_err(pthread_mutex_lock(& store->lock), __FILE__, __LINE__, ": mutex lock");
 #endif
 #ifdef USE_TIMESTAMP_STORE_ARRAY
   if(store->n_timestamp_store >= store->size_timestamp_store){
@@ -94,11 +94,11 @@ timestamp_store* init_timestamp_store(substitution_size_info ssi){
   timestamp_store* ts = malloc_tester(sizeof(timestamp_store));
 #ifdef HAVE_PTHREAD
   pthread_mutexattr_t mutex_attr;
-  pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
+  pt_err(pthread_mutexattr_init(&mutex_attr), __FILE__, __LINE__, "rule_queue_single.c: initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
-  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
+  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP), __FILE__, __LINE__,  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
 #endif
-  pt_err(pthread_mutex_init(& ts->lock, &mutex_attr), "timestamp_linked_list.c: init_timestamp_store: mutex init.\n");
+  pt_err(pthread_mutex_init(& ts->lock, &mutex_attr), __FILE__, __LINE__, "timestamp_linked_list.c: init_timestamp_store: mutex init.\n");
 #endif
   ts->size_timestamp_store = 1;
   ts->n_timestamp_store = 0;
@@ -132,7 +132,7 @@ void destroy_timestamp_store(timestamp_store* store){
   backtrack_timestamp_store(store, 0);
 #endif
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_destroy(& store->lock), "#__FILE__: #__LINE__: mutexdestroy");;
+  pt_err(pthread_mutex_destroy(& store->lock), __FILE__, __LINE__, ": mutexdestroy");;
 #endif
   free(store->stores);
   free(store);

@@ -76,11 +76,11 @@ rule_instance* peek_rule_queue_single(rule_queue_single*);
 rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
 
 
-void wait_queue_single(rule_queue_single*);
-bool timedwait_queue_single(rule_queue_single*, unsigned int);
-void signal_queue_single(rule_queue_single*);
-void lock_queue_single(rule_queue_single*);
-void unlock_queue_single(rule_queue_single*);
+void wait_queue_single(rule_queue_single*, const char*, int);
+bool timedwait_queue_single(rule_queue_single*, unsigned int, const char*, int);
+void signal_queue_single(rule_queue_single*, const char*, int);
+void lock_queue_single(rule_queue_single*, const char*, int);
+void unlock_queue_single(rule_queue_single*, const char*, int);
 
 
 unsigned int rule_queue_single_age(rule_queue_single*);

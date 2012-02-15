@@ -50,7 +50,7 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->fresh = init_fresh_const(net->th->vars->n_vars);
   assert(state->fresh != NULL);
   //  state->constants = init_constants(net->th->vars->n_vars);
-  state->constants = copy_constants(net->th->constants);
+  state->constants = copy_constants(net->th->constants, state->timestamp_store);
   state->cur_step = 0;
   state->total_steps = 0;
   state->rule_queues = calloc_tester(net->th->n_axioms, sizeof(rule_queue_single*));
@@ -90,6 +90,7 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   backup.new_facts_backups = calloc(state->net->th->n_predicates, sizeof(fact_store_iter));
   copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   backup.state = state;
+  backup.constants = backup_constants(state->constants, state->timestamp_store);
   for(i = 0; i < state->net->th->n_axioms; i++)
     wait_for_worker_to_pause(state->workers[i]);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
@@ -105,13 +106,23 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   return backup;
 }
 
+void pause_rete_state_workers(rete_state_single* state){
+   unsigned int i;
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    pause_rete_worker(state->workers[i]);
+  for(i = 0; i < state->net->th->n_axioms; i++)
+    wait_for_worker_to_pause(state->workers[i]);
+}
+
 /**
    Called when the prover sees an equality
 **/
 void recheck_rete_state_net(rete_state_single* state){
   unsigned int i;
-  for(i = 0; i < state->net->th->n_axioms; i++)
+  for(i = 0; i < state->net->th->n_axioms; i++){
     set_recheck_net(state->workers[i]);
+    continue_rete_worker(state->workers[i]);
+  }
 }
 
 
@@ -162,6 +173,7 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
   for(i = 0; i < state->net->th->n_axioms; i++){
     wait_for_worker_to_pause(state->workers[i]);
   }
+  state->constants = copy_constants(backup->constants, state->timestamp_store);
   state->node_subs = restore_substitution_store_array(backup->node_sub_backups);
   state->timestamp_store = restore_timestamp_store(backup->timestamp_backup);
   for(i = 0; i < backup->state->net->th->n_axioms; i++){
@@ -221,11 +233,11 @@ bool test_rete_state(rete_state_single* state){
   for(i = 0; i < state->net->th->n_axioms; i++){
     rule_queue_single* rq = state->rule_queues[i];
 #ifdef HAVE_PTHREAD
-    lock_queue_single(rq);
+    lock_queue_single(rq, __FILE__, __LINE__);
 #endif
     assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
-      unlock_queue_single(rq);
+      unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
   }
   return true;
@@ -265,12 +277,12 @@ rule_instance* transfer_from_rule_queue_to_history(rete_state_single* state, siz
   rule_instance *ri, *next;
   rule_queue_single* rq = state->rule_queues[axiom_no];
 #ifdef HAVE_PTHREAD
-  lock_queue_single(rq);
+  lock_queue_single(rq, __FILE__, __LINE__);
 #endif
   ri = pop_rule_queue_single(rq, get_state_step_no_single(state));
   next = insert_rule_instance_history_single(state, ri);
 #ifdef HAVE_PTHREAD
-  unlock_queue_single(rq);
+  unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
   assert(test_rule_instance(next));
   return next;
@@ -435,14 +447,14 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
 
   while( axiom_may_have_new_instance_single_state(state, axiom_no)){
 #ifdef HAVE_PTHREAD
-    lock_queue_single(rq);
+    lock_queue_single(rq, __FILE__, __LINE__);
 #endif
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
-      if(!timedwait_queue_single(rq, 100))
+      if(!timedwait_queue_single(rq, 100, __FILE__, __LINE__))
 	break;
     if(rule_queue_single_is_empty(rq)){
 #ifdef HAVE_PTHREAD
-      unlock_queue_single(rq);
+      unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
       retval = false;
       break;
@@ -450,18 +462,18 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
       rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
       copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store, false);
 #ifdef HAVE_PTHREAD
-      unlock_queue_single(rq);
+      unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
       if(!disjunction_true_in_fact_store(state, ri->rule->rhs, tmp_sub)){
 	retval = true;
 	break;
       }
 #ifdef HAVE_PTHREAD
-      lock_queue_single(rq);
+      lock_queue_single(rq, __FILE__, __LINE__);
 #endif
       pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
 #ifdef HAVE_PTHREAD
-      unlock_queue_single(rq);
+      unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
     }
   }
@@ -566,25 +578,25 @@ unsigned int rule_queue_possible_age_single_state(rete_state_single* state, unsi
   rete_worker *worker = state->workers[axiom_no];
   unsigned int age;
 #ifdef HAVE_PTHREAD
-  lock_queue_single(rq);
+  lock_queue_single(rq, __FILE__, __LINE__);
 #endif
   if(!rule_queue_single_is_empty(rq)){
     rule_instance * ri = peek_rule_queue_single(rq);
     age = ri->timestamp;
   } else {
 #ifdef HAVE_PTHREAD
-    lock_worker_queue(wq);
+    lock_worker_queue(wq, __FILE__, __LINE__);
 #endif
     if(rete_worker_is_working(worker) || rete_worker_queue_is_empty(wq))
       age = get_worker_step(worker);
     else 
       age = get_timestamp_rete_worker_queue(wq);
 #ifdef HAVE_PTHREAD
-    unlock_worker_queue(wq);
+    unlock_worker_queue(wq, __FILE__, __LINE__);
 #endif
   }
 #ifdef HAVE_PTHREAD
-  unlock_queue_single(rq);
+  unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
   return age;
 }

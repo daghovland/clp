@@ -33,19 +33,19 @@
 /**
    pthread functionality for locking, signaling etc. 
 **/
-void lock_queue_single(rule_queue_single* rq){
-  pt_err(pthread_mutex_lock(& rq->queue_mutex), "rule_queue_single.c: lock_queue_single: mutex_lock");
+void lock_queue_single(rule_queue_single* rq, const char* filename, int line){
+  pt_err(pthread_mutex_lock(& rq->queue_mutex), filename, line ,"rule_queue_single.c: lock_queue_single: mutex_lock");
 }
 
-void unlock_queue_single(rule_queue_single* rq){
-  pt_err(pthread_mutex_unlock(& rq->queue_mutex), "rule_queue_single.c: unlock_queue_single: mutex_unlock");
+void unlock_queue_single(rule_queue_single* rq, const char* filename, int line){
+  pt_err(pthread_mutex_unlock(& rq->queue_mutex),  filename, line, "rule_queue_single.c: unlock_queue_single: mutex_unlock");
 }
 
-void wait_queue_single(rule_queue_single* rq){
-  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), "rule_queue_single.c: wait_queue_single: cond_wait");
+void wait_queue_single(rule_queue_single* rq, const char* filename, int line){
+  pt_err(pthread_cond_wait(& rq->queue_cond, & rq->queue_mutex), filename, line, "rule_queue_single.c: wait_queue_single: cond_wait");
 }
 
-bool timedwait_queue_single(rule_queue_single* rq, unsigned int secs){
+bool timedwait_queue_single(rule_queue_single* rq, unsigned int secs, const char* filename, int line){
   struct timeval now;
   struct timespec endwait;
   int retval;
@@ -55,17 +55,17 @@ bool timedwait_queue_single(rule_queue_single* rq, unsigned int secs){
   retval = pthread_cond_timedwait(& rq->queue_cond, & rq->queue_mutex, &endwait);
   if(retval == ETIMEDOUT)
     return false;
-  pt_err(retval, "rule_queue_single.c: timedwait_queue_single: cond_timedwait");
+  pt_err(retval, filename, line,  "rule_queue_single.c: timedwait_queue_single: cond_timedwait");
   return true;
 }
 
-void signal_queue_single(rule_queue_single* rq){
-  pt_err(pthread_cond_signal(& rq->queue_cond), "rule_queue_single.c: signal_queue_single: ");
+void signal_queue_single(rule_queue_single* rq, const char* filename, int line){
+  pt_err(pthread_cond_signal(& rq->queue_cond),  filename, line, "rule_queue_single.c: signal_queue_single: ");
 }
 
 
-void broadcast_queue_single(rule_queue_single* rq){
-  pt_err(pthread_cond_broadcast(& rq->queue_cond), "rule_queue_single.c: broadcast_queue_single:");
+void broadcast_queue_single(rule_queue_single* rq, const char* filename, int line){
+  pt_err(pthread_cond_broadcast(& rq->queue_cond), filename, line,   "rule_queue_single.c: broadcast_queue_single:");
 }
 #endif
 
@@ -114,13 +114,13 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned 
   rq->axiom_no = axiom_no;
   rq->permanent = permanent;
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutexattr_init(&mutex_attr), "rule_queue_single.c: initialize_queue_single: mutex attr init");
+  pt_err(pthread_mutexattr_init(&mutex_attr), __FILE__, __LINE__,  " initialize_queue_single: mutex attr init");
 #ifndef NDEBUG
-  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP),  "rule_queue_single.c: initialize_queue_single: mutex attr settype");
+  pt_err(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK_NP), __FILE__, __LINE__,  " initialize_queue_single: mutex attr settype");
 #endif
-  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr),   "rule_queue_single.c: initialize_queue_single: mutex init");
-  pt_err(pthread_mutexattr_destroy(&mutex_attr),   "rule_queue_single.c: initialize_queue_single: mutexattr destroy");
-  pt_err(pthread_cond_init(& rq->queue_cond, NULL),   "rule_queue_single.c: initialize_queue_single: cond init");
+  pt_err(pthread_mutex_init(& rq->queue_mutex, & mutex_attr),  __FILE__, __LINE__,   " initialize_queue_single: mutex init");
+  pt_err(pthread_mutexattr_destroy(&mutex_attr),  __FILE__, __LINE__,   " initialize_queue_single: mutexattr destroy");
+  pt_err(pthread_cond_init(& rq->queue_cond, NULL),  __FILE__, __LINE__,   " initialize_queue_single: cond init");
 #endif
   return rq;
 }
@@ -153,8 +153,8 @@ const rule_instance* get_const_rule_instance_single(const rule_queue_single* rq,
 **/
 void destroy_rule_queue_single(rule_queue_single* rq){
 #ifdef HAVE_PTHREAD
-  pt_err( pthread_mutex_destroy(&rq->queue_mutex), "rule_queue_single.c: destroy_rule_queue_single: mutex destroy");
-  pt_err( pthread_cond_destroy(&rq->queue_cond),  "rule_queue_single.c: destroy_rule_queue_single: cond destroy");  
+  pt_err( pthread_mutex_destroy(&rq->queue_mutex), __FILE__, __LINE__,  "destroy_rule_queue_single: mutex destroy");
+  pt_err( pthread_cond_destroy(&rq->queue_cond), __FILE__, __LINE__,   "destroy_rule_queue_single: cond destroy");  
 #endif
   free(rq->queue);
   free(rq);
@@ -198,7 +198,7 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   unsigned int pos;
   assert(test_substitution(sub));
 #ifdef HAVE_PTHREAD
-  lock_queue_single(rq);
+  lock_queue_single(rq, __FILE__, __LINE__);
 #endif
   assert(test_rule_queue_single(rq));
   check_rq_too_small(rq);
@@ -222,8 +222,8 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
   assign_rule_queue_instance(rq, pos, rule, sub, step, ts_store);
   assert(test_rule_queue_single(rq));
 #ifdef HAVE_PTHREAD
-  signal_queue_single(rq);
-  unlock_queue_single(rq);
+  signal_queue_single(rq, __FILE__, __LINE__);
+  unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
   return get_rule_instance_single(rq, pos);
 }
@@ -304,7 +304,7 @@ unsigned int rule_queue_single_previous_application(rule_queue_single* rqs){
 void print_rule_queue_single(rule_queue_single* rq, const constants* cs, FILE* f){
   unsigned int i, j;
 #ifdef HAVE_PTHREAD
-  lock_queue_single(rq);
+  lock_queue_single(rq, __FILE__, __LINE__);
 #endif
   fprintf(f, "queue with %u entries: \n", get_rule_queue_single_size(rq));
   for(j=0, i = rq->first; i < rq->end; i++, j++){
@@ -313,7 +313,7 @@ void print_rule_queue_single(rule_queue_single* rq, const constants* cs, FILE* f
     fprintf(f, "\n");
   }
 #ifdef HAVE_PTHREAD
-  unlock_queue_single(rq);
+  unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
 }
     
