@@ -33,12 +33,17 @@ constants* init_constants(unsigned int init_size){
   new_c->size_constants = init_size;
   new_c->constants = calloc_tester(new_c->size_constants, sizeof(constant));
   new_c->n_constants = 0;
-  
+#ifdef HAVE_PTHREAD
+  pthread_mutex_init(&new_c->constants_mutex, NULL);
+#endif
   return new_c;
 }
 
 void destroy_constants(constants* c){
   free(c->constants);
+#ifdef HAVE_PTHREAD
+  pthread_mutex_destroy(&c->constants_mutex);
+#endif
   free(c);
 }
 
@@ -120,12 +125,16 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
   init_empty_timestamp_linked_list(tmp1, false);
   init_empty_timestamp_linked_list(tmp2, false);
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_lock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+  pt_err(pthread_mutex_lock(& consts->constants_mutex), __FILE__, __LINE__, "union_constants: mutex_lock");
 #endif
   unsigned int c1_root = find_constant_root(c1, consts, tmp1, store, true);
   unsigned int c2_root = find_constant_root(c2, consts, tmp2, store, true);
-  if(c1_root == c2_root) 
+  if(c1_root == c2_root) {
+#ifdef HAVE_PTHREAD
+    pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__, "union_constants: mutex_lock");
+#endif
     return;
+  }
   if(consts->constants[c1_root].rank < consts->constants[c2_root].rank){
     consts->constants[c1_root].parent = c2_root;
     add_equality_timestamp(& consts->constants[c1_root].steps, step, store, true);
@@ -138,7 +147,7 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
       consts->constants[c1_root].rank++;
   }
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_unlock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+  pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__, "union_constants: mutex_lock");
 #endif
   free(tmp1);
   free(tmp2);
@@ -153,28 +162,15 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
    It is assumed that the timestamps are discarded if the constants are unequal
 **/
 bool equal_constants(unsigned int c1, unsigned int c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
-#if false
-  timestamp_linked_list* old_list = ts->list;
-  assert(old_list->prev == NULL);
-#endif
   if(c1 == c2)
     return true;
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_lock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+  pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
 #endif
   unsigned int p1 = find_constant_root(c1, consts, ts, store, update_ts);
   unsigned int p2 = find_constant_root(c2, consts, ts, store, update_ts);
-
-#if false
-  if( update_ts && p1 != p2 ){
-    ts->list = old_list;
-    old_list->prev = NULL;
-    if(old_list == NULL)
-      ts->first = NULL;
-  }
-#endif
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_unlock(& consts->constants_mutex), "__FILE__: __LINE__ union_constants: mutex_lock");
+  pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
 #endif
   return p1 == p2;
 }

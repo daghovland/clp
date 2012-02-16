@@ -84,7 +84,7 @@
 /**
   Uncomment to prevent threading functionality from being built in
 **/
-//#undef HAVE_PTHREAD
+#undef HAVE_PTHREAD
 
 /**
    Uncomment this line to get assertions, which are used for a sort of 

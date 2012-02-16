@@ -70,11 +70,11 @@ void pt_err(int errval, const char* filename, int line, const char* msg){
   if(errval != 0){
     char* err_msg;
     unsigned int msg_len;
-    msg_len = strlen(msg) + strlen(__FILE__) + 20;
+    msg_len = strlen(msg) + strlen(filename) + 20;
     err_msg = malloc(msg_len+1);
-    snprintf(err_msg, msg_len, "%s (line %i): %s", __FILE__, __LINE__, msg);
+    snprintf(err_msg, msg_len, "%s (line %i): %s", filename, line, msg);
     errno = errval;
-    perror(msg);
+    perror(err_msg);
     free(err_msg);
     assert(false);
     exit(EXIT_FAILURE);
