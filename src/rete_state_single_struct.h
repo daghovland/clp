@@ -46,7 +46,7 @@ typedef struct rete_state_single_t {
   substitution_store_mt tmp_subs;
   rule_queue_single ** rule_queues;
   rule_queue_single * history;
-#ifdef HAVE_PTREAD
+#ifdef HAVE_PTHREAD
   rete_worker ** workers;
 #endif
   rete_worker_queue ** worker_queues;
