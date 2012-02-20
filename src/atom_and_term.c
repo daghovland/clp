@@ -144,7 +144,7 @@ void delete_term(term* t){
   free(t);
 }
 
-bool test_ground_term(const term* t){
+bool test_ground_term(const term* t, const constants* cs){
   assert(t != NULL);
   switch(t->type){
   case variable_term:
@@ -152,8 +152,9 @@ bool test_ground_term(const term* t){
     return false;
     break;
   case function_term:
-    assert(test_term_list(t->args));
+    assert(test_term_list(t->args, cs));
   case constant_term:
+    assert(test_constant(t->val.constant, cs));
     break;
   default:
     assert(false);
@@ -161,15 +162,16 @@ bool test_ground_term(const term* t){
   return true;
 }
 
-bool test_term(const term* t){
+bool test_term(const term* t, const constants* cs){
   assert(t != NULL);
   switch(t->type){
   case variable_term:
     assert(strlen(t->val.var->name) > 0);
     break;
   case function_term:
-    assert(test_term_list(t->args));
+    assert(test_term_list(t->args, cs));
   case constant_term:
+    assert(test_constant(t->val.constant, cs));
     break;
   default:
     assert(false);
@@ -177,35 +179,35 @@ bool test_term(const term* t){
   return true;
 }
 
-bool test_term_list(const term_list* tl){
+bool test_term_list(const term_list* tl, const constants* cs){
   unsigned int i;
   assert(tl != NULL);
   assert(tl->n_args <= tl->size_args);
   for(i = 0; i < tl->n_args; i++)
-    assert(test_term(tl->args[i]));
+    assert(test_term(tl->args[i], cs));
   return true;
 }
     
-bool test_ground_term_list(const term_list* tl){
+bool test_ground_term_list(const term_list* tl, const constants* cs){
   unsigned int i;
   assert(tl != NULL);
   assert(tl->n_args <= tl->size_args);
   for(i = 0; i < tl->n_args; i++)
-    assert(test_ground_term(tl->args[i]));
+    assert(test_ground_term(tl->args[i], cs));
   return true;
 }
     
-bool test_atom(const atom* a){
+bool test_atom(const atom* a, const constants* cs){
   assert(test_predicate(a->pred));
-  assert(test_term_list(a->args));
+  assert(test_term_list(a->args, cs));
   assert(a->pred->arity == a->args->n_args);
   return true;
 }
 
     
-bool test_ground_atom(const atom* a){
+bool test_ground_atom(const atom* a, const constants* cs){
   assert(test_predicate(a->pred));
-  assert(test_ground_term_list(a->args));
+  assert(test_ground_term_list(a->args, cs));
   assert(a->pred->arity == a->args->n_args);
   return true;
 }

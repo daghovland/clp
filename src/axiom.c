@@ -164,7 +164,7 @@ freevars* free_axiom_variables(const axiom* axm, freevars* vars){
 /**
    For testing of the axiom basic functionality and sanity
 **/
-bool test_axiom(const axiom* a, size_t no){
+bool test_axiom(const axiom* a, size_t no, const constants* cs){
 #ifndef NDEBUG
   bool found_exist = false;
 #endif
@@ -175,16 +175,16 @@ bool test_axiom(const axiom* a, size_t no){
   switch(a->type){
   case goal:
     assert(a->rhs->n_args == 0);
-    test_conjunction(a->lhs);
+    test_conjunction(a->lhs, cs);
     fv = free_conj_variables(a->lhs, fv);
     break;
   case fact:
     assert(a->lhs->n_args == 1);
-    test_disjunction(a->rhs);
+    test_disjunction(a->rhs, cs);
     break;
   case normal:
-    test_conjunction(a->lhs);
-    test_disjunction(a->rhs);
+    test_conjunction(a->lhs, cs);
+    test_disjunction(a->rhs, cs);
     fv = free_conj_variables(a->lhs, fv);
     break;
   default:

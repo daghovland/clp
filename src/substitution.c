@@ -117,10 +117,10 @@ void init_substitution(substitution* sub, const theory* t, signed int timestamp,
 /**
    Substitution constructor and destructor
 **/
-substitution* create_substitution(const theory* t, signed int timestamp, substitution_store_mt* store, timestamp_store* ts_store){
+substitution* create_substitution(const theory* t, signed int timestamp, substitution_store_mt* store, timestamp_store* ts_store, const constants* cs){
   substitution* ret_val = get_substitution_memory(t->sub_size_info, store);
   init_substitution(ret_val, t, timestamp, ts_store);
-  assert(test_substitution(ret_val));
+  assert(test_substitution(ret_val, cs));
   return ret_val;
 }
 
@@ -129,8 +129,8 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
 **/
-substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store, timestamp_store* ts_store){
-  substitution* sub = create_substitution(t, 1, store, ts_store);
+substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store, timestamp_store* ts_store, const constants* cs){
+  substitution* sub = create_substitution(t, 1, store, ts_store, cs);
   assert(test_substitution(sub));
   return sub;
 }
@@ -312,7 +312,7 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2,
 /**
    Tests that a substitution is correct
 **/
-bool test_substitution(const substitution* sub){
+bool test_substitution(const substitution* sub, const constants* cs){
   unsigned int i, c;
   assert(sub != NULL);
   assert(sub->n_subs <= sub->allvars->n_vars);
@@ -322,7 +322,7 @@ bool test_substitution(const substitution* sub){
     const term* t = get_sub_value(sub, i);
     if(t != NULL){
       c++;
-      assert(test_term(t));
+      assert(test_term(t, cs));
     }
   }
 

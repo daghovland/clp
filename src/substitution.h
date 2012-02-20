@@ -92,7 +92,7 @@ void print_substitution_list(const substitution_list*, const constants*, FILE*);
 
 
 
-bool test_substitution(const substitution*);
+bool test_substitution(const substitution*, const constants*);
 bool test_is_instantiation(const freevars*, const substitution*);
 bool test_is_conj_instantiation(const conjunction*, const substitution*);
 

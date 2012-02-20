@@ -138,19 +138,19 @@ void delete_disjunction(disjunction *disj){
    Basic sanity testing
    Called from main method just after parsing
 **/
-bool test_conjunction(const conjunction* c){
+bool test_conjunction(const conjunction* c, const constants* cs){
   unsigned int i;
   assert(c->n_args <= c->size_args);
   for(i = 0; i < c->n_args; i++)
-    test_atom(c->args[i]);
+    test_atom(c->args[i], cs);
   return true;
 }
 
-bool test_disjunction(const disjunction* d){
+bool test_disjunction(const disjunction* d, const constants* cs){
   unsigned int i;
   assert(d->n_args <= d->size_args);
   for(i = 0; i < d->n_args; i++)
-    assert(test_conjunction(d->args[i]));
+    assert(test_conjunction(d->args[i], cs));
   return true;
 }
 

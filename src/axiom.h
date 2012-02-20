@@ -59,7 +59,7 @@ axiom* create_negative(conjunction*);
 
 void set_axiom_name(axiom*, const char*);
 
-bool test_axiom(const axiom*, size_t);
+bool test_axiom(const axiom*, size_t, const constants*);
 
 void delete_axiom(axiom*);
 

@@ -40,8 +40,8 @@ atom* prover_create_atom(const predicate*, const term_list*);
 void delete_atom(atom*);
 freevars* free_atom_variables(const atom*, freevars*);
 
-bool test_atom(const atom*);
-bool test_ground_atom(const atom*);
+bool test_atom(const atom*, const constants*);
+bool test_ground_atom(const atom*, const constants*);
 
 void print_fol_atom(const atom*, const constants*, FILE*);
 void print_coq_atom(const atom*, const constants*, FILE*);

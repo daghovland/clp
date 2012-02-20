@@ -34,14 +34,14 @@
    that introduced the facts nevessary for the instances.
    TODO: Not finished.
 **/
-bool test_rule_substitution(const axiom* rule, const substitution* sub){
+bool test_rule_substitution(const axiom* rule, const substitution* sub, const constants* cs){
   unsigned int i = 0;
   timestamps_iter iter = get_timestamps_iter(& sub->sub_ts);
   while(has_next_timestamps_iter(&iter)){
     assert(i < rule->lhs->n_args);
     timestamp ts = get_next_timestamps_iter(&iter);
     const term* val = get_sub_value(sub,i);
-    if(val != NULL && !test_term(val))
+    if(val != NULL && !test_term(val, cs))
       return false;
     if(ts.step < 0) 
       return false;

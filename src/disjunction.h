@@ -36,7 +36,7 @@ disjunction* create_disjunction(conjunction*);
 disjunction* create_empty_disjunction(void);
 disjunction* extend_disjunction(disjunction*, conjunction*);
 
-bool test_disjunction(const disjunction*);
+bool test_disjunction(const disjunction*, const constants*);
 
 void delete_disjunction(disjunction*);
 

@@ -49,4 +49,6 @@ bool constants_iter_has_next(constants*, constants_iter*);
 constant* constants_iter_get_next(constants*, constants_iter*);
 void destroy_constants_iter(constants_iter);
 
+bool test_constant(unsigned int i , const constants*);
+
 #endif

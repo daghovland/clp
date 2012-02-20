@@ -60,6 +60,7 @@ constants* copy_constants(const constants * orig, timestamp_store* ts_store){
 }
 
 const char* get_constant_name(unsigned int c, const constants* cs){
+  assert(c < cs->n_constants);
   return cs->constants[c].name;
 }
 
@@ -216,6 +217,11 @@ unsigned int parser_new_constant(constants* cs, const char* new){
       return i;
   }
   return insert_constant_name(cs, new);
+}
+
+bool test_constant(unsigned int i, const constants* cs){
+  assert(i < cs->n_constants);
+  return true;
 }
 
 /**

@@ -41,7 +41,7 @@ conjunction* extend_conjunction(conjunction*, const atom*);
 void delete_conjunction(conjunction*);
 freevars* free_conj_variables(const conjunction*, freevars*);
 
-bool test_conjunction(const conjunction*);
+bool test_conjunction(const conjunction*, const constants*);
 
 void print_fol_conj(const conjunction*, const constants*, FILE*);
 void print_clpl_conj(const conjunction*, const constants*, FILE*);
