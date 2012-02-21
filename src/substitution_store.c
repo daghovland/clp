@@ -55,9 +55,9 @@ unsigned int alloc_store_substitution(substitution_store* store){
 /**
   Adds a copy of the substitution and all its substructures to the store
 **/
-void push_substitution_sub_store(substitution_store* store, const substitution* new_sub, timestamp_store* ts_store){
+void push_substitution_sub_store(substitution_store* store, const substitution* new_sub, timestamp_store* ts_store, const constants* cs){
   unsigned int sub_no = alloc_store_substitution(store);
-  copy_substitution_struct(get_substitution(sub_no, store), new_sub, store->ssi, ts_store, false);
+  copy_substitution_struct(get_substitution(sub_no, store), new_sub, store->ssi, ts_store, false, cs);
 }
 
 substitution* get_substitution(unsigned int i, substitution_store* store){

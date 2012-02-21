@@ -38,8 +38,14 @@
 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure 
 **/
+typedef struct dom_elem_t {
+  char* name;
+  unsigned int id;
+} dom_elem;
+
+
 typedef struct constant_t {
-  const char* name;
+  dom_elem elem;
   timestamps steps;
   unsigned int parent;
   unsigned int rank;

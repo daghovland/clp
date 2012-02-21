@@ -52,10 +52,10 @@ typedef substitution_list* sub_list_iter;
 substitution* create_empty_substitution(const theory*, substitution_store_mt*);
 void init_empty_substitution(substitution*, const theory*);
 void init_substitution(substitution*, const theory*, signed int, timestamp_store*);
-substitution* create_substitution(const theory*, signed int, substitution_store_mt*, timestamp_store*);
-substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info, timestamp_store*);
-void copy_substitution_struct(substitution*, const substitution*, substitution_size_info, timestamp_store*, bool permanent);
-substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*, timestamp_store*);
+substitution* create_substitution(const theory*, signed int, substitution_store_mt*, timestamp_store*, const constants* cs);
+substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info, timestamp_store*, const constants*);
+void copy_substitution_struct(substitution*, const substitution*, substitution_size_info, timestamp_store*, bool permanent, const constants*);
+substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*, timestamp_store*, const constants* cs);
 
 unsigned int get_sub_n_timestamps(const substitution*);
 timestamps_iter get_sub_timestamps_iter(const substitution*);
@@ -70,9 +70,9 @@ void free_sub_list_iter(sub_list_iter*);
 
 void free_substitution(substitution*);
 //void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);
-const term* find_substitution(const substitution*, const variable*);
+const term* find_substitution(const substitution*, const variable*, const constants*);
 bool add_substitution(substitution*, variable*, const term*, constants*, timestamp_store*, bool update_ts);
-void insert_substitution_value(substitution*, variable*, const term*);
+void insert_substitution_value(substitution*, variable*, const term*, const constants*);
 bool unify_substitution_terms(const term*, const term*, substitution*, constants*, timestamp_store*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*, constants*, timestamp_store*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);
@@ -93,7 +93,6 @@ void print_substitution_list(const substitution_list*, const constants*, FILE*);
 
 
 bool test_substitution(const substitution*, const constants*);
-bool test_is_instantiation(const freevars*, const substitution*);
-bool test_is_conj_instantiation(const conjunction*, const substitution*);
+bool test_is_instantiation(const freevars*, const substitution*, const constants*);
 
 #endif

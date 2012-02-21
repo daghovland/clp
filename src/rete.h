@@ -159,8 +159,6 @@ void add_rule_to_queue(const axiom*, const substitution*, rete_net_state*);
 bool is_empty_axiom_rule_queue(rete_net_state*, unsigned int);
 bool is_empty_axiom_rule_queue_state(rule_queue_state, unsigned int);
 
-const term* find_substitution(const substitution*, const variable*);
-
 void print_rete_state(const rete_net_state*, FILE*);
 void print_dot_rete_state_net(const rete_net*, const rete_net_state*, FILE*);
 

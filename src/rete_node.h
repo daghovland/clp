@@ -79,9 +79,9 @@ struct rete_node_t {
     } alpha;
     struct beta_t {
       const struct rete_node_t* right_parent;
-      size_t a_store_no;
-      size_t a_store_used_no;
-      size_t b_store_no;
+      unsigned int a_store_no;
+      unsigned int a_store_used_no;
+      unsigned int b_store_no;
     } beta;
     struct equality_t {
       const term* t1;

@@ -118,7 +118,7 @@ term* parser_create_constant_term(theory* th, const char* name){
    Called from constants.c to get a new term.
    The number is already ok.
 **/
-term* prover_create_constant_term(unsigned int constant){
+term* prover_create_constant_term(dom_elem constant){
   term* t = _init_term(constant_term, _create_term_list(0));
   t->val.constant = constant;
   return t;

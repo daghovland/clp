@@ -22,8 +22,8 @@
 #include "rule_instance.h"
 #include "substitution.h"
 
-void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store, bool permanent){
-  copy_substitution_struct(& dest->sub, & orig->sub, ssi, ts_store, permanent);
+void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store, bool permanent, const constants* cs){
+  copy_substitution_struct(& dest->sub, & orig->sub, ssi, ts_store, permanent, cs);
   dest->rule = orig->rule;
   dest->timestamp = orig->timestamp;
   dest->used_in_proof = orig->used_in_proof;
@@ -35,9 +35,9 @@ void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, s
   When the prover changes "used_in_proof" to true, it must copy the rule instance, 
   as the other copies must not be changed
 */
-rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store){
+rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store, const constants* cs){
   rule_instance* copy = malloc_tester(get_size_rule_instance(ssi));
-  copy_rule_instance_struct(copy, orig, ssi, ts_store, false);
+  copy_rule_instance_struct(copy, orig, ssi, ts_store, false, cs);
   return copy;
 }
 
@@ -49,16 +49,16 @@ rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_i
    Only used when commandline option fact-set is on, 
    that is, when RETE is not used
 **/
-rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi, timestamp_store* ts_store){
+rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi, timestamp_store* ts_store, const constants* cs){
   rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));
 
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
   
   // The timestamp on rule instances is only used by RETE. Otherwise, rule instances are immediately added to the factset
   ins->timestamp = 0;
   ins->rule = rule;
 
-  copy_substitution_struct(&(ins->sub), sub, ssi, ts_store, false);
+  copy_substitution_struct(&(ins->sub), sub, ssi, ts_store, false, cs);
   ins->used_in_proof = false;
   return ins;
 }
@@ -82,11 +82,11 @@ void delete_dummy_rule_instance(rule_instance* ri){
 
 // Basic sanity testing
 
-bool test_rule_instance(const rule_instance* ri){
+bool test_rule_instance(const rule_instance* ri, const constants* cs){
   assert(ri != NULL);
   assert(ri->rule != NULL);
-  assert(test_substitution(& ri->sub));
-  assert(test_axiom(ri->rule, ri->rule->axiom_no));
+  assert(test_substitution(& ri->sub, cs));
+  assert(test_axiom(ri->rule, ri->rule->axiom_no, cs));
 #if false  
   if(!test_is_instantiation(ri->rule->rhs->free_vars, & (ri->sub))){
     fprintf(stderr, "An incorrect rule instance added to the queue\n");

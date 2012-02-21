@@ -59,13 +59,13 @@ rete_state_single* create_rete_state_single(const rete_net* net, bool verbose){
   state->workers = calloc_tester(net->th->n_axioms, sizeof(rete_worker*));
 #endif
   for(i = 0; i < net->th->n_axioms; i++){
-    state->rule_queues[i] = initialize_queue_single(ssi, i, false);
+    state->rule_queues[i] = initialize_queue_single(ssi, i, false, false);
     state->worker_queues[i] = init_rete_worker_queue();
 #ifdef HAVE_PTHREAD
-    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs, state->timestamp_store,  state->rule_queues[i], state->worker_queues[i], state->constants);
+    state->workers[i] = init_rete_worker(state->net, i, & state->tmp_subs, state->node_subs, state->timestamp_store,  state->rule_queues[i], state->worker_queues[i], & state->constants);
 #endif
   }
-  state->history = initialize_queue_single(ssi, 0, true);
+  state->history = initialize_queue_single(ssi, 0, true, true);
   state->factsets = calloc_tester(net->th->n_predicates, sizeof(fact_store));
   state->new_facts_iters = calloc_tester(net->th->n_predicates, sizeof(fact_store_iter));
   for(i = 0; i < net->th->n_predicates; i++){
@@ -174,9 +174,8 @@ void destroy_rete_backup(rete_state_backup* backup){
   free(backup->worker_backups);
 }
 
-rete_state_single* restore_rete_state(rete_state_backup* backup){
+void restore_rete_state(rete_state_backup* backup, rete_state_single* state){
   unsigned int i;
-  rete_state_single* state = backup->state;
 #ifdef HAVE_PTHREAD
   for(i = 0; i < state->net->th->n_axioms; i++)
     pause_rete_worker(state->workers[i]);
@@ -201,7 +200,6 @@ rete_state_single* restore_rete_state(rete_state_backup* backup){
   for(i = 0; i < state->net->th->n_axioms; i++)
     continue_rete_worker(state->workers[i]);
 #endif
-  return backup->state;
 }
 
 
@@ -257,7 +255,7 @@ bool test_rete_state(rete_state_single* state){
 #ifdef HAVE_PTHREAD
     lock_queue_single(rq, __FILE__, __LINE__);
 #endif
-    assert(test_rule_queue_single(rq));
+    assert(test_rule_queue_single(rq, state->constants));
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
@@ -301,24 +299,25 @@ rule_instance* transfer_from_rule_queue_to_history(rete_state_single* state, siz
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq, __FILE__, __LINE__);
 #endif
-  ri = pop_rule_queue_single(rq, get_state_step_no_single(state));
+  ri = pop_rule_queue_single(rq, get_state_step_no_single(state), state->constants);
   next = insert_rule_instance_history_single(state, ri);
 #ifdef HAVE_PTHREAD
   unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
-  assert(test_rule_instance(next));
+  assert(test_rule_instance(next, state->constants));
   return next;
 }
 
 void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
   rete_state_single* state = rqs.single;
-  assert(test_is_instantiation(rule->rhs->free_vars, sub));
+  assert(test_is_instantiation(rule->rhs->free_vars, sub, state->constants));
   push_rule_instance_single((state->rule_queues[rule->axiom_no])
                             , rule
                             , sub
                             , get_state_step_no_single(state)
                             , state->net->strat == clpl_strategy
 			    , state->timestamp_store
+			    , state->constants
                             );
 }
 
@@ -335,7 +334,7 @@ bool is_empty_axiom_rule_queue_single_state(rete_state_single* state, size_t axi
 }
 
 rule_instance* peek_axiom_rule_queue_single_state(rete_state_single * state, size_t axiom_no){
-  return peek_rule_queue_single(state->rule_queues[axiom_no]);
+  return peek_rule_queue_single(state->rule_queues[axiom_no], state->constants);
 }
 
 
@@ -359,7 +358,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
 
   while(!found_true && has_next_fact_store(&iter)){
     const atom* fact = get_next_fact_store(&iter);
-    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store, false);
+    copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store, false, state->constants);
     if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, state->constants)){
       if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
 	found_true = true;
@@ -405,11 +404,11 @@ rule_instance* insert_rule_instance_history_single(rete_state_single* state, con
 #ifndef NDEBUG
     fprintf(stderr, "Pushing dummy rule instance on history for step %i\n", step);
 #endif
-    push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
+    push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store, state->constants);
   }
-  assert(test_rule_instance(ri));
-  assert(test_rule_queue_single(state->rule_queues[ri->rule->axiom_no]));
-  return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store);
+  assert(test_rule_instance(ri, state->constants));
+  assert(test_rule_queue_single(state->rule_queues[ri->rule->axiom_no], state->constants));
+  return push_rule_instance_single(state->history, ri->rule, & ri->sub, step, false, state->timestamp_store, state->constants);
 }
 
 rule_instance* get_historic_rule_instance(rete_state_single* state, unsigned int step_no){
@@ -484,7 +483,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
     } else {
 #endif
       rule_instance* ri = peek_axiom_rule_queue_single_state(state, axiom_no);
-      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store, false);
+      copy_substitution_struct(tmp_sub, &ri->sub, state->net->th->sub_size_info, state->timestamp_store, false, state->constants);
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq, __FILE__, __LINE__);
 #endif
@@ -495,7 +494,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
 #ifdef HAVE_PTHREAD
       lock_queue_single(rq, __FILE__, __LINE__);
 #endif
-      pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state));
+      pop_rule_queue_single(state->rule_queues[axiom_no], get_state_step_no_single(state), state->constants);
 #ifdef HAVE_PTHREAD
       unlock_queue_single(rq, __FILE__, __LINE__);
     }
@@ -523,7 +522,7 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
   substitution * tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
   unsigned int step = get_state_step_no_single(state);
-  assert(test_atom(fact));
+  assert(test_atom(fact, state->constants));
   assert(sel != NULL && sel->val.selector == fact->pred);
   for(i = 0; i < sel->n_children; i++){
     const rete_node* child = sel->children[i];
@@ -607,7 +606,7 @@ unsigned int rule_queue_possible_age_single_state(rete_state_single* state, unsi
   lock_queue_single(rq, __FILE__, __LINE__);
 #endif
   if(!rule_queue_single_is_empty(rq)){
-    rule_instance * ri = peek_rule_queue_single(rq);
+    rule_instance * ri = peek_rule_queue_single(rq, state->constants);
     age = ri->timestamp;
   } else {
 #ifdef HAVE_PTHREAD

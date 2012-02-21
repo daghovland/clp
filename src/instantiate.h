@@ -36,16 +36,16 @@
 /**
    Tests that a substitution has a value for all variables in the conjunction
 **/
-bool test_is_conj_instantiation(const conjunction* a, const substitution* sub);
-const term* instantiate_term(const term* orig, const substitution* sub);
+bool test_is_conj_instantiation(const conjunction* a, const substitution* sub, const constants*);
+const term* instantiate_term(const term* orig, const substitution* sub, const constants*);
 void delete_instantiated_term(term* copy);
-const term_list* instantiate_term_list(const term_list* orig, const substitution* sub);
+const term_list* instantiate_term_list(const term_list* orig, const substitution* sub, const constants*);
 void delete_instantiated_term_list(term_list* copy);
-bool test_is_atom_instantiation(const atom* a, const substitution* sub);
-atom* instantiate_atom(const atom* orig, const substitution* sub);
+bool test_is_atom_instantiation(const atom* a, const substitution* sub, const constants*);
+atom* instantiate_atom(const atom* orig, const substitution* sub, const constants*);
 void delete_instantiated_atom(atom* copy);
 const term* get_fresh_constant(variable* var, constants* constants);
 void fresh_exist_constants(const conjunction* con, substitution* sub, constants* constants);
-bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants* cs);
+bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants*);
 
 #endif

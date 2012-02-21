@@ -222,7 +222,7 @@ rule_instance* choose_next_instance(rule_queue_state state
     fprintf(stderr, "Unknown strategy %i\n", strat);
     exit(EXIT_FAILURE);
   }
-  assert(ri == NULL || test_rule_instance(ri));
+  assert(ri == NULL || test_rule_instance(ri, state.single->constants));
   return ri;
 }
 

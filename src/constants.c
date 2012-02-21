@@ -59,15 +59,14 @@ constants* copy_constants(const constants * orig, timestamp_store* ts_store){
   return copy;
 }
 
-const char* get_constant_name(unsigned int c, const constants* cs){
-  assert(c < cs->n_constants);
-  return cs->constants[c].name;
+const char* get_constant_name(dom_elem c, const constants* cs){
+  return c.name;
 }
 
 /**
    
 **/
-unsigned int insert_constant_name(constants * consts, const char* name){
+dom_elem insert_constant_name(constants * consts, const char* name){
   unsigned int new_const_ind;
   constant* new_c;
   assert(name != NULL && strlen(name) > 0);
@@ -78,19 +77,20 @@ unsigned int insert_constant_name(constants * consts, const char* name){
     consts->constants = realloc_tester(consts->constants, consts->size_constants * sizeof(constant));
   }
   new_c = & consts->constants[new_const_ind];
-  new_c->name = malloc_tester(strlen(name)+2);
-  strcpy((char*) new_c->name, name);
+  new_c->elem.name = malloc_tester(strlen(name)+2);
+  strcpy((char*) new_c->elem.name, name);
   new_c->rank = 0;
   new_c->parent = new_const_ind;
+  new_c->elem.id = new_const_ind;
   init_empty_timestamp_linked_list(& new_c->steps, false);
-  return new_const_ind;
+  return new_c->elem;
 }
 
 /**
    Creates a new domain element. Called from instantiate.c
 **/
 const term* get_fresh_constant(variable* var, constants* constants){
-  unsigned int new_const_ind;
+  dom_elem new_const;
   char* name;
   const term* t;
   assert(constants->fresh != NULL);
@@ -98,8 +98,8 @@ const term* get_fresh_constant(variable* var, constants* constants){
   constants->n_constants ++;
   name = calloc_tester(sizeof(char), strlen(var->name) + 20);
   sprintf(name, "%s_%i", var->name, const_no);
-  new_const_ind = insert_constant_name(constants, name);
-  t = prover_create_constant_term(new_const_ind);
+  new_const = insert_constant_name(constants, name);
+  t = prover_create_constant_term(new_const);
   return t;
 }
 
@@ -120,7 +120,7 @@ unsigned int find_constant_root(unsigned int c, constants* cs, timestamps* ts, t
    Part of union-find alg. 
    http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 **/
-void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsigned int step, timestamp_store* store){
+void union_constants(dom_elem c1, dom_elem c2, constants* consts, unsigned int step, timestamp_store* store){
   timestamps * tmp1 = malloc_tester(sizeof(timestamps));
   timestamps* tmp2 = malloc_tester(sizeof(timestamps));
   init_empty_timestamp_linked_list(tmp1, false);
@@ -128,8 +128,8 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& consts->constants_mutex), __FILE__, __LINE__, "union_constants: mutex_lock");
 #endif
-  unsigned int c1_root = find_constant_root(c1, consts, tmp1, store, true);
-  unsigned int c2_root = find_constant_root(c2, consts, tmp2, store, true);
+  unsigned int c1_root = find_constant_root(c1.id, consts, tmp1, store, true);
+  unsigned int c2_root = find_constant_root(c2.id, consts, tmp2, store, true);
   if(c1_root == c2_root) {
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__, "union_constants: mutex_lock");
@@ -162,14 +162,14 @@ void union_constants(unsigned int c1, unsigned int c2, constants* consts, unsign
    If update_ts is true, the timestamps of the steps needed to infer the equality are added to ts, even if they are not equal
    It is assumed that the timestamps are discarded if the constants are unequal
 **/
-bool equal_constants(unsigned int c1, unsigned int c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
-  if(c1 == c2)
+bool equal_constants(dom_elem c1, dom_elem c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
+  if(c1.id == c2.id)
     return true;
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
 #endif
-  unsigned int p1 = find_constant_root(c1, consts, ts, store, update_ts);
-  unsigned int p2 = find_constant_root(c2, consts, ts, store, update_ts);
+  unsigned int p1 = find_constant_root(c1.id, consts, ts, store, update_ts);
+  unsigned int p2 = find_constant_root(c2.id, consts, ts, store, update_ts);
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
 #endif
@@ -209,18 +209,20 @@ void destroy_constants_iter(constants_iter iter){
    Called from the parser (via create_constant_term in atom_and_term.c) 
    when seeing a constant
 **/
-unsigned int parser_new_constant(constants* cs, const char* new){
+dom_elem parser_new_constant(constants* cs, const char* new){
   unsigned int i;
   for(i = 0; i < cs->n_constants; i++){
     constant c = cs->constants[i];
-    if(strcmp(c.name, new) == 0)
-      return i;
+    if(strcmp(c.elem.name, new) == 0)
+      return c.elem;
   }
   return insert_constant_name(cs, new);
 }
 
-bool test_constant(unsigned int i, const constants* cs){
-  assert(i < cs->n_constants);
+bool test_constant(dom_elem c, const constants* cs){
+  assert(cs->size_constants > 0);
+  assert(cs->constants != NULL);
+  assert(c.id < cs->n_constants);
   return true;
 }
 
@@ -243,7 +245,7 @@ void print_all_constants(constants* cs, FILE* stream){
       unsigned int j;
       fprintf(stream, "{");
       for(j = 0; j < size_partition[i]; j++)
-	fprintf(stream, "%s ", cs->constants[partitions[i][j]].name);
+	fprintf(stream, "%s ", cs->constants[partitions[i][j]].elem.name);
       fprintf(stream, "}");
     }
   }
@@ -256,11 +258,11 @@ void print_coq_constants(const constants* cs, FILE* stream){
   if(cs->n_constants > 0){
     fprintf(stream, "Variables ");
     for(i = 0; i < cs->n_constants; i++){
-      char first = cs->constants[i].name[0];
+      char first = cs->constants[i].elem.name[0];
       if(first - '0' >= 0 && first - '0' <= 9)
-	fprintf(stream, "num_%s ", cs->constants[i].name);
+	fprintf(stream, "num_%s ", cs->constants[i].elem.name);
       else
-	fprintf(stream, "%s ", cs->constants[i].name);
+	fprintf(stream, "%s ", cs->constants[i].elem.name);
     }
     fprintf(stream, ": %s.\n", DOMAIN_SET_NAME);
   }

@@ -62,7 +62,7 @@ typedef struct sub_store_iter_t {
 substitution_store init_substitution_store(substitution_size_info);
 void destroy_substitution_store(substitution_store*);
 unsigned int alloc_store_substitution(substitution_store*);
-void push_substitution_sub_store(substitution_store*, const substitution*, timestamp_store*);
+void push_substitution_sub_store(substitution_store*, const substitution*, timestamp_store*, const constants* cs);
 substitution* get_substitution(unsigned int, substitution_store*);
 
 sub_store_iter get_sub_store_iter(substitution_store*);

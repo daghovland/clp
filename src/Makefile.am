@@ -49,7 +49,7 @@ check_clp.sh:
 	echo "./clpmemdebug -q $(srcdir)/anc.in" >> $(check_SCRIPTS)
 	echo "coqc anc.v" >> $(check_SCRIPTS)	
 	echo "rm anc.v anc.vo" >> $(check_SCRIPTS)
-	echo "./clpdebug -n $(srcdir)/nl.in" >> $(check_SCRIPTS)
+	echo "./clpdebug $(srcdir)/nl.in" >> $(check_SCRIPTS)
 	chmod +x $(check_SCRIPTS)
 CLEANFILES = $(check_SCRIPTS) geolog_parser.h clpl_parser.h geolog_parser.c clpl_parser.c geolog_parser.tab.h clpl_parser.tab.h geolog_parser.tab.c clpl_parser.tab.c y.tab.c y.tab.h clpl.c geolog.c
 

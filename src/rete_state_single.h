@@ -38,7 +38,7 @@ rule_instance* choose_next_instance_single(rete_state_single*);
 rule_instance* insert_rule_instance_history_single(rete_state_single* state, const rule_instance*);
 rete_state_backup backup_rete_state(rete_state_single*);
 void destroy_rete_backup(rete_state_backup*);
-rete_state_single* restore_rete_state(rete_state_backup*);
+void restore_rete_state(rete_state_backup*, rete_state_single*);
 
 void check_used_rule_instances_coq_single(rule_instance*, rete_state_single*, proof_branch*, timestamp, timestamp);
 rule_instance* get_historic_rule_instance(rete_state_single*, unsigned int);

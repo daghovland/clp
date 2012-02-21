@@ -54,6 +54,7 @@ typedef struct rule_queue_single_t {
   size_t first;
   size_t end;
   unsigned int axiom_no;
+  bool multi_rule_queue;
   unsigned int previous_appl;
   unsigned int n_appl;
   substitution_size_info ssi;
@@ -67,12 +68,12 @@ typedef struct rule_queue_single_backup_t {
   unsigned int n_appl;
 } rule_queue_single_backup;
 
-rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int, bool permanent);
+rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int, bool permanent, bool multi_rule_queue);
 void destroy_rule_queue_single(rule_queue_single*);
 
-rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool, timestamp_store*);
-rule_instance* pop_rule_queue_single(rule_queue_single*, unsigned int);
-rule_instance* peek_rule_queue_single(rule_queue_single*);
+rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool, timestamp_store*, const constants*);
+rule_instance* pop_rule_queue_single(rule_queue_single*, unsigned int, const constants*);
+rule_instance* peek_rule_queue_single(rule_queue_single*, const constants*);
 rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);
 
 
@@ -83,7 +84,7 @@ void lock_queue_single(rule_queue_single*, const char*, int);
 void unlock_queue_single(rule_queue_single*, const char*, int);
 
 
-unsigned int rule_queue_single_age(rule_queue_single*);
+unsigned int rule_queue_single_age(rule_queue_single*, const constants*);
 unsigned int rule_queue_single_previous_application(rule_queue_single*);
 
 rule_queue_single_backup backup_rule_queue_single(rule_queue_single*);
@@ -91,6 +92,8 @@ rule_queue_single* restore_rule_queue_single(rule_queue_single*, rule_queue_sing
 
 bool rule_queue_single_is_empty(rule_queue_single*);
 unsigned int get_rule_queue_single_size(const rule_queue_single*);
+
+bool test_rule_queue_single(rule_queue_single*, const constants*);
 
 void print_rule_queue_single(rule_queue_single*, const constants*, FILE*);
 #endif

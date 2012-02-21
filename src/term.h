@@ -45,7 +45,7 @@ struct term_t {
   union {
     const char* function;
     variable* var;
-    unsigned int constant;
+    dom_elem  constant;
   } val;
   enum term_type type;
   const struct term_list_t * args;
@@ -58,7 +58,7 @@ typedef struct term_list_t term_list;
 
 
 term* create_function_term(const char*, const term_list*);
-term* prover_create_constant_term(unsigned int);
+term* prover_create_constant_term(dom_elem);
 
 term* copy_term(const term*);
 term_list* copy_term_list(const term_list*);

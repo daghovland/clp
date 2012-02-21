@@ -99,7 +99,7 @@ void check_rq_too_small(rule_queue_single* rq){
 
    The axiom_no is only for debugging purposes
  **/
-rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no, bool permanent){
+rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned int axiom_no, bool permanent, bool multi_rule_queue){
   rule_queue_single* rq = malloc_tester(sizeof(rule_queue_single));
   rq->size_queue = RULE_QUEUE_INIT_SIZE;
   rq->queue = malloc_tester(get_rq_size_t(rq->size_queue, ssi));
@@ -107,6 +107,7 @@ rule_queue_single* initialize_queue_single(substitution_size_info ssi, unsigned 
   pthread_mutexattr_t mutex_attr;
 #endif
   rq->ssi = ssi;
+  rq->multi_rule_queue = multi_rule_queue;
   rq->first = 0;
   rq->end = 0;
   rq->previous_appl = 0;
@@ -163,11 +164,11 @@ void destroy_rule_queue_single(rule_queue_single* rq){
 /**
    Assigns position pos in the rule queue the according values.
 **/
-void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step, timestamp_store* ts_store){
+void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step, timestamp_store* ts_store, const constants* cs){
   assert(pos < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
-  copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store, rq->permanent);
+  copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store, rq->permanent, cs);
   ri->timestamp = step;
   ri->used_in_proof = false;
 }
@@ -177,15 +178,20 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const a
    Only for serious debugging
 
    The queue _must_ be locked before testing.
+
+   Assumes that rule is NULL if the queue takes several axioms
 **/
-bool test_rule_queue_single(rule_queue_single* rq){
+bool test_rule_queue_single(rule_queue_single* rq, const constants* cs){
   unsigned int i;
   assert(rq->first <= rq->end);
   for(i = rq->first; i < rq->end; i++){
 #ifndef NDEBUG
     rule_instance* ri = get_rule_instance_single(rq, i);
 #endif
-    assert(test_rule_instance(ri));
+    if(!rq->multi_rule_queue){
+      assert(ri->rule->axiom_no == rq->axiom_no);
+      assert(test_rule_instance(ri, cs));
+    }
   }
   return true;
 }
@@ -194,15 +200,15 @@ bool test_rule_queue_single(rule_queue_single* rq){
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store){
+rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store, const constants* cs){
   unsigned int pos;
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq, __FILE__, __LINE__);
 #endif
-  assert(test_rule_queue_single(rq));
+  assert(test_rule_queue_single(rq, cs));
   check_rq_too_small(rq);
-  assert(test_rule_queue_single(rq));
+  assert(test_rule_queue_single(rq, cs));
   if(clpl_sorted){
     for(pos = rq->end
 	  ; pos > rq->first 
@@ -214,13 +220,14 @@ rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* ru
 				, rq->ssi
 				, ts_store
 				, rq->permanent
+				, cs
 				);
   } else
     pos = rq->end;
-  assert(test_rule_queue_single(rq));
+  assert(test_rule_queue_single(rq, cs));
   __sync_add_and_fetch(& rq->end, 1);
-  assign_rule_queue_instance(rq, pos, rule, sub, step, ts_store);
-  assert(test_rule_queue_single(rq));
+  assign_rule_queue_instance(rq, pos, rule, sub, step, ts_store, cs);
+  assert(test_rule_queue_single(rq, cs));
 #ifdef HAVE_PTHREAD
   signal_queue_single(rq, __FILE__, __LINE__);
   unlock_queue_single(rq, __FILE__, __LINE__);
@@ -240,18 +247,18 @@ bool rule_queue_single_is_empty(rule_queue_single* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-rule_instance* peek_rule_queue_single(rule_queue_single* rq){
+rule_instance* peek_rule_queue_single(rule_queue_single* rq, const constants* cs){
   assert(rq->first < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, rq->first);
-  assert(test_rule_instance(ri));
+  assert(test_rule_instance(ri, cs));
   return ri;
 }
 
 /**
    Returns timestamp of oldest rule instance
 **/
-unsigned int rule_queue_single_age(rule_queue_single* rq){
-  return (peek_rule_queue_single(rq))->timestamp;
+unsigned int rule_queue_single_age(rule_queue_single* rq, const constants* cs){
+  return (peek_rule_queue_single(rq, cs))->timestamp;
 }
 
 
@@ -262,9 +269,9 @@ unsigned int rule_queue_single_age(rule_queue_single* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-rule_instance* pop_rule_queue_single(rule_queue_single* rq, unsigned int step){
-  rule_instance* ri = peek_rule_queue_single(rq);
-  assert(test_rule_instance(ri));
+rule_instance* pop_rule_queue_single(rule_queue_single* rq, unsigned int step, const constants* cs){
+  rule_instance* ri = peek_rule_queue_single(rq, cs);
+  assert(test_rule_instance(ri, cs));
   assert(rq->end > rq->first);
   rq->first++;
   rq->n_appl++;

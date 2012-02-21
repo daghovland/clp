@@ -34,10 +34,10 @@
 /**
    Tests that a substitution has a value for all variables in the conjunction
 **/
-bool test_is_conj_instantiation(const conjunction* a, const substitution* sub){
+bool test_is_conj_instantiation(const conjunction* a, const substitution* sub, const constants* cs){
   freevars* fv = init_freevars();
   fv = free_conj_variables(a, fv);
-  assert(test_is_instantiation(fv, sub));
+  assert(test_is_instantiation(fv, sub, cs));
   del_freevars(fv);
   return true;
 }
@@ -46,24 +46,24 @@ bool test_is_conj_instantiation(const conjunction* a, const substitution* sub){
 /**
    Instantiating an atom with a substitution
 **/
-const term* instantiate_term(const term* orig, const substitution* sub){
+const term* instantiate_term(const term* orig, const substitution* sub, const constants* cs){
   const term* t;
   switch(orig->type){
   case constant_term: 
     t = orig;
     break;
   case variable_term:
-    t = find_substitution(sub, orig->val.var);
+    t = find_substitution(sub, orig->val.var, cs);
     break;
   case function_term: 
-    t =  create_function_term(orig->val.function, instantiate_term_list(orig->args, sub));
+    t =  create_function_term(orig->val.function, instantiate_term_list(orig->args, sub, cs));
     break;
   default:
     fprintf(stderr, "Unknown term type %i occurred\n", orig->type);
     exit(EXIT_FAILURE);
     assert(false);
   }
-  assert(test_term(t));
+  assert(test_term(t, cs));
   return t;
 }
 
@@ -89,13 +89,14 @@ void delete_instantiated_term(term* copy){
 
 
 const term_list* instantiate_term_list(const term_list* orig, 
-				       const substitution* sub){
+				       const substitution* sub,
+				       const constants* cs){
   unsigned int i;
-  const term * t = instantiate_term(orig->args[0], sub);
+  const term * t = instantiate_term(orig->args[0], sub, cs);
   term_list* retval = create_term_list(t);
   for(i = 1; i < orig->n_args; i++)
-    extend_term_list(retval, instantiate_term(orig->args[i], sub));
-  assert(test_term_list(retval));
+    extend_term_list(retval, instantiate_term(orig->args[i], sub, cs));
+  assert(test_term_list(retval, cs));
   return retval;
 }
 
@@ -118,23 +119,23 @@ void delete_instantiated_term_list(term_list* copy){
 /**
    Tests that a substitution has a value for all variables in the atom
 **/
-bool test_is_atom_instantiation(const atom* a, const substitution* sub){
+bool test_is_atom_instantiation(const atom* a, const substitution* sub, const constants* cs){
   freevars* fv = init_freevars();
   fv = free_atom_variables(a, fv);
-  assert(test_is_instantiation(fv, sub));
+  assert(test_is_instantiation(fv, sub, cs));
   del_freevars(fv);
   return true;
 }
 
-atom* instantiate_atom(const atom* orig, const substitution* sub){
-  assert(test_atom(orig));
-  assert(test_substitution(sub));
+atom* instantiate_atom(const atom* orig, const substitution* sub, const constants* cs){
+  assert(test_atom(orig, cs));
+  assert(test_substitution(sub, cs));
   if(orig->args->n_args > 0){
     atom* retval;
-    const term_list* ground_args = instantiate_term_list(orig->args, sub);
-    assert(test_term_list(ground_args));
+    const term_list* ground_args = instantiate_term_list(orig->args, sub, cs);
+    assert(test_term_list(ground_args, cs));
     retval = prover_create_atom(orig->pred, ground_args);
-    assert(test_atom(retval));
+    assert(test_atom(retval, cs));
     return (atom*) retval;
   } else 
     return (atom*) orig;
@@ -168,7 +169,7 @@ void fresh_exist_constants(const conjunction* con, substitution* sub, constants*
   while(has_next_freevars_iter(&exist_iter)){
     variable* var = next_freevars_iter(&exist_iter);
     const term* t =  get_fresh_constant(var, constants);
-    insert_substitution_value(sub, var, t);
+    insert_substitution_value(sub, var, t, constants);
   }
 }
 
@@ -198,7 +199,7 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
 	    && equal_constants(t->val.constant, ground->val.constant, cs, NULL, NULL, false));
     break;
   case variable_term:
-    val = find_substitution(sub, t->val.var);
+    val = find_substitution(sub, t->val.var, cs);
     if (val == NULL){
       add_substitution(sub, t->val.var, ground, cs, NULL, false);
       return true;
@@ -220,7 +221,7 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
 bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground, substitution* sub, constants* cs){
   unsigned int i;
   assert(tl->n_args == ground->n_args);
-  assert(test_ground_term_list(ground));
+  assert(test_ground_term_list(ground, cs));
   for(i = 0; i < tl->n_args; i++){
     if(!find_instantiate_sub_term(tl->args[i], ground->args[i], sub, cs))
       return false;
@@ -231,6 +232,6 @@ bool find_instantiate_sub_termlist(const term_list* tl, const term_list* ground,
 
 bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants* cs){
   assert(at->pred->pred_no == fact->pred->pred_no && at->args->n_args == fact->args->n_args);
-  assert(test_ground_atom(fact));
+  assert(test_ground_atom(fact, cs));
   return find_instantiate_sub_termlist(at->args, fact->args, sub, cs);
 }

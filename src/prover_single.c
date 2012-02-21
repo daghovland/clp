@@ -78,14 +78,14 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 					conjunction* con, 
 					substitution* sub){
   unsigned int i;
-  assert(test_conjunction(con));
-  assert(test_substitution(sub));
+  assert(test_conjunction(con, state->constants));
+  assert(test_substitution(sub, state->constants));
   fresh_exist_constants(con, sub, state->constants);
-  assert(test_is_conj_instantiation(con, sub));
+  assert(test_is_conj_instantiation(con, sub, state->constants));
   for(i = 0; i < con->n_args; i++){
     bool fact_is_new = true;
-    atom* ground = instantiate_atom(con->args[i], sub);
-    assert(test_ground_atom(ground));
+    atom* ground = instantiate_atom(con->args[i], sub, state->constants);
+    assert(test_ground_atom(ground, state->constants));
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");
     print_fol_atom(ground, state->constants, stdout);
@@ -150,7 +150,7 @@ bool run_prover_single(rete_state_single* state){
       assert(test_rete_state(state));
       if(next == NULL)
 	return return_found_model_mt(state);
-      assert(test_rule_instance(next));
+      assert(test_rule_instance(next, state->constants));
       incval = inc_proof_step_counter_single(state);
       if(!incval)
 	return return_reached_max_steps_mt(state, next);
@@ -193,26 +193,28 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
   proof_branch* parent_prf_branch = state->current_proof_branch;
   for(i = 0; i < n_branches; i++){
     bool rv;
-    substitution* sub;
+    const substitution * sub;
+    substitution *tmp_sub;
     if(i > 0)
-      state = restore_rete_state(&backup);
+      restore_rete_state(&backup, state);
     enter_proof_disjunct(state);
-    conjunction *con = rule->rhs->args[i];
-    sub = & ((get_historic_rule_instance(state, step.step))->sub);
-    assert(test_substitution(sub));
-    insert_rete_net_conjunction_single(state, con, sub);
+    conjunction *con = rule->rhs->args[i]; 
+    sub = & (get_historic_rule_instance(state, step.step))->sub;
+    tmp_sub = copy_substitution(sub, & state->tmp_subs, state->net->th->sub_size_info, state->timestamp_store, state->constants);
+    assert(test_substitution(tmp_sub, state->constants));
+    insert_rete_net_conjunction_single(state, con, tmp_sub);
     write_proof_edge(parent_prf_branch->name, step.step, state->current_proof_branch->name, state->cur_step);
     rv = run_prover_single(state);
     if(!rv)
       return false;
     if(!state->net->treat_all_disjuncts && !(get_historic_rule_instance(state, step.step))->used_in_proof){
-      state = restore_rete_state(&backup);
+      restore_rete_state(&backup, state);
       prune_proof(state->current_proof_branch, i);
       break;
     }
   }
   destroy_rete_backup(&backup);
-
+    
   return true;
 }
 /**

@@ -32,23 +32,23 @@
 #include "timestamps.h"
 
 
-unsigned int parser_new_constant(constants*, const char*);
+dom_elem parser_new_constant(constants*, const char*);
 void print_coq_constants(const constants*,FILE* stream);
 const term* get_fresh_constant(variable*, constants*);
-const char* get_constant_name(unsigned int, const constants*);
+const char* get_constant_name(dom_elem, const constants*);
 constants* init_constants(unsigned int);
 void destroy_constants(constants*);
 constants* copy_constants(const constants*, timestamp_store*);
 constants* backup_constants(const constants*, timestamp_store*);
 void print_all_constants(constants*, FILE*);
-bool equal_constants(unsigned int, unsigned int, constants*, timestamps*, timestamp_store*, bool);
-void union_constants(unsigned int, unsigned int, constants*, unsigned int, timestamp_store*);
+bool equal_constants(dom_elem, dom_elem, constants*, timestamps*, timestamp_store*, bool);
+void union_constants(dom_elem, dom_elem, constants*, unsigned int, timestamp_store*);
 
 constants_iter get_constants_iter(constants*);
 bool constants_iter_has_next(constants*, constants_iter*);
 constant* constants_iter_get_next(constants*, constants_iter*);
 void destroy_constants_iter(constants_iter);
 
-bool test_constant(unsigned int i , const constants*);
+bool test_constant(dom_elem , const constants*);
 
 #endif

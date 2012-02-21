@@ -56,9 +56,9 @@ bool test_rule_substitution(const axiom* rule, const substitution* sub, const co
    substitution value of the variable.
    Called from insert below
 **/
-unsigned int get_instantiated_constant(const term* t, const substitution* sub){
+dom_elem get_instantiated_constant(const term* t, const substitution* sub, const constants* cs){
   if(t->type == variable_term)
-    t = find_substitution(sub, t->val.var);
+    t = find_substitution(sub, t->val.var, cs);
   assert(t->type == constant_term);
   return t->val.constant;
 }
@@ -85,20 +85,20 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				 )
 {
   sub_store_iter iter;
-  unsigned int c1, c2;
+  dom_elem c1, c2;
   const term *t1, *t2;
   substitution_size_info ssi = net->th->sub_size_info;
   substitution * tmp_sub = create_empty_substitution(net->th, tmp_subs);
 
   assert(parent == node->left_parent || parent == node->val.beta.right_parent);
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
   
   //assert(node->rule_no < net->th->n_axioms && test_timestamps(net->th->axioms[node->rule_no], sub));
   
   if(node->type == rule){
     assert(node->n_children == 0);
     //    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
-    assert(test_substitution(sub));
+    assert(test_substitution(sub, cs));
 #ifdef DEBUG_RETE_INSERT
     printf("Inserting ");
     print_substitution(sub, cs, stdout);
@@ -112,6 +112,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				, step
 				, net->strat == clpl_strategy
 				, ts_store
+				, cs
 				);
       //      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
 #ifdef DEBUG_RETE_INSERT
@@ -129,9 +130,9 @@ void insert_rete_beta_sub_single(const rete_net* net,
     switch(node->type){
     case equality:
       t1 = node->val.equality.t1;
-      c1 = get_instantiated_constant(t1, sub);
+      c1 = get_instantiated_constant(t1, sub, cs);
       t2 = node->val.equality.t2;
-      c2 = get_instantiated_constant(t2, sub);
+      c2 = get_instantiated_constant(t2, sub, cs);
       add_reflexivity_timestamp(&sub->sub_ts, step, ts_store);
       if(equal_constants(c1, c2, cs, &sub->sub_ts, ts_store, true))
 	insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
@@ -267,7 +268,7 @@ void recheck_beta_node(const rete_net* net,
     tmp_sub = create_empty_substitution(net->th, tmp_subs);
     iter= get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
     while(has_next_sub_store(& iter)){
-      copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store, false);
+      copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store, false, cs);
       insert_rete_alpha_beta(net, node_caches, tmp_subs, ts_store, node, rule_queue, step, tmp_sub, cs);
     }
     destroy_sub_store_iter(& iter);
@@ -303,7 +304,7 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
   substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   assert(node->type == selector || node->type == alpha);
   for(i = 0; i < node->n_children; i++){
-    copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store, false);
+    copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store, false, cs);
     insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  ts_store, rule_queue, node->children[i], fact, step, tmp_sub, cs);
   }
   free_substitution(tmp_sub);
@@ -336,7 +337,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 {
   const term *arg;
   bool ret_val = true;
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
   switch(node->type){
   case selector:
     assert(false);
@@ -344,7 +345,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
   case alpha:
     assert(node->val.alpha.argument_no < fact->args->n_args);
     arg = fact->args->args[node->val.alpha.argument_no];
-    assert(test_term(arg));
+    assert(test_term(arg, cs));
     if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, cs, ts_store))
       ret_val = false;
     else

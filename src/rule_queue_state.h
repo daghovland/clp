@@ -21,7 +21,7 @@
 #ifndef __INCLUDED_RULE_QUEUE_STATE_H
 #define __INCLUDED_RULE_QUEUE_STATE_H
 
-#include "rete_state_struct.h"
+//#include "rete_state_struct.h"
 #include "rete_state_single_struct.h"
 /**
    An interface for the implementation of a RETE_STATE.
@@ -31,7 +31,7 @@
 
 
 typedef union rule_queue_state_t {
-  rete_net_state* state;
+  //  rete_net_state* state;
   rete_state_single* single;
 } rule_queue_state;
 	

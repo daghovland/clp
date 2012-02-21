@@ -131,7 +131,7 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
 **/
 substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store, timestamp_store* ts_store, const constants* cs){
   substitution* sub = create_substitution(t, 1, store, ts_store, cs);
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
   return sub;
 }
 
@@ -142,11 +142,11 @@ substitution* create_empty_fact_substitution(const theory* t, const axiom* a, su
    timestamp store takes care of this when backtracking
    Overwrites dest.
 **/
-void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi, timestamp_store* store, bool permanent){
-  assert(test_substitution(orig));
+void copy_substitution_struct(substitution* dest, const substitution* orig, substitution_size_info ssi, timestamp_store* store, bool permanent, const constants* cs){
+  assert(test_substitution(orig, cs));
   memcpy(dest, orig, get_size_substitution(ssi));
   copy_timestamps(& dest->sub_ts, & orig->sub_ts, store, permanent);
-  assert(test_substitution(dest));
+  assert(test_substitution(dest, cs));
 }
 
 
@@ -154,7 +154,7 @@ void copy_substitution_struct(substitution* dest, const substitution* orig, subs
    Creates a new substitution, either on the heap, or on
    the store
 **/
-substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi, timestamp_store* ts_store){
+substitution* copy_substitution(const substitution* orig, substitution_store_mt* store, substitution_size_info ssi, timestamp_store* ts_store, const constants* cs){
   substitution* copy;
   
   if(use_substitution_store)
@@ -162,10 +162,10 @@ substitution* copy_substitution(const substitution* orig, substitution_store_mt*
   else 
     copy = alloc_heap_substitution(ssi);
   
-  copy_substitution_struct(copy, orig, ssi, ts_store, false);
+  copy_substitution_struct(copy, orig, ssi, ts_store, false, cs);
 
-  assert(test_substitution(orig));
-  assert(test_substitution(copy));
+  assert(test_substitution(orig, cs));
+  assert(test_substitution(copy, cs));
   assert(orig->allvars == copy->allvars);
 
   return copy;
@@ -174,8 +174,8 @@ substitution* copy_substitution(const substitution* orig, substitution_store_mt*
 
 
 
-const term* find_substitution(const substitution* sub, const variable* key){
-  assert(test_substitution(sub));
+const term* find_substitution(const substitution* sub, const variable* key, const constants* cs){
+  assert(test_substitution(sub, cs));
   if(sub == NULL)
     return NULL;
   return get_sub_value(sub, key->var_no);
@@ -193,17 +193,17 @@ const term* find_substitution(const substitution* sub, const variable* key){
 bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, constants* cs, timestamp_store* store, bool update_ts){
   const term* orig_val = get_sub_value(sub, var_no);
 
-  assert(test_term(value));
+  assert(test_term(value, cs));
 
   if(orig_val == NULL){
     sub->n_subs++;
     set_sub_value(sub, var_no, value);
     
-    assert(test_substitution(sub));
+    assert(test_substitution(sub, cs));
 
     return true;
   }
-  assert(test_term(orig_val));
+  assert(test_term(orig_val, cs));
   return equal_terms(value, orig_val, cs, &sub->sub_ts, store, update_ts);
 }
 
@@ -219,14 +219,14 @@ bool add_substitution(substitution* sub, variable* var, const term* value, const
 
    Does not fail if the key already occurs with a different value
 **/
-void insert_substitution_value(substitution* sub, variable* var, const term* value){
+void insert_substitution_value(substitution* sub, variable* var, const term* value, const constants* cs){
   size_t var_no = var->var_no;
-  assert(test_term(value));
+  assert(test_term(value, cs));
   if(get_sub_value(sub, var_no) == NULL)
     sub->n_subs++;
   set_sub_value(sub, var_no, value);
   
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
 }
 
 /**
@@ -247,9 +247,9 @@ void insert_substitution_value(substitution* sub, variable* var, const term* val
 bool unify_substitution_terms(const term* value, const term* argument, substitution* sub, constants* cs, timestamp_store* store){
   //  freevars* free_arg_vars = init_freevars();
 
-  assert(test_substitution(sub));
-  assert(test_term(value));
-  assert(test_term(argument));
+  assert(test_substitution(sub, cs));
+  assert(test_term(value, cs));
+  assert(test_term(argument, cs));
 
   //free_arg_vars = free_term_variables(argument, free_arg_vars);
   switch(argument->type){
@@ -279,7 +279,7 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
 bool unify_substitution_term_lists(const term_list* value, const term_list* arg, substitution* sub, constants* cs, timestamp_store* store){
   unsigned int i;
 
-  assert(test_substitution(sub));
+  assert(test_substitution(sub, cs));
 
   if(value->n_args != arg->n_args)
     return false;
@@ -296,8 +296,8 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
 bool subs_equal_intersection(const substitution* sub1, const substitution* sub2, constants* cs){
   unsigned int i;
 
-  assert(test_substitution(sub1));
-  assert(test_substitution(sub2));
+  assert(test_substitution(sub1, cs));
+  assert(test_substitution(sub2, cs));
 
 
   for(i = 0; i < sub1->allvars->n_vars; i++){
@@ -333,11 +333,11 @@ bool test_substitution(const substitution* sub, const constants* cs){
 /**
    Tests that all variables in fv has a value in sub
 **/
-bool test_is_instantiation(const freevars* fv, const substitution* sub){
+bool test_is_instantiation(const freevars* fv, const substitution* sub, const constants* cs){
   freevars_iter iter = get_freevars_iter(fv);
   while(has_next_freevars_iter(&iter)){
     variable* var = next_freevars_iter(&iter);
-    if(find_substitution(sub, var) == NULL)
+    if(find_substitution(sub, var, cs) == NULL)
       return false;
   }
   return true;
@@ -380,7 +380,7 @@ bool union_substitutions_struct_terms(substitution* dest, const substitution* or
    Timestamps of dest are updated. Must not be used if return-value is false
 **/
 bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
-  copy_substitution_struct(dest, sub1, ssi, ts_store, false);
+  copy_substitution_struct(dest, sub1, ssi, ts_store, false, cs);
   return union_substitutions_struct_terms(dest, sub2, cs, ts_store);
 }
 
@@ -396,8 +396,8 @@ bool union_substitutions_struct_one_ts(substitution* dest, const substitution* s
 substitution* union_substitutions_one_ts(const substitution* sub1, const substitution* sub2, substitution_store_mt* store, substitution_size_info ssi, constants* cs, timestamp_store* ts_store){
   substitution *retval;
 
-  assert(test_substitution(sub1));
-  assert(test_substitution(sub2));
+  assert(test_substitution(sub1, cs));
+  assert(test_substitution(sub2, cs));
   assert(sub1->allvars == sub2->allvars);
   
   if(use_substitution_store)
@@ -413,7 +413,7 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
   }
   
   assert(subs_equal_intersection(sub1, sub2, cs));
-  assert(test_substitution(retval));
+  assert(test_substitution(retval, cs));
   
   return retval;
 }
@@ -463,11 +463,11 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
 **/
 bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs){
   unsigned int i;
-  assert(test_substitution(a));
-  assert(test_substitution(b));
+  assert(test_substitution(a, cs));
+  assert(test_substitution(b, cs));
   for(i = 0; i < vars->n_vars; i++){
-    const term* t1 = find_substitution(a, vars->vars[i]);
-    const term* t2 = find_substitution(b, vars->vars[i]);
+    const term* t1 = find_substitution(a, vars->vars[i], cs);
+    const term* t2 = find_substitution(b, vars->vars[i], cs);
     if( t1 == NULL && t2 == NULL)
       continue;
     if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2, cs, NULL, NULL, false))
@@ -560,7 +560,7 @@ void free_sub_list_iter(sub_list_iter* i){
 bool insert_substitution(rete_net_state* state, unsigned int sub_no, substitution* a, const freevars* free_vars, constants* cs){
   substitution_list* sub_list = state->subs[sub_no];
 
-  assert(test_substitution(a));
+  assert(test_substitution(a, cs));
   assert(state->net->n_subs >= sub_no);
 
   while(sub_list != NULL && sub_list->sub != NULL){
@@ -573,7 +573,7 @@ bool insert_substitution(rete_net_state* state, unsigned int sub_no, substitutio
   state->subs[sub_no]->sub = a;
   state->subs[sub_no]->next = sub_list;
 
-  assert(test_substitution(a));
+  assert(test_substitution(a, cs));
   
   return true;
 }

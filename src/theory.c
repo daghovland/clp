@@ -213,7 +213,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
 bool test_theory(const theory* t){
   unsigned int i;
   for(i = 0; i < t->n_axioms; i++)
-    assert(test_axiom(t->axioms[i], i));
+    assert(test_axiom(t->axioms[i], i, t->constants));
   for(i = 0; i < t->n_predicates; i++){
     assert(t->predicates[i]->pred_no == i);
     assert(test_predicate(t->predicates[i]));

@@ -78,7 +78,7 @@ bool insert_substitution_single(substitution_store_array* stores, unsigned int s
       return false;
   }
   destroy_sub_store_iter(&iter);
-  push_substitution_sub_store(get_substitution_store(stores, sub_no), a, ts_store);
+  push_substitution_sub_store(get_substitution_store(stores, sub_no), a, ts_store, cs);
   return true;
 }
 
