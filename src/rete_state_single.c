@@ -229,8 +229,7 @@ void delete_rete_state_single(rete_state_single* state){
   free(state->rule_queues);
   free(state->worker_queues);
   destroy_constants(state->constants);
-  delete_proof_branch_tree(state->root_branch);
-  
+  delete_proof_branch_tree(state->root_branch);  
   free(state);
 }
 

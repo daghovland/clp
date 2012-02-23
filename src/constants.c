@@ -161,17 +161,20 @@ void union_constants(dom_elem c1, dom_elem c2, constants* consts, unsigned int s
 
    If update_ts is true, the timestamps of the steps needed to infer the equality are added to ts, even if they are not equal
    It is assumed that the timestamps are discarded if the constants are unequal
+
+   TODO: At the moment, locking is disabled, since I did not manage to debug a frequent deadlock.
+   It might be that it is ok not to lock, since the changes done by find_constant_root could be compatible?
 **/
 bool equal_constants(dom_elem c1, dom_elem c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
   if(c1.id == c2.id)
     return true;
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
+  //pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
 #endif
   unsigned int p1 = find_constant_root(c1.id, consts, ts, store, update_ts);
   unsigned int p2 = find_constant_root(c2.id, consts, ts, store, update_ts);
 #ifdef HAVE_PTHREAD
-  pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
+  //pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
 #endif
   return p1 == p2;
 }
