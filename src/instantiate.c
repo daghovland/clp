@@ -164,8 +164,8 @@ void delete_instantiated_atom(atom* copy){
    Extends the substitution with fresh constants for the
    existentially bound variables
 **/
-void fresh_exist_constants(const conjunction* con, substitution* sub, constants* constants){
-  freevars_iter exist_iter = get_freevars_iter(con->bound_vars);
+void fresh_exist_constants(const axiom* axm, substitution* sub, constants* constants){
+  freevars_iter exist_iter = get_freevars_iter(axm->exist_vars);
   while(has_next_freevars_iter(&exist_iter)){
     variable* var = next_freevars_iter(&exist_iter);
     const term* t =  get_fresh_constant(var, constants);

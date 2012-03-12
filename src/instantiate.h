@@ -45,7 +45,7 @@ bool test_is_atom_instantiation(const atom* a, const substitution* sub, const co
 atom* instantiate_atom(const atom* orig, const substitution* sub, const constants*);
 void delete_instantiated_atom(atom* copy);
 const term* get_fresh_constant(variable* var, constants* constants);
-void fresh_exist_constants(const conjunction* con, substitution* sub, constants* constants);
+void fresh_exist_constants(const axiom*, substitution*, constants*);
 bool find_instantiate_sub(const atom* at, const atom* fact, substitution* sub, constants*);
 
 #endif

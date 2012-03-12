@@ -80,7 +80,6 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
   unsigned int i;
   assert(test_conjunction(con, state->constants));
   assert(test_substitution(sub, state->constants));
-  fresh_exist_constants(con, sub, state->constants);
   assert(test_is_conj_instantiation(con, sub, state->constants));
   for(i = 0; i < con->n_args; i++){
     bool fact_is_new = true;
@@ -147,6 +146,7 @@ bool run_prover_single(rete_state_single* state){
       bool incval;
       assert(test_rete_state(state));
       next = choose_next_instance_single(state);
+      fresh_exist_constants(next->rule, & next->sub, state->constants);
       assert(test_rete_state(state));
       if(next == NULL)
 	return return_found_model_mt(state);
