@@ -1,4 +1,4 @@
-/* timestamp_linked_list_struct.h
+/* timestamp_linked_list.h
 
    Copyright 2011 
 
@@ -21,8 +21,8 @@
 /**
    Included from timestamps.h, depending on USE_TIMESTAMP_ARRAY, defined in common.h
 **/
-#ifndef __INCLUDED_TIMESTAMP_LINKED_LIST_STRUCT_H
-#define __INCLUDED_TIMESTAMP_LINKED_LIST_STRUCT_H
+#ifndef __INCLUDED_TIMESTAMP_LINKED_LIST_H
+#define __INCLUDED_TIMESTAMP_LINKED_LIST_H
 
 #include "common.h"
 #include "timestamp.h"
@@ -31,6 +31,9 @@
 #include <pthread.h>
 #endif
 
+// This file should not have been included if USE_TIMESTAMP_ARRAY was defined
+// Defined in common.h. 
+// The present file is a newer implementation, with a hopefully more efficient memory management
 #ifdef USE_TIMESTAMP_ARRAY
 #abort
 #endif
@@ -44,11 +47,18 @@
 
 
 
+/**
+   "older" points to the older element,
+   while "newer" points to the newer element.
 
+   When a new element x is added and y was previously the newest, x->older = y and y->newer = x
+
+   The iterator starts at "oldest" and follows the "newer" pointer until it becomes null
+**/
 typedef struct timestamp_linked_list_t {
   timestamp ts;
-  struct timestamp_linked_list_t* next;
-  struct timestamp_linked_list_t* prev;
+  struct timestamp_linked_list_t* older;
+  struct timestamp_linked_list_t* newer;
 } timestamp_linked_list;  
 
 /**
@@ -58,7 +68,7 @@ typedef struct timestamp_linked_list_t {
 **/
 typedef struct timestamps_t {
   timestamp_linked_list* list;
-  timestamp_linked_list* first;
+  timestamp_linked_list* oldest;
   bool permanent;
 } timestamps;
 
