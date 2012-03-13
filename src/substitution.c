@@ -428,7 +428,13 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* store){
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs, store))
     return false;
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_lock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_lock");
+#endif
   add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
+#ifdef HAVE_PTHREAD
+  pt_err(pthread_mutex_unlock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_unlock");
+#endif
   return true;
 }
 
