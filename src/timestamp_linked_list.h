@@ -68,7 +68,7 @@ typedef struct timestamp_linked_list_t {
 **/
 typedef struct timestamps_t {
   timestamp_linked_list* list;
-  timestamp_linked_list* oldest;
+  //  timestamp_linked_list* oldest;
   bool permanent;
 } timestamps;
 

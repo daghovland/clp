@@ -258,7 +258,7 @@ bool unify_substitution_terms(const term* value, const term* argument, substitut
     return add_substitution(sub, argument->val.var, value, cs, store, true);
   case constant_term:
     //del_freevars(free_arg_vars);
-    return (value->type == constant_term && equal_constants(value->val.constant, argument->val.constant, cs, &sub->sub_ts, store, true));
+    return (value->type == constant_term && equal_constants_mt(value->val.constant, argument->val.constant, cs, &sub->sub_ts, store, true));
     break;
   case function_term:
     //del_freevars(free_arg_vars);

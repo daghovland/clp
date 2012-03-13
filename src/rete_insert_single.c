@@ -134,7 +134,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
       t2 = node->val.equality.t2;
       c2 = get_instantiated_constant(t2, sub, cs);
       add_reflexivity_timestamp(&sub->sub_ts, step, ts_store);
-      if(equal_constants(c1, c2, cs, &sub->sub_ts, ts_store, true))
+      if(equal_constants_mt(c1, c2, cs, &sub->sub_ts, ts_store, true))
 	insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
       break;
     case beta_and:

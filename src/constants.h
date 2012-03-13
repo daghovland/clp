@@ -41,7 +41,7 @@ void destroy_constants(constants*);
 constants* copy_constants(const constants*, timestamp_store*);
 constants* backup_constants(const constants*, timestamp_store*);
 void print_all_constants(constants*, FILE*);
-bool equal_constants(dom_elem, dom_elem, constants*, timestamps*, timestamp_store*, bool);
+bool equal_constants_mt(dom_elem, dom_elem, constants*, timestamps*, timestamp_store*, bool);
 void union_constants(dom_elem, dom_elem, constants*, unsigned int, timestamp_store*);
 
 constants_iter get_constants_iter(constants*);

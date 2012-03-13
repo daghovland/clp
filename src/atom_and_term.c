@@ -321,7 +321,7 @@ bool equal_terms(const term* t1, const term* t2, constants* constants, timestamp
     retval = (t1->val.var->var_no == t2->val.var->var_no);
     break;
   case constant_term:
-    retval = equal_constants(t1->val.constant, t2->val.constant, constants, ts, store, update_ts);
+    retval = equal_constants_mt(t1->val.constant, t2->val.constant, constants, ts, store, update_ts);
     break;
   case function_term:
     retval = (t1->val.function == t2->val.function && equal_term_lists(t1->args, t2->args, constants, ts, store, update_ts));

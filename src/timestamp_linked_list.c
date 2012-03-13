@@ -44,8 +44,10 @@
 #include <pthread.h>
 #endif
 
+
 #ifndef NDEBUG
 bool test_timestamps(const timestamps* ts){
+#if false
   timestamp_linked_list* orig_el = ts->list;
   unsigned int ts_len = get_n_timestamps(ts);
   unsigned int count;
@@ -78,6 +80,7 @@ bool test_timestamps(const timestamps* ts){
     }
     assert(count == ts_len);
   }
+#endif
   return true;
 }
 #endif
@@ -92,21 +95,27 @@ bool test_timestamps(const timestamps* ts){
 
 void init_empty_timestamp_linked_list(timestamps* ts, bool permanent){
   ts->list = NULL;
-  ts->oldest = NULL;
+  //  ts->oldest = NULL;
   ts->permanent = permanent;
 }
 void init_empty_timestamps(timestamps* ts, substitution_size_info ssi){
   init_empty_timestamp_linked_list(ts, false);
 }
 
+
 timestamp get_first_timestamp(timestamps* ts){
-  assert(ts != NULL && ts->oldest != NULL);
-  return ts->oldest->ts;
+  assert(ts != NULL && ts->list != NULL);
+  timestamp_linked_list* el = ts->list;
+  while(el->older != NULL)
+    el = el->older;
+  return el->ts;
 }
 
 timestamps_iter get_timestamps_iter(const timestamps* ts){
   timestamps_iter iter;
-  iter.ts_list = ts->oldest;
+  iter.ts_list = ts->list;
+  while(iter.ts_list->older != NULL)
+    iter.ts_list = iter.ts_list->older;
   return iter;
 }
 
@@ -171,10 +180,12 @@ void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){
   if(ts->list != NULL)
     ts->list->newer = new_ts;
   ts->list = new_ts;
+#if false
   if(ts->oldest == NULL){
     assert(ts->list->older == NULL);
     ts->oldest = new_ts;
   }
+#endif
 #ifndef NDEBUG
   new_ts_len = get_n_timestamps(ts);
   assert(orig_ts_len + 1 == new_ts_len);
@@ -187,7 +198,11 @@ void add_timestamp(timestamps* ts, timestamp t, timestamp_store* store){
    Called from union_substitutions_struct_with_ts in substitution.c
 **/
 void add_timestamps(timestamps* dest, const timestamps* orig, timestamp_store* store){
-  timestamp_linked_list* orig_el = orig->oldest;
+  timestamp_linked_list* orig_el = orig->list;
+  if(orig_el != NULL){
+    while(orig_el->older != NULL)
+      orig_el = orig_el->older;
+  }
   assert(test_timestamps(dest));
   assert(test_timestamps(orig));
   while(orig_el != NULL){

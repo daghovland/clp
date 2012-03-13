@@ -196,7 +196,7 @@ bool find_instantiate_sub_term(const term* t, const term* ground, substitution* 
   switch(t->type){
   case constant_term: 
     return (ground->type == constant_term 
-	    && equal_constants(t->val.constant, ground->val.constant, cs, NULL, NULL, false));
+	    && equal_constants_mt(t->val.constant, ground->val.constant, cs, NULL, NULL, false));
     break;
   case variable_term:
     val = find_substitution(sub, t->val.var, cs);

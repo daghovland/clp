@@ -165,19 +165,27 @@ void union_constants(dom_elem c1, dom_elem c2, constants* consts, unsigned int s
    TODO: At the moment, locking is disabled, since I did not manage to debug a frequent deadlock.
    It might be that it is ok not to lock, since the changes done by find_constant_root could be compatible?
 **/
-bool equal_constants(dom_elem c1, dom_elem c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
+bool equal_constants_locked(dom_elem c1, dom_elem c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
+  if(c1.id == c2.id)
+    return true;
+  unsigned int p1 = find_constant_root(c1.id, consts, ts, store, update_ts);
+  unsigned int p2 = find_constant_root(c2.id, consts, ts, store, update_ts);
+  return p1 == p2;
+}
+
+bool equal_constants_mt(dom_elem c1, dom_elem c2, constants* consts, timestamps* ts, timestamp_store* store, bool update_ts){
   if(c1.id == c2.id)
     return true;
 #ifdef HAVE_PTHREAD
-  //pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
+  pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
 #endif
-  unsigned int p1 = find_constant_root(c1.id, consts, ts, store, update_ts);
-  unsigned int p2 = find_constant_root(c2.id, consts, ts, store, update_ts);
+  bool rv = equal_constants_locked(c1, c2, consts, ts, store, update_ts);
 #ifdef HAVE_PTHREAD
-  //pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
+  pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
 #endif
-  return p1 == p2;
+  return rv;
 }
+
 
 /**
    Called from rete_state when in a disjunctive split. 
