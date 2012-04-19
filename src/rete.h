@@ -105,6 +105,8 @@ rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*,
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, unsigned int axiom_no);
 rete_node * insert_beta_not_nodes(rete_net* net, const conjunction* con, const disjunction* dis, rete_node* beta_node, unsigned int axiom_no);
 
+bool true_ground_equality(const term*, const term*, const substitution*, constants*, timestamps*, timestamp_store*, bool update_ts);
+
 // Defined in strategy.c
 rule_instance* choose_next_instance(rule_queue_state
 				    , const rete_net*

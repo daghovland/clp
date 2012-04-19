@@ -333,6 +333,29 @@ bool equal_terms(const term* t1, const term* t2, constants* constants, timestamp
   return retval;
 }
 
+/* 
+   Assumes t is a constant or variable. 
+   Returns the constant, or the value in sub of the constant
+**/
+dom_elem get_dom_elem(const term* t, const substitution* sub){
+  assert(t->type != function_term);
+  if(t->type == constant_term)
+    return t->val.constant;
+  t = get_sub_value(sub, t->val.var->var_no);
+  assert(t->type == constant_term);
+  return t->val.constant;
+}
+
+/**
+   Used to check to terms of an equality.
+**/
+bool true_ground_equality(const term* t1, const term* t2, const substitution* sub, constants* cs, timestamps* ts, timestamp_store* store, bool update_ts){
+  dom_elem c1, c2;
+  c1 = get_dom_elem(t1, sub);
+  c2 = get_dom_elem(t2, sub);
+  return equal_constants_mt(c1, c2, cs, ts, store, update_ts);
+}
+
 bool equal_atoms(const atom* a1, const atom* a2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
   if(a1->pred->pred_no != a2->pred->pred_no)
     return false;

@@ -350,7 +350,11 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
 
   if(conjunct >= con->n_args)
     return true;
-
+  if(con->args[conjunct]->pred->is_equality){
+    if(true_ground_equality(con->args[conjunct]->args->args[0], con->args[conjunct]->args->args[1], sub, state->constants, NULL, state->timestamp_store, false))
+      return remaining_conjunction_true_in_fact_store(state, con, conjunct+1, sub);
+    return false;
+  }
   pred_no = con->args[conjunct]->pred->pred_no;
   iter = get_state_fact_store_iter(state, pred_no);
   tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
