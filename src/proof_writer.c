@@ -166,11 +166,11 @@ void write_proof_node(unsigned int step_no
       print_dot_rule_instance(ri, cs, dot_fp);
       fp_err( fprintf(dot_fp, "\"] \n" ), "Could not write proof node dot info\n");
 #ifdef RETE_STATE_DEBUG_DOT
-      snprintf(fname2, "rete_state_%i.dot", cur_step_no);
+      sprintf(fname2, "rete_state_%i.dot", cur_step_no);
       fp2 = file_err( fopen(fname2, "w"), "Could not create rete state dot file\n");
-      print_dot_rete_state_net(net, s, fp2);
+      print_dot_rete_state_net(net, rqs.single, fp2);
       fclose(fp2);
-      sprintf(fname2, "dot -Tpdf rete_state_%i.dot > rete_state_%i.pdf && rm rete_state_%i.dot",  get_current_state_step_no(s), get_current_state_step_no(s), get_current_state_step_no(s));
+      sprintf(fname2, "dot -Tpdf rete_state_%i.dot > rete_state_%i.pdf && rm rete_state_%i.dot",  get_current_state_step_no(s), get_current_state_step_no(s), get_current_state_step_no(rqs.single));
       sys_err( system(fname2), "Could not execute dot on rete state file. Maybe dot is not installed?\n");
       
 #endif

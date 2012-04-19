@@ -241,7 +241,7 @@ void insert_rete_alpha_beta(const rete_net* net,
 /**
    Called when a new equality is added to the model. 
    For each beta node, first re-inserts all beta into the next beta-node, 
-   the reinserts all from the alpha node into the beta node.
+   then reinserts all from the alpha node into the beta node.
 
    Should first be called at the rule node, iterates backwards
 **/

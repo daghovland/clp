@@ -98,6 +98,9 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
 		      , get_state_step_no_single(state)
 		      , state->timestamp_store
 		      );
+#ifdef __DEBUG_RETE_STATE
+      printf("New equality: Rechecking relevant parts of rete net.\n");
+#endif
       recheck_rete_state_net(state);
     }
     else

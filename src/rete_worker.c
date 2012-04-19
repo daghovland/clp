@@ -120,6 +120,9 @@ void * queue_worker_routine(void* arg){
       break;
     if(read_recheck_net(worker)){
       worker->state = has_popped;
+#ifdef __DEBUG_RETE_STATE
+      printf("Rechecking relevant parts of rete net for axiom %s.\n", worker->net->th->axioms[worker->axiom_no]->name);
+#endif
       recheck_beta_node(worker->net, worker->node_subs, worker->tmp_subs, worker->timestamp_store, worker->net->rule_nodes[worker->axiom_no], worker->output, step, *(worker->constants));
     } else {
       worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
