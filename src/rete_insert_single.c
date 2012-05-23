@@ -95,7 +95,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
   
   //assert(node->rule_no < net->th->n_axioms && test_timestamps(net->th->axioms[node->rule_no], sub));
   
-  if(node->type == rule){
+  if(node->type == rule_node){
     assert(node->n_children == 0);
     //    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
     assert(test_substitution(sub, cs));
@@ -124,11 +124,11 @@ void insert_rete_beta_sub_single(const rete_net* net,
     }
   } else {
 
-    assert(node->type == beta_and || node->type == equality || node->type == beta_not);
+    assert(node->type == beta_and || node->type == equality_node || node->type == beta_not);
     assert(node->n_children == 1);	
     assert(node->left_parent != NULL && node->left_parent->type != alpha);
     switch(node->type){
-    case equality:
+    case equality_node:
       t1 = node->val.equality.t1;
       c1 = get_instantiated_constant(t1, sub, cs);
       t2 = node->val.equality.t2;
@@ -259,7 +259,7 @@ void recheck_beta_node(const rete_net* net,
   switch(node->type){
   case beta_root:
     return;
-  case equality:
+  case equality_node:
     break;
   case beta_not:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->val.beta.right_parent, rule_queue, step, cs);
@@ -273,7 +273,7 @@ void recheck_beta_node(const rete_net* net,
     }
     destroy_sub_store_iter(& iter);
     break;
-  case rule:
+  case rule_node:
     break;
   default:
     fprintf(stderr, "%s, line %i recheck_beta_node: Invalid node type.\n", __FILE__, __LINE__);
@@ -302,7 +302,7 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
 					    constants* cs){
   unsigned int i;
   substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
-  assert(node->type == selector || node->type == alpha);
+  assert(node->type == selector_node || node->type == alpha);
   for(i = 0; i < node->n_children; i++){
     copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store, false, cs);
     insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  ts_store, rule_queue, node->children[i], fact, step, tmp_sub, cs);
@@ -339,7 +339,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
   bool ret_val = true;
   assert(test_substitution(sub, cs));
   switch(node->type){
-  case selector:
+  case selector_node:
     assert(false);
     break;
   case alpha:

@@ -69,7 +69,7 @@ rete_node* _create_rete_node(enum rete_node_type type, rete_node* left_parent, c
   belong to a specific axiom.
 **/
 void init_selector_node(predicate* p, rete_node* n){
-  init_rete_node(n, selector, NULL, init_freevars(), true, 0);
+  init_rete_node(n, selector_node, NULL, init_freevars(), true, 0);
   n->val.selector = p;
   return;
 }
@@ -146,8 +146,8 @@ rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const 
 
 
 rete_node* create_rete_equality_node(rete_net* net, const term* t1, const term* t2, rete_node* left_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
-  assert(left_parent->type == equality || left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
-  rete_node* node = _create_rete_node(equality, left_parent, free_vars, in_positive_lhs_part, rule_no);
+  assert(left_parent->type == equality_node || left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  rete_node* node = _create_rete_node(equality_node, left_parent, free_vars, in_positive_lhs_part, rule_no);
   node->val.equality.t1 = t1;
   node->val.equality.t2 = t2;
   return node;
@@ -170,26 +170,26 @@ rete_node* _create_beta_node(rete_net* net, rete_node* left_parent, rete_node* r
 
 
 rete_node* create_beta_and_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
-  assert(left_parent->type == beta_and || left_parent->type == equality || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
-  assert(right_parent->type == alpha || right_parent->type == beta_not  || left_parent->type == beta_or || right_parent->type == beta_and || right_parent->type == selector);
+  assert(left_parent->type == beta_and || left_parent->type == equality_node || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  assert(right_parent->type == alpha || right_parent->type == beta_not  || left_parent->type == beta_or || right_parent->type == beta_and || right_parent->type == selector_node);
   return  _create_beta_node(net, left_parent, right_parent, beta_and, free_vars, in_positive_lhs_part, rule_no);
 }
 
 
 rete_node* create_beta_or_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
-  assert(left_parent->type == beta_and || left_parent->type == equality || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
-  assert(right_parent->type == alpha || right_parent->type == beta_not || right_parent->type == beta_and || left_parent->type == beta_or || right_parent->type == selector);
+  assert(left_parent->type == beta_and || left_parent->type == equality_node || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
+  assert(right_parent->type == alpha || right_parent->type == beta_not || right_parent->type == beta_and || left_parent->type == beta_or || right_parent->type == selector_node);
   return  _create_beta_node(net, left_parent, right_parent, beta_or, free_vars, in_positive_lhs_part, rule_no);
 }
 
 rete_node* create_beta_not_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars, unsigned int rule_no){
-  assert(left_parent->type == beta_and  || left_parent->type == equality ||left_parent->type == beta_not   || left_parent->type == beta_or ||  left_parent->type == alpha);
+  assert(left_parent->type == beta_and  || left_parent->type == equality_node ||left_parent->type == beta_not   || left_parent->type == beta_or ||  left_parent->type == alpha);
   assert(right_parent->type == alpha || right_parent->type == beta_and || left_parent->type == beta_or);
   return  _create_beta_node(net, left_parent, right_parent, beta_not, free_vars, false, rule_no);
 }
 
 rete_node* create_rule_node(rete_net* net, rete_node* parent, const axiom* ax, const freevars* vars, unsigned int rule_no){
-  rete_node* node = _create_rete_node(rule, parent, vars, true, rule_no);
+  rete_node* node = _create_rete_node(rule_node, parent, vars, true, rule_no);
   assert(parent->n_children > 0);
   node->val.rule.store_no = net->n_subs++;
   node->val.rule.axm = ax;
@@ -229,7 +229,7 @@ void delete_rete_node(rete_node* node){
   if(node->left_parent != NULL)
     remove_parent_pointer(node, (rete_node*) node->left_parent);
   else 
-    assert(node->type == selector);
+    assert(node->type == selector_node);
   if(node->type == beta_and || node->type == beta_not)
     remove_parent_pointer(node, (rete_node*) node->val.beta.right_parent);
   for(i = 0; i < node->n_children; i++){
@@ -257,10 +257,10 @@ void delete_rete_net(rete_net* net){
 
 void test_rete_node(const rete_node* node, void (*child_test)(const rete_node*)){
   unsigned int i;
-  assert(node->type == selector || node->type == alpha || node->type == equality || node->type == beta_root || node->type == beta_and || node->type == beta_not || node->type == rule || node->type == beta_or);
+  assert(node->type == selector_node || node->type == alpha || node->type == equality_node || node->type == beta_root || node->type == beta_and || node->type == beta_not || node->type == rule_node || node->type == beta_or);
   assert(node->size_children > 0);
   assert(node->n_children < node->size_children);
-  assert(node->n_children > 0 || node->type == rule || node->type == selector);
+  assert(node->n_children > 0 || node->type == rule_node || node->type == selector_node);
   for(i = 0; i < node->n_children; i++){
     const rete_node* child = node->children[i];
     assert(child != NULL);
@@ -269,8 +269,8 @@ void test_rete_node(const rete_node* node, void (*child_test)(const rete_node*))
 }
 
 void test_rete_beta(const rete_node* node){
-  assert(node->type != alpha && node->type != selector);
-  assert(node->type == rule || node->n_children == 1);
+  assert(node->type != alpha && node->type != selector_node);
+  assert(node->type == rule_node || node->n_children == 1);
   test_rete_node(node, test_rete_beta);
 }
 
@@ -284,7 +284,7 @@ void test_rete_alpha(const rete_node* node){
 }
 
 void test_rete_selector(const rete_node* sel){
-  assert(sel->type == selector);
+  assert(sel->type == selector_node);
   test_rete_node(sel, test_rete_alpha);
 }
 
@@ -302,7 +302,7 @@ bool test_rete_net(const rete_net* net){
    Printing out a rete network
 **/
 void print_selector(const rete_node* sel, const constants* cs, FILE* stream){
-  assert(sel->type == selector);
+  assert(sel->type == selector_node);
   fprintf(stream, "%s(%zi): %i occurrences", sel->val.selector->name, sel->val.selector->arity, sel->n_children);
   print_rete_node(sel, cs, stream,1);
 }
@@ -316,7 +316,7 @@ void print_rete_alpha_node(const rete_node* node, const constants* cs, FILE* str
 
 
 void print_rete_equality_node(const rete_node* node, const constants* cs, FILE* stream){
-  assert(node->type == equality);
+  assert(node->type == equality_node);
  fprintf(stream, ": ");
   print_fol_term(node->val.equality.t1, cs, stream);
   fprintf(stream, " = ");
@@ -336,13 +336,13 @@ void print_dot_alpha_node(const rete_node* node, const constants* cs, FILE* stre
 const char* get_rete_node_type_name(const rete_node* node){
   switch(node->type)
     {
-    case selector:
+    case selector_node:
       return "selector";
       break;
     case alpha:
       return "alpha";
       break;
-    case equality:
+    case equality_node:
       return "equality";
       break;
     case beta_and:
@@ -357,7 +357,7 @@ const char* get_rete_node_type_name(const rete_node* node){
  case beta_root:
       return "beta_root";
       break;
- case rule:
+ case rule_node:
       return  "rule";
       break;
     default:
@@ -371,13 +371,13 @@ void print_rete_node_type(const rete_node* node, const constants* cs, FILE* stre
   fprintf(stream, "%s", get_rete_node_type_name(node));
   switch(node->type)
     {
-    case selector:
+    case selector_node:
       fprintf(stream, ": %s(%zi)", node->val.selector->name, node->val.selector->arity);
       break;
     case alpha:
       print_rete_alpha_node(node, cs, stream);
       break;
-    case equality:
+    case equality_node:
       print_rete_equality_node(node, cs, stream);
       break;
     case beta_and:
@@ -386,7 +386,7 @@ void print_rete_node_type(const rete_node* node, const constants* cs, FILE* stre
       break;
  case beta_root:
       break;
- case rule:
+ case rule_node:
       fprintf(stream, ": ");
       print_fol_axiom(node->val.rule.axm, cs, stream);
       break;
@@ -401,7 +401,7 @@ void print_rete_node(const rete_node* node, const constants* cs, FILE* stream, u
   unsigned int i;
   for(i = 0; i < indent; i++)
     fprintf(stream, "  ");
-  if(node->type != selector){
+  if(node->type != selector_node){
     print_rete_node_type(node, cs, stream);
     if(node->n_children == 1)
       fprintf(stream, " 1 child:");
@@ -410,7 +410,7 @@ void print_rete_node(const rete_node* node, const constants* cs, FILE* stream, u
     fprintf(stream, "\n");
   }
   for(i = 0; i < node->n_children; i++){
-    assert(node->children[i]->type != selector);
+    assert(node->children[i]->type != selector_node);
     print_rete_node(node->children[i], cs, stream, indent+1);
   }
 }
@@ -418,13 +418,13 @@ void print_rete_node(const rete_node* node, const constants* cs, FILE* stream, u
 void print_dot_rete_node(const rete_node* node, const constants* cs, FILE* stream){
   unsigned int i;
   fprintf(stream, "n%li [label=\"", (unsigned long) node);
-  if(node->type == rule)
+  if(node->type == rule_node)
     print_dot_axiom(node->val.rule.axm, cs, stream);
   else
     print_rete_node_type(node, cs, stream);
   fprintf(stream, "\"]\n");
   for(i = 0; i < node->n_children; i++){
-    assert(node->children[i]->type != selector);
+    assert(node->children[i]->type != selector_node);
     fprintf(stream, "n%li -> n%li\n", (unsigned long) node, (unsigned long) node->children[i]);
     print_dot_rete_node(node->children[i], cs, stream);
   }
