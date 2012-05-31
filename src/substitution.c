@@ -430,10 +430,12 @@ bool union_substitutions_struct_with_ts(substitution* dest, const substitution* 
     return false;
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_lock");
+  fprintf(stderr, "Locking constants (subs)\n");
 #endif
   add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_unlock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_unlock");
+  fprintf(stderr, "Unlocking constants (subs)\n");
 #endif
   return true;
 }

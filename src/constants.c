@@ -127,12 +127,14 @@ void union_constants(dom_elem c1, dom_elem c2, constants* consts, unsigned int s
   init_empty_timestamp_linked_list(tmp2, false);
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& consts->constants_mutex), __FILE__, __LINE__, "union_constants: mutex_lock");
+  fprintf(stderr, "Locking constants (union)\n");
 #endif
   unsigned int c1_root = find_constant_root(c1.id, consts, tmp1, store, true);
   unsigned int c2_root = find_constant_root(c2.id, consts, tmp2, store, true);
   if(c1_root == c2_root) {
 #ifdef HAVE_PTHREAD
     pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__, "union_constants: mutex_lock");
+    fprintf(stderr, "Unlocking constants (union 1)\n");
 #endif
     return;
   }
@@ -149,6 +151,7 @@ void union_constants(dom_elem c1, dom_elem c2, constants* consts, unsigned int s
   }
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__, "union_constants: mutex_lock");
+    fprintf(stderr, "Unlocking constants (union 2)\n");
 #endif
   free(tmp1);
   free(tmp2);
@@ -178,10 +181,12 @@ bool equal_constants_mt(dom_elem c1, dom_elem c2, constants* consts, timestamps*
     return true;
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& consts->constants_mutex),__FILE__,  __LINE__,  "union_constants: mutex_lock");
+  fprintf(stderr, "Locking constants (equal)\n");
 #endif
   bool rv = equal_constants_locked(c1, c2, consts, ts, store, update_ts);
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_unlock(& consts->constants_mutex), __FILE__,  __LINE__,  "union_constants: mutex_unlock");
+  fprintf(stderr, "Unlocking constants (equal)\n");
 #endif
   return rv;
 }
