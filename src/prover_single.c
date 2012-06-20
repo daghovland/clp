@@ -149,10 +149,10 @@ bool run_prover_single(rete_state_single* state){
       bool incval;
       assert(test_rete_state(state));
       next = choose_next_instance_single(state);
-      fresh_exist_constants(next->rule, & next->sub, state->constants);
       assert(test_rete_state(state));
       if(next == NULL)
 	return return_found_model_mt(state);
+      fresh_exist_constants(next->rule, & next->sub, state->constants);
       assert(test_rule_instance(next, state->constants));
       incval = inc_proof_step_counter_single(state);
       if(!incval)
