@@ -477,7 +477,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
 #ifdef HAVE_PTHREAD
     lock_queue_single(rq, __FILE__, __LINE__);
     while(rule_queue_single_is_empty(rq) && axiom_may_have_new_instance_single_state(state, axiom_no))
-      if(!timedwait_queue_single(rq, 100, __FILE__, __LINE__))
+      if(!timedwait_queue_single(rq, 1000, __FILE__, __LINE__))
 	break;
     if(rule_queue_single_is_empty(rq)){
       unlock_queue_single(rq, __FILE__, __LINE__);
