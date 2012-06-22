@@ -76,6 +76,7 @@ void insert_substitution_value(substitution*, variable*, const term*, const cons
 bool unify_substitution_terms(const term*, const term*, substitution*, constants*, timestamp_store*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*, constants*, timestamp_store*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);
+bool literally_equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);
 bool subs_equal_intersection(const substitution*, const substitution*, constants*);
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants* cs, timestamp_store*);
 bool union_substitutions_struct_one_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info, constants*, timestamp_store*);

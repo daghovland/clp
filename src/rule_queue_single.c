@@ -26,6 +26,7 @@
 #include "rule_instance.h"
 #include "substitution.h"
 #include "error_handling.h"
+#include "logger.h"
 #include <sys/time.h>
 #include <errno.h>
 
@@ -203,6 +204,13 @@ bool test_rule_queue_single(rule_queue_single* rq, const constants* cs){
 rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store, const constants* cs){
   unsigned int pos;
   assert(test_substitution(sub, cs));
+#ifdef DEBUG_RETE_INSERT
+  FILE* out = get_logger_out(__FILE__, __LINE__);
+  fprintf(out, "\nPushing ");
+  print_substitution(sub, cs, out);
+  fprintf(out, "\n");
+  finished_logging(__FILE__, __LINE__);
+#endif
 #ifdef HAVE_PTHREAD
   lock_queue_single(rq, __FILE__, __LINE__);
 #endif

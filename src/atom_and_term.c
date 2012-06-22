@@ -292,16 +292,17 @@ freevars* free_term_variables(const term *t, freevars* vars){
     return free_term_list_variables(t->args, vars);
   return vars;
 }
+bool _equal_terms(const term* t1, const term* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts, bool literal);
 /**
    Comparators
    Return 0 for equality
 **/
-bool equal_term_lists(const term_list* t1, const term_list* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
+bool equal_term_lists(const term_list* t1, const term_list* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts, bool literal){
   unsigned int i;
   if(t1->n_args != t2->n_args)
     return false;
   for(i = 0; i < t1->n_args; i++){
-    if(!equal_terms(t1->args[i], t2->args[i], constants, ts, store, update_ts))
+    if(!_equal_terms(t1->args[i], t2->args[i], constants, ts, store, update_ts, literal))
       return false;
   }
   return true;
@@ -311,8 +312,10 @@ bool equal_term_lists(const term_list* t1, const term_list* t2, constants* const
    Returns true if the two terms are equal modulo equality of constants
 
    If update_ts is true, ts is updated (also if the terms are unequal.)
+
+   If literal is true, the constants must have same name
 **/
-bool equal_terms(const term* t1, const term* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
+bool _equal_terms(const term* t1, const term* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts, bool literal){
   bool retval;
   if(t1->type != t2->type)
     return false;
@@ -321,16 +324,26 @@ bool equal_terms(const term* t1, const term* t2, constants* constants, timestamp
     retval = (t1->val.var->var_no == t2->val.var->var_no);
     break;
   case constant_term:
-    retval = equal_constants_mt(t1->val.constant, t2->val.constant, constants, ts, store, update_ts);
+    if(literal)
+      retval = t1->val.constant.id == t2->val.constant.id;
+    else
+      retval = equal_constants_mt(t1->val.constant, t2->val.constant, constants, ts, store, update_ts);
     break;
   case function_term:
-    retval = (t1->val.function == t2->val.function && equal_term_lists(t1->args, t2->args, constants, ts, store, update_ts));
+    retval = (t1->val.function == t2->val.function && equal_term_lists(t1->args, t2->args, constants, ts, store, update_ts, literal));
     break;
   default:
     fprintf(stderr, "Untreated term type in equal_terms in atom_and_term.c.\n");
     exit(EXIT_FAILURE);
   }
   return retval;
+}
+
+bool equal_terms(const term* t1, const term* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
+  return _equal_terms(t1, t2, constants, ts, store, update_ts, false);
+}
+bool literally_equal_terms(const term* t1, const term* t2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
+  return _equal_terms(t1, t2, constants, ts, store, update_ts, true);
 }
 
 /* 
@@ -359,7 +372,7 @@ bool true_ground_equality(const term* t1, const term* t2, const substitution* su
 bool equal_atoms(const atom* a1, const atom* a2, constants* constants, timestamps* ts, timestamp_store* store, bool update_ts){
   if(a1->pred->pred_no != a2->pred->pred_no)
     return false;
-  return equal_term_lists(a1->args, a2->args, constants, ts, store, update_ts);
+  return equal_term_lists(a1->args, a2->args, constants, ts, store, update_ts, false);
 }
 
 

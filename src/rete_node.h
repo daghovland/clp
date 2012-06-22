@@ -86,6 +86,7 @@ struct rete_node_t {
     struct equality_t {
       const term* t1;
       const term* t2;
+      unsigned int b_store_no;
     } equality;
     struct rule_t {
       const axiom* axm;

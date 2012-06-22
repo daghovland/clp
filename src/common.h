@@ -97,7 +97,7 @@
    To get loads of debugging output about the rete state, uncomment this
 **/
 //#define  __DEBUG_RETE_STATE 
-//#define DEBUG_RETE_INSERT
+#define DEBUG_RETE_INSERT
 /**
    To get dot output of state of rete net at each proof step
 **/

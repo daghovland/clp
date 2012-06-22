@@ -150,6 +150,7 @@ rete_node* create_rete_equality_node(rete_net* net, const term* t1, const term* 
   rete_node* node = _create_rete_node(equality_node, left_parent, free_vars, in_positive_lhs_part, rule_no);
   node->val.equality.t1 = t1;
   node->val.equality.t2 = t2;
+  node->val.equality.b_store_no = net->n_subs++;
   return node;
 }
 

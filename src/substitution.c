@@ -471,9 +471,12 @@ substitution* union_substitutions_with_ts(const substitution* sub1, const substi
 /**
    Test whether two substitutions are the same for the set of variables given
 
+   if literally is true, the substitutions must give same name constants to same variable, 
+   otherwise a semantic equality is used
+
    The timestamps are not added 
 **/
-bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs){
+bool _equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs, bool literally){
   unsigned int i;
   assert(test_substitution(a, cs));
   assert(test_substitution(b, cs));
@@ -482,11 +485,19 @@ bool equal_substitutions(const substitution* a, const substitution* b, const fre
     const term* t2 = find_substitution(b, vars->vars[i], cs);
     if( t1 == NULL && t2 == NULL)
       continue;
-    if ( t1 != NULL && t2 != NULL && equal_terms(t1, t2, cs, NULL, NULL, false))
+    if ( t1 != NULL && t2 != NULL && (literally ? literally_equal_terms(t1, t2, cs, NULL, NULL, false) : equal_terms(t1, t2, cs, NULL, NULL, false)))
       continue;
     return false;
   }
   return true;
+}
+
+bool equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs){
+  return _equal_substitutions(a, b, vars, cs, false);
+}
+
+bool literally_equal_substitutions(const substitution* a, const substitution* b, const freevars* vars, constants* cs){
+  return _equal_substitutions(a, b, vars, cs, true);
 }
 
 void delete_substitution_list(substitution_list* sub_list){

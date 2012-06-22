@@ -74,7 +74,7 @@ bool insert_substitution_single(substitution_store_array* stores, unsigned int s
   
   while(has_next_sub_store(&iter)){
     substitution* next_sub = get_next_sub_store(&iter);
-    if(equal_substitutions(a, next_sub, relevant_vars, cs))
+    if(literally_equal_substitutions(a, next_sub, relevant_vars, cs))
       return false;
   }
   destroy_sub_store_iter(&iter);

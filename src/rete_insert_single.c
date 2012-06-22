@@ -28,6 +28,7 @@
 #include "rete_insert_single.h"
 #include "substitution.h"
 #include "timestamps.h"
+#include "logger.h"
 
 /**
    Should test that the timestamps actually refer to rules 
@@ -100,10 +101,12 @@ void insert_rete_beta_sub_single(const rete_net* net,
     //    assert(test_is_instantiation(node->val.rule.axm->rhs->free_vars, sub));
     assert(test_substitution(sub, cs));
 #ifdef DEBUG_RETE_INSERT
-    printf("Inserting ");
-    print_substitution(sub, cs, stdout);
-    printf("into rule node for axiom %i", node->rule_no);
-    printf("\n");
+    FILE* out = get_logger_out(__FILE__, __LINE__);
+    fprintf(out, "\nInserting ");
+    print_substitution(sub, cs, out);
+    fprintf(out, "into rule node for axiom %i", node->rule_no);
+    fprintf(out, "\n");
+    finished_logging(__FILE__, __LINE__);
 #endif	
     if(insert_substitution_single(node_caches, node->val.rule.store_no, sub, node->free_vars, cs, ts_store)){
       push_rule_instance_single(rule_queue
@@ -115,7 +118,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				, cs
 				);
       //      add_rule_to_queue_single(node->val.rule.axm, sub, rqs);
-#ifdef DEBUG_RETE_INSERT
+#if false
       printf("Inserted ");
       print_substitution(sub, cs, stdout);
       printf("into rule node for axiom %i", node->rule_no);
@@ -134,6 +137,11 @@ void insert_rete_beta_sub_single(const rete_net* net,
       t2 = node->val.equality.t2;
       c2 = get_instantiated_constant(t2, sub, cs);
       add_reflexivity_timestamp(&sub->sub_ts, step, ts_store);
+      insert_substitution_single(node_caches, 
+				 node->val.equality.b_store_no, 
+				 sub, node->free_vars, cs, 
+				 ts_store
+				 );
       if(equal_constants_mt(c1, c2, cs, &sub->sub_ts, ts_store, true))
 	insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
       break;
@@ -145,10 +153,12 @@ void insert_rete_beta_sub_single(const rete_net* net,
 				    ))
 	{
 #ifdef DEBUG_RETE_INSERT
-	  printf("Inserting ");
-	  print_substitution(sub, cs, stdout);
-	  printf("into beta store %i for axiom %i", node->val.beta.b_store_no, node->rule_no);
-	  printf("\n");
+	  FILE* out = get_logger_out(__FILE__,__LINE__);
+	  fprintf(out, "Inserting ");
+	  print_substitution(sub, cs, out);
+	  fprintf(out, "into beta store %i for axiom %i", node->val.beta.b_store_no, node->rule_no);
+	  fprintf(out, "\n");
+	  finished_logging(__FILE__, __LINE__);
 #endif	
 	  iter = get_array_sub_store_iter(node_caches, node->val.beta.a_store_no);
 	  while(has_next_sub_store(& iter)){
@@ -238,10 +248,48 @@ void insert_rete_alpha_beta(const rete_net* net,
     free_substitution(tmp_sub);
   }
 }
+
+/**
+   Called from recheck_beta_node when reaching equality nodes
+   Reinserts the beta cache of the closest beta node to the left
+   There should be such a node since in axiom.c dom literals are added to the left of any 
+   leftmost equality literals
+**/
+void reinsert_beta_cache(const rete_net* net,
+			 substitution_store_array * node_caches, 
+			 substitution_store_mt * tmp_subs,
+			 timestamp_store* ts_store, 
+			 const rete_node* node, 
+			 rule_queue_single * rule_queue,
+			 unsigned int step, 
+			 constants* cs)
+{
+  sub_store_iter iter;
+  substitution* tmp_sub;
+  const rete_node* parent = node->left_parent;
+
+  assert(node->type == equality_node);
+  assert(parent->type == beta_and || parent->type == beta_not || parent->type == equality_node);
+
+  if(parent->type == equality_node)
+    return;
+
+  tmp_sub = create_empty_substitution(net->th, tmp_subs);
+  iter = get_array_sub_store_iter(node_caches, node->val.equality.b_store_no);
+  while(has_next_sub_store(& iter)){
+    copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store, false, cs);
+    insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, parent, node,  step, tmp_sub, cs);
+  }
+  destroy_sub_store_iter(& iter);
+  return;
+}
+
 /**
    Called when a new equality is added to the model. 
    For each beta node, first re-inserts all beta into the next beta-node, 
    then reinserts all from the alpha node into the beta node.
+   At equality nodes, after the recursive call, the previous beta node is asked to reinject 
+   all substitutions
 
    Should first be called at the rule node, iterates backwards
 **/
@@ -260,6 +308,9 @@ void recheck_beta_node(const rete_net* net,
   case beta_root:
     return;
   case equality_node:
+    recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
+    assert(node->left_parent->type != beta_root);
+    reinsert_beta_cache(net, node_caches, tmp_subs, ts_store, node, rule_queue, step, cs);
     break;
   case beta_not:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->val.beta.right_parent, rule_queue, step, cs);
@@ -280,7 +331,8 @@ void recheck_beta_node(const rete_net* net,
     assert(false);
     exit(EXIT_FAILURE);
   }
-  recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
+  if(node->type != equality_node)
+    recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
 }
 /**
    Inserting fact into all alpha children 

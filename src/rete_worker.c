@@ -95,7 +95,7 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
 /**
    The main routine of the queue worker
 
-   This is set to asynchornous canceling, since the data it changes is 
+   This is set to asynchronous canceling, since the data it changes is 
    not used after cancelation. 
 
    The main loop runs for the whole runtime of the prover (stop_signalled arrives

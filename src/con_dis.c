@@ -235,6 +235,7 @@ rete_node * create_rete_conj_node(rete_net* net,
 
 /**
    The newer beta-not implementaion, inserts beta-not nodes as much to the left as possible
+   taking into account that all variables in the lhs must occur to the left of the beta-not node
 **/
 rete_node * insert_beta_not_nodes(rete_net* net, 
 				  const conjunction* con, 

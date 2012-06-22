@@ -85,4 +85,5 @@ void print_geolog_term(const term*, const constants*, FILE*);
 void print_geolog_term_list(const term_list*, const constants*, FILE*);
 
 bool equal_terms(const term*, const term*, constants*, timestamps*, timestamp_store*, bool update_ts);
+bool literally_equal_terms(const term*, const term*, constants*, timestamps*, timestamp_store*, bool update_ts);
 #endif
