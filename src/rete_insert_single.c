@@ -274,7 +274,6 @@ void recheck_beta_node(const rete_net* net,
     return;
   case equality_node:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
-    assert(node->left_parent->type != beta_root);
     break;
   case beta_not:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->val.beta.right_parent, rule_queue, step, cs);

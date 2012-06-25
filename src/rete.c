@@ -185,7 +185,7 @@ rete_node* create_beta_or_node(rete_net* net, rete_node* left_parent, rete_node*
 
 rete_node* create_beta_not_node(rete_net* net, rete_node* left_parent, rete_node* right_parent, const freevars* free_vars, unsigned int rule_no){
   assert(left_parent->type == beta_and  || left_parent->type == equality_node ||left_parent->type == beta_not   || left_parent->type == beta_or ||  left_parent->type == alpha);
-  assert(right_parent->type == alpha || right_parent->type == beta_and || left_parent->type == beta_or);
+  assert(right_parent->type == alpha || right_parent->type == beta_and || right_parent->type == beta_or || right_parent->type == equality_node);
   return  _create_beta_node(net, left_parent, right_parent, beta_not, free_vars, false, rule_no);
 }
 
