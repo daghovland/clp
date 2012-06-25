@@ -57,6 +57,7 @@ typedef struct rete_worker_t {
   constants** constants;
   unsigned int step;
   rete_worker_queue * work;
+  rete_worker_queue * uninserted;
   rule_queue_single * output;
   unsigned int axiom_no;
   bool working;

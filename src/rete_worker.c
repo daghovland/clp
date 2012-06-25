@@ -90,7 +90,35 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
   unlock_worker_queue(worker->work, __FILE__, __LINE__);
 }
 
+/**
+   This is called when facts are not inserted because the test in the alpha nodes fails.
+   These facts are put in a queue and then reinserted whenever the beta node needs rechecking
 
+   This is because new equalities may make them pass the alpha tests
+
+   This queue does not require locking, since it is only accessed by the one worker using it
+**/
+insert_worker_uninserted_queue(rete_worker* worker, const atom * fact, const rete_node * alpha, unsigned int step){
+  push_rete_worker_queue(worker->uninserted, fact, alpha, step);
+}
+
+/**
+   Reinserts all elements from the uninserted queue. Called when rechecking net
+**/
+worker_reinsert_uninserted(rete_worker* worker){
+  unsigned int start_size;
+  const atom* fact;
+  const rete_node* node;
+  unsigned int step;
+  substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
+  for(start_size = get_rete_worker_queue_size(worker->uninserted); start_size > 0; start_size--){
+    pop_rete_worker_queue(worker->uninserted, &fact, &node, &step);
+    worker->step = step;
+    init_substitution(tmp_sub, worker->net->th, step, worker->timestamp_store);
+    if (!insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->timestamp_store, worker->output, node, fact, step, tmp_sub, *(worker->constants)) )
+      insert_worker_uninserted_queue(worker, fact, node, step);
+  }
+}
 
 /**
    The main routine of the queue worker
@@ -124,11 +152,13 @@ void * queue_worker_routine(void* arg){
       printf("Rechecking relevant parts of rete net for axiom %s.\n", worker->net->th->axioms[worker->axiom_no]->name);
 #endif
       recheck_beta_node(worker->net, worker->node_subs, worker->tmp_subs, worker->timestamp_store, worker->net->rule_nodes[worker->axiom_no], worker->output, step, *(worker->constants));
+      worker_reinsert_uninserted(worker);
     } else {
       worker_thread_pop_worker_queue(worker, &fact, &alpha, & step);
       if(worker->state == has_popped){
 	init_substitution(tmp_sub, worker->net->th, step, worker->timestamp_store);
-	insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->timestamp_store, worker->output, alpha, fact, step, tmp_sub, *(worker->constants));
+	if (!insert_rete_alpha_fact_single(worker->net, worker->node_subs, worker->tmp_subs, worker->timestamp_store, worker->output, alpha, fact, step, tmp_sub, *(worker->constants)) )
+	  insert_worker_uninserted_queue(worker, fact, alpha, step);
       }
     }
     __sync_lock_test_and_set(& worker->state, waiting);
@@ -187,6 +217,7 @@ rete_worker* init_rete_worker(const rete_net* net, unsigned int axiom_no, substi
   worker->axiom_no = axiom_no;
   worker->constants = cs;
   worker->recheck_net = false;
+  worker->uninserted = init_rete_worker_queue();
   start_worker_thread(worker);
   return worker;
 }

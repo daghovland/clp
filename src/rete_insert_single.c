@@ -137,13 +137,15 @@ void insert_rete_beta_sub_single(const rete_net* net,
       t2 = node->val.equality.t2;
       c2 = get_instantiated_constant(t2, sub, cs);
       add_reflexivity_timestamp(&sub->sub_ts, step, ts_store);
-      insert_substitution_single(node_caches, 
-				 node->val.equality.b_store_no, 
-				 sub, node->free_vars, cs, 
-				 ts_store
-				 );
-      if(equal_constants_mt(c1, c2, cs, &sub->sub_ts, ts_store, true))
-	insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
+      if(insert_substitution_single(node_caches, 
+				    node->val.equality.b_store_no, 
+				    sub, node->free_vars, cs, 
+				    ts_store
+				    ))
+	{
+	  if(equal_constants_mt(c1, c2, cs, &sub->sub_ts, ts_store, true))
+	    insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, node->children[0], step, sub, cs);
+	}
       break;
     case beta_and:
       if(insert_substitution_single(node_caches, 
@@ -303,8 +305,10 @@ void recheck_beta_node(const rete_net* net,
    The substitution is changed, but not deleted, the calling function must deallocate it and not depend on the contents after calling
 
    exit_matcher usually points to the component stop_worker of a rete_worker_thread
+
+   Returns false if the fact is not passed into beta network in all children
 **/
-void insert_rete_alpha_fact_children_single(const rete_net* net,
+bool insert_rete_alpha_fact_children_single(const rete_net* net,
 					    substitution_store_array * node_caches, 
 					    substitution_store_mt * tmp_subs,
 					    timestamp_store* ts_store, 
@@ -315,13 +319,16 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
 					    substitution* sub, 
 					    constants* cs){
   unsigned int i;
+  bool ret_val = true;
   substitution* tmp_sub = create_empty_substitution(net->th, tmp_subs);
   assert(node->type == selector_node || node->type == alpha);
   for(i = 0; i < node->n_children; i++){
     copy_substitution_struct(tmp_sub, sub, net->th->sub_size_info, ts_store, false, cs);
-    insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  ts_store, rule_queue, node->children[i], fact, step, tmp_sub, cs);
+    if(!insert_rete_alpha_fact_single(net, node_caches, tmp_subs,  ts_store, rule_queue, node->children[i], fact, step, tmp_sub, cs))
+      ret_val = false;
   }
   free_substitution(tmp_sub);
+  return ret_val;
 }
 
 /**
@@ -337,6 +344,10 @@ void insert_rete_alpha_fact_children_single(const rete_net* net,
 
    fact is not changed. It is assumed that the factset will contain this, and it is destroyed
    at the end of the prover.
+
+   Returns true if the fact reaches the beta nodes. Returns false if the substitution is rejected by the alpha 
+   network. This is necessary so the rete worker can store the facts that must be reinserted when new equalities
+   are encountered
 **/
 bool insert_rete_alpha_fact_single(const rete_net* net,
 				   substitution_store_array * node_caches, 
@@ -363,24 +374,21 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
     if( ! unify_substitution_terms(arg, node->val.alpha.value, sub, cs, ts_store))
       ret_val = false;
     else
-      insert_rete_alpha_fact_children_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, fact, step, sub, cs);
+      ret_val = insert_rete_alpha_fact_children_single(net, node_caches, tmp_subs, ts_store, rule_queue, node, fact, step, sub, cs);
     break;
   case beta_and:
+    ret_val = true;
     assert(node->n_children == 1);
-    if(!insert_substitution_single(node_caches, node->val.beta.a_store_no, sub, node->free_vars, cs, ts_store))
-      ret_val = false;
-    else 
+    if(insert_substitution_single(node_caches, node->val.beta.a_store_no, sub, node->free_vars, cs, ts_store))
       insert_rete_alpha_beta(net, node_caches, tmp_subs, ts_store, node, rule_queue, step, sub, cs);
     break;
   case beta_not: 
-    if(insert_substitution_single(node_caches, 
-				  node->val.beta.a_store_no, 
-				  sub, node->free_vars, cs, 
-				  ts_store
-				  ))
-      ;
-    else 
-      ret_val = false;
+    ret_val = true;
+    insert_substitution_single(node_caches, 
+			       node->val.beta.a_store_no, 
+			       sub, node->free_vars, cs, 
+			       ts_store
+			       );
     break;
   default:
     fprintf(stderr, "Encountered wrong node type %i\n", node->type);

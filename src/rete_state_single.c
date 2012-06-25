@@ -533,7 +533,9 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
       push_rete_worker_queue(state->worker_queues[child->rule_no], fact, child, step);
     } else {
       init_substitution(tmp_sub, state->net->th, step, state->timestamp_store);
-      insert_rete_alpha_fact_single(state->net, state->node_subs, &state->tmp_subs, state->timestamp_store, state->rule_queues[child->rule_no], child, fact, step, tmp_sub, state->net->th->constants);
+      if(!insert_rete_alpha_fact_single(state->net, state->node_subs, &state->tmp_subs, state->timestamp_store, state->rule_queues[child->rule_no], child, fact, step, tmp_sub, state->net->th->constants))
+	// TODO: Add code to replace the worker->uninserted  for multithreaded case
+	assert(false);
     }
   }
   free_substitution(tmp_sub);
