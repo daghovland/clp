@@ -250,46 +250,9 @@ void insert_rete_alpha_beta(const rete_net* net,
 }
 
 /**
-   Called from recheck_beta_node when reaching equality nodes
-   Reinserts the beta cache of the closest beta node to the left
-   There should be such a node since in axiom.c dom literals are added to the left of any 
-   leftmost equality literals
-**/
-void reinsert_beta_cache(const rete_net* net,
-			 substitution_store_array * node_caches, 
-			 substitution_store_mt * tmp_subs,
-			 timestamp_store* ts_store, 
-			 const rete_node* node, 
-			 rule_queue_single * rule_queue,
-			 unsigned int step, 
-			 constants* cs)
-{
-  sub_store_iter iter;
-  substitution* tmp_sub;
-  const rete_node* parent = node->left_parent;
-
-  assert(node->type == equality_node);
-  assert(parent->type == beta_and || parent->type == beta_not || parent->type == equality_node);
-
-  if(parent->type == equality_node)
-    return;
-
-  tmp_sub = create_empty_substitution(net->th, tmp_subs);
-  iter = get_array_sub_store_iter(node_caches, node->val.equality.b_store_no);
-  while(has_next_sub_store(& iter)){
-    copy_substitution_struct(tmp_sub, get_next_sub_store(&iter), net->th->sub_size_info, ts_store, false, cs);
-    insert_rete_beta_sub_single(net, node_caches, tmp_subs, ts_store, rule_queue, parent, node,  step, tmp_sub, cs);
-  }
-  destroy_sub_store_iter(& iter);
-  return;
-}
-
-/**
    Called when a new equality is added to the model. 
    For each beta node, first re-inserts all beta into the next beta-node, 
    then reinserts all from the alpha node into the beta node.
-   At equality nodes, after the recursive call, the previous beta node is asked to reinject 
-   all substitutions
 
    Should first be called at the rule node, iterates backwards
 **/
@@ -310,7 +273,6 @@ void recheck_beta_node(const rete_net* net,
   case equality_node:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->left_parent, rule_queue, step, cs);
     assert(node->left_parent->type != beta_root);
-    reinsert_beta_cache(net, node_caches, tmp_subs, ts_store, node, rule_queue, step, cs);
     break;
   case beta_not:
     recheck_beta_node(net, node_caches, tmp_subs, ts_store, node->val.beta.right_parent, rule_queue, step, cs);
