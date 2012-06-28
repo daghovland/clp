@@ -428,17 +428,23 @@ substitution* union_substitutions_one_ts(const substitution* sub1, const substit
 bool union_substitutions_struct_with_ts(substitution* dest, const substitution* sub1, const substitution* sub2, substitution_size_info ssi, constants* cs, timestamp_store* store){
   if(! union_substitutions_struct_one_ts(dest, sub1, sub2, ssi, cs, store))
     return false;
+#ifdef __DEBUG_RETE_PTHREAD
+  fprintf(stderr, "Locking constants (subs): %i\n", pthread_self());
+#endif
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_lock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_lock");
-#ifdef __DEBUG_RETE_PTHREAD
-  fprintf(stderr, "Locking constants (subs)\n");
 #endif
+#ifdef __DEBUG_RETE_PTHREAD
+  fprintf(stderr, "Locked constants (subs): %i\n", pthread_self());
 #endif
   add_timestamps(& dest->sub_ts, & sub2->sub_ts, store);
+#ifdef __DEBUG_RETE_PTHREAD
+  fprintf(stderr, "Unlocking constants (subs): %i\n", pthread_self());
+#endif
 #ifdef HAVE_PTHREAD
   pt_err(pthread_mutex_unlock(& cs->constants_mutex), __FILE__, __LINE__, "union_substitutions_struct_with_ts: mutex_unlock");
 #ifdef __DEBUG_RETE_PTHREAD
-  fprintf(stderr, "Unlocking constants (subs)\n");
+  fprintf(stderr, "Unlocked constants (subs): %i\n", pthread_self());
 #endif
 #endif
   return true;
