@@ -63,8 +63,8 @@
   atom* atom;
   term* term;
   term_list* terms;
-  conjunction* conj;
-  disjunction* disj;
+  clp_conjunction* conj;
+  clp_disjunction* disj;
   axiom* axiom;
   theory* theory;
 }

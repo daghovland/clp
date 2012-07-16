@@ -101,9 +101,9 @@ const rete_node* get_const_selector(unsigned int, const rete_net*);
 rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, bool in_positive_lhs_part, unsigned int axiom_no);
 rete_node* create_rete_axiom_node(rete_net*, const axiom*, unsigned int axiom_no, bool);
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool, bool, bool, bool, bool, bool, bool);
-rete_node* create_rete_conj_node(rete_net*, const conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, unsigned int axiom_no);
-rete_node* create_rete_disj_node(rete_net*, rete_node*, const disjunction*, unsigned int axiom_no);
-rete_node * insert_beta_not_nodes(rete_net* net, const conjunction* con, const disjunction* dis, rete_node* beta_node, unsigned int axiom_no);
+rete_node* create_rete_conj_node(rete_net*, const clp_conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, unsigned int axiom_no);
+rete_node* create_rete_disj_node(rete_net*, rete_node*, const clp_disjunction*, unsigned int axiom_no);
+rete_node * insert_beta_not_nodes(rete_net* net, const clp_conjunction* con, const clp_disjunction* dis, rete_node* beta_node, unsigned int axiom_no);
 
 bool true_ground_equality(const term*, const term*, const substitution*, constants*, timestamps*, timestamp_store*, bool update_ts);
 

@@ -35,8 +35,8 @@
     conjunction constructors and destructors
 **/
 
-conjunction* create_conjunction(const atom *at){
-  conjunction * ret_val = malloc_tester(sizeof(conjunction));
+clp_conjunction* create_conjunction(const atom *at){
+  clp_conjunction * ret_val = malloc_tester(sizeof(clp_conjunction));
   ret_val->size_args = 20;
   ret_val->args = calloc_tester(ret_val->size_args,  sizeof(atom*));
   ret_val->n_args = 1;
@@ -49,8 +49,8 @@ conjunction* create_conjunction(const atom *at){
   return ret_val;
 }
 
-conjunction* create_empty_conjunction(theory* th){
-  conjunction * ret_val = malloc_tester(sizeof(conjunction));
+clp_conjunction* create_empty_conjunction(theory* th){
+  clp_conjunction * ret_val = malloc_tester(sizeof(clp_conjunction));
   ret_val->n_args = 1;
   ret_val->size_args = 1;
   ret_val->args =  calloc_tester(ret_val->size_args,  sizeof(atom*));
@@ -60,7 +60,7 @@ conjunction* create_empty_conjunction(theory* th){
   return ret_val;
 }
 
-void increase_conjunction_size(conjunction *conj){
+void increase_conjunction_size(clp_conjunction *conj){
   conj->n_args++;
   if(conj->n_args >= conj->size_args){
     conj->size_args *= 2;
@@ -68,7 +68,7 @@ void increase_conjunction_size(conjunction *conj){
   }
 }
 
-conjunction* extend_conjunction(conjunction *conj, const atom* at){
+clp_conjunction* extend_conjunction(clp_conjunction *conj, const atom* at){
   increase_conjunction_size(conj);
   conj->args[conj->n_args - 1] = at;
   conj->free_vars = free_atom_variables(at, conj->free_vars);
@@ -78,7 +78,7 @@ conjunction* extend_conjunction(conjunction *conj, const atom* at){
   return conj;
 }
 
-void delete_conjunction(conjunction *conj){
+void delete_conjunction(clp_conjunction *conj){
   int i;
   assert(conj->n_args >= 0);
   for(i = 0; i < conj->n_args; i++)
@@ -94,18 +94,18 @@ void delete_conjunction(conjunction *conj){
    disjunction constructors and destructors
 **/
 
-disjunction* create_disjunction(conjunction* disj){
-  disjunction * ret_val = malloc_tester(sizeof(disjunction));
+clp_disjunction* create_disjunction(clp_conjunction* disj){
+  clp_disjunction * ret_val = malloc_tester(sizeof(clp_disjunction));
   ret_val->n_args = 1;
   ret_val->size_args = 100;
-  ret_val->args = calloc_tester(ret_val->size_args, sizeof(conjunction*));
+  ret_val->args = calloc_tester(ret_val->size_args, sizeof(clp_conjunction*));
   ret_val->args[0] = disj;
   ret_val->free_vars = init_freevars();
   return ret_val;
 }
 
-disjunction* create_empty_disjunction(){
-  disjunction * ret_val = malloc_tester(sizeof(disjunction));
+clp_disjunction* create_empty_disjunction(){
+  clp_disjunction * ret_val = malloc_tester(sizeof(clp_disjunction));
   ret_val->n_args = 0;
   ret_val->size_args = 0;
   ret_val->args = NULL;
@@ -113,21 +113,21 @@ disjunction* create_empty_disjunction(){
   return ret_val;
 }
 
-disjunction* extend_disjunction(disjunction *disj, conjunction *conj){
+clp_disjunction* extend_disjunction(clp_disjunction *disj, clp_conjunction *conj){
   disj->n_args++;
   if(disj->n_args >= disj->size_args){
     disj->size_args *= 2;
-    disj->args = realloc_tester(disj->args, disj->size_args * sizeof(conjunction*));
+    disj->args = realloc_tester(disj->args, disj->size_args * sizeof(clp_conjunction*));
   }
   disj->args[disj->n_args-1] = conj;
   return disj;
 }
 
-void delete_disjunction(disjunction *disj){
+void delete_disjunction(clp_disjunction *disj){
   int i;
   assert(disj->n_args >= 0);
   for(i = 0; i < disj->n_args; i++)
-    delete_conjunction((conjunction*) disj->args[i]);
+    delete_conjunction((clp_conjunction*) disj->args[i]);
   del_freevars(disj->free_vars);
   if(disj->args != NULL)
     free(disj->args);
@@ -138,7 +138,7 @@ void delete_disjunction(disjunction *disj){
    Basic sanity testing
    Called from main method just after parsing
 **/
-bool test_conjunction(const conjunction* c, const constants* cs){
+bool test_conjunction(const clp_conjunction* c, const constants* cs){
   unsigned int i;
   assert(c->n_args <= c->size_args);
   for(i = 0; i < c->n_args; i++)
@@ -146,7 +146,7 @@ bool test_conjunction(const conjunction* c, const constants* cs){
   return true;
 }
 
-bool test_disjunction(const disjunction* d, const constants* cs){
+bool test_disjunction(const clp_disjunction* d, const constants* cs){
   unsigned int i;
   assert(d->n_args <= d->size_args);
   for(i = 0; i < d->n_args; i++)
@@ -160,7 +160,7 @@ bool test_disjunction(const disjunction* d, const constants* cs){
    Checks that if the term t is a variable, then it either occurs in left, 
    or a dom(t->val.var) is inserted into the conjunction
 **/
-unsigned int test_equality_var(conjunction* con, theory* th, unsigned int i, freevars* left, const term* t){
+unsigned int test_equality_var(clp_conjunction* con, theory* th, unsigned int i, freevars* left, const term* t){
   if(t->type == variable_term && !is_in_freevars(left, t->val.var)){
     unsigned int j;
     term_list* tl = create_term_list(copy_term(t));
@@ -181,7 +181,7 @@ unsigned int test_equality_var(conjunction* con, theory* th, unsigned int i, fre
 
    Called from extend_theory
 **/
-void fix_equality_vars(conjunction *con, theory* th){
+void fix_equality_vars(clp_conjunction *con, theory* th){
   freevars* left = init_freevars();
   unsigned int i;
   for(i = 0; i < con->n_args; i++){
@@ -207,7 +207,7 @@ void fix_equality_vars(conjunction *con, theory* th){
    pass on the substitutions, but rather put them in a queue for the rule node to use if necessary
 **/
 rete_node * create_rete_conj_node(rete_net* net, 
-				  const conjunction* con,  
+				  const clp_conjunction* con,  
 				  const freevars* vars,
 				  bool propagate,
 				  bool in_positive_lhs_part,
@@ -238,8 +238,8 @@ rete_node * create_rete_conj_node(rete_net* net,
    taking into account that all variables in the lhs must occur to the left of the beta-not node
 **/
 rete_node * insert_beta_not_nodes(rete_net* net, 
-				  const conjunction* con, 
-				  const disjunction* dis, 
+				  const clp_conjunction* con, 
+				  const clp_disjunction* dis, 
 				  rete_node* beta_node, 
 				  unsigned int axiom_no){
   unsigned int i, j;
@@ -290,7 +290,7 @@ rete_node * insert_beta_not_nodes(rete_net* net,
    Used by the original "beta-not" implementation, where the beta-not comes last, just before the rule node.
    
 **/
-rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const disjunction* dis, unsigned int axiom_no){
+rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const clp_disjunction* dis, unsigned int axiom_no){
   unsigned int i;
   rete_node* right_parent;
   assert(dis->n_args > 0);
@@ -305,7 +305,7 @@ rete_node * create_rete_disj_node(rete_net* net, rete_node* left_parent, const d
 /**
    The free variables are returned
 **/
-freevars* free_conj_variables(const conjunction * con, freevars* vars){
+freevars* free_conj_variables(const clp_conjunction * con, freevars* vars){
   int i;
   for(i = 0; i < con->n_args; i++)
     vars = free_atom_variables(con->args[i], vars);
@@ -316,13 +316,13 @@ freevars* free_conj_variables(const conjunction * con, freevars* vars){
 /** 
     Generic printing function
 **/
-void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char* or_sign, char* exist_sign, char* exist_end, bool print_bindings, void (*print_conj)(const conjunction*, const constants*, FILE*)){
+void print_disj(const clp_disjunction *dis, const constants* cs, FILE* stream, char* or_sign, char* exist_sign, char* exist_end, bool print_bindings, void (*print_conj)(const clp_conjunction*, const constants*, FILE*)){
   int i, j;
   bool print_parentheses;
   if(dis->n_args > 1 && print_bindings)
     fprintf(stream, "(");
   for(i = 0; i < dis->n_args; i++){
-    const conjunction* con = dis->args[i];
+    const clp_conjunction* con = dis->args[i];
     if(i > 0)
       fprintf(stream, "%s", or_sign);
     if(con->bound_vars->n_vars > 0){
@@ -352,7 +352,7 @@ void print_disj(const disjunction *dis, const constants* cs, FILE* stream, char*
 
 }
 
-void print_conj(const conjunction * con, const constants* cs, FILE* stream, char* and_sep, void (*print_atom)(const atom*, const constants*, FILE*)){
+void print_conj(const clp_conjunction * con, const constants* cs, FILE* stream, char* and_sep, void (*print_atom)(const atom*, const constants*, FILE*)){
   int i;
   for(i = 0; i < con->n_args-1; i++){
     print_fol_atom(con->args[i], cs, stream);
@@ -365,22 +365,22 @@ void print_conj(const conjunction * con, const constants* cs, FILE* stream, char
 /**
    Pretty-printing functions , print_fol gives standard fol output
 **/
-void print_fol_conj(const conjunction *con, const constants* cs, FILE* stream){
+void print_fol_conj(const clp_conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, "/\\", print_fol_atom);
 }
-void print_clpl_conj(const conjunction *con, const constants* cs, FILE* stream){
+void print_clpl_conj(const clp_conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, ", ", print_fol_atom);
 }
 
-void print_fol_disj(const disjunction *dis, const constants* cs, FILE* stream){
+void print_fol_disj(const clp_disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, " \\/ "," ∃",  ":", true, print_fol_conj);
 }
 
-void print_dot_conj(const conjunction *con, const constants* cs, FILE* stream){
+void print_dot_conj(const clp_conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, " ∧ ", print_fol_atom);
 }
 
-void print_dot_disj(const disjunction *dis, const constants* cs, FILE* stream){
+void print_dot_disj(const clp_disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, " ∨ ", " ∃", ":", true, print_dot_conj);
 }
 
@@ -389,7 +389,7 @@ void print_dot_disj(const disjunction *dis, const constants* cs, FILE* stream){
    Returns true iff there were some non-domain atoms. 
    There is output iff return value is true.
 **/
-bool print_coq_conj(const conjunction* con, const constants* cs, FILE* stream){
+bool print_coq_conj(const clp_conjunction* con, const constants* cs, FILE* stream){
   unsigned int i;
   bool has_printed_one = false;
   for(i = 0; i < con->n_args; i++){
@@ -400,11 +400,11 @@ bool print_coq_conj(const conjunction* con, const constants* cs, FILE* stream){
   }
   return has_printed_one;
 }
-void print_coq_disj(const disjunction* dis, const constants* cs, FILE* stream){
+void print_coq_disj(const clp_disjunction* dis, const constants* cs, FILE* stream){
   freevars* ev;
   unsigned int i, j;
   for(i = 0; i < dis->n_args; i++){
-    conjunction* arg = dis->args[i];
+    clp_conjunction* arg = dis->args[i];
     if(arg->n_args > 0 || arg->is_existential)
       fprintf(stream, "(");
     if(arg->is_existential){
@@ -423,25 +423,25 @@ void print_coq_disj(const disjunction* dis, const constants* cs, FILE* stream){
 /**
    Print in geolog input format
 **/
-void print_geolog_disj(const disjunction *dis, const constants* cs, FILE* stream){
+void print_geolog_disj(const clp_disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, ";", " ∃", ":", false, print_geolog_conj);
 }
-void print_clpl_disj(const disjunction *dis, const constants* cs, FILE* stream){
+void print_clpl_disj(const clp_disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, ";", " ∃", ":", false, print_clpl_conj);
 }
 
-void print_geolog_conj(const conjunction *con, const constants* cs, FILE* stream){
+void print_geolog_conj(const clp_conjunction *con, const constants* cs, FILE* stream){
   print_conj(con, cs, stream, ",", print_geolog_atom);
 }
 
 /**
    Print in TPTP format
 **/
-void print_tptp_disj(const disjunction *dis, const constants* cs, FILE* stream){
+void print_tptp_disj(const clp_disjunction *dis, const constants* cs, FILE* stream){
   print_disj(dis, cs, stream, "|", " ? [", " ]: ", true, print_tptp_conj);
 }
 
-void print_tptp_conj(const conjunction *con, const constants* cs, FILE* stream){
+void print_tptp_conj(const clp_conjunction *con, const constants* cs, FILE* stream){
   if(con->n_args > 1)
     fprintf(stream, "(");
   print_conj(con, cs, stream, " & ", print_fol_atom);

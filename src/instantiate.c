@@ -34,7 +34,7 @@
 /**
    Tests that a substitution has a value for all variables in the conjunction
 **/
-bool test_is_conj_instantiation(const conjunction* a, const substitution* sub, const constants* cs){
+bool test_is_conj_instantiation(const clp_conjunction* a, const substitution* sub, const constants* cs){
   freevars* fv = init_freevars();
   fv = free_conj_variables(a, fv);
   assert(test_is_instantiation(fv, sub, cs));

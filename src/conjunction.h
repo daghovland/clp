@@ -33,21 +33,21 @@ typedef struct conjunction_t {
   unsigned int n_equalities;
   freevars *bound_vars;
   freevars *free_vars;
-} conjunction;
+} clp_conjunction;
 
-conjunction* create_conjunction(const atom*);
-conjunction* extend_conjunction(conjunction*, const atom*);
+clp_conjunction* create_conjunction(const atom*);
+clp_conjunction* extend_conjunction(clp_conjunction*, const atom*);
 
-void delete_conjunction(conjunction*);
-freevars* free_conj_variables(const conjunction*, freevars*);
+void delete_conjunction(clp_conjunction*);
+freevars* free_conj_variables(const clp_conjunction*, freevars*);
 
-bool test_conjunction(const conjunction*, const constants*);
+bool test_conjunction(const clp_conjunction*, const constants*);
 
-void print_fol_conj(const conjunction*, const constants*, FILE*);
-void print_clpl_conj(const conjunction*, const constants*, FILE*);
-void print_dot_conj(const conjunction*, const constants*, FILE*);
-bool print_coq_conj(const conjunction*, const constants*, FILE*);
-void print_geolog_conj(const conjunction*, const constants*, FILE*);
-void print_tptp_conj(const conjunction*, const constants*, FILE*);
+void print_fol_conj(const clp_conjunction*, const constants*, FILE*);
+void print_clpl_conj(const clp_conjunction*, const constants*, FILE*);
+void print_dot_conj(const clp_conjunction*, const constants*, FILE*);
+bool print_coq_conj(const clp_conjunction*, const constants*, FILE*);
+void print_geolog_conj(const clp_conjunction*, const constants*, FILE*);
+void print_tptp_conj(const clp_conjunction*, const constants*, FILE*);
 
 #endif

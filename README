@@ -11,6 +11,8 @@ Takes a theory in geolog-format or CL.pl-format from standard input or files
 
 Information about compiling and installing
 
+Copy all source and header files from JJParser in "Geoff's Service Tools" from tptp.org into the src subdirectory of clp
+
 Requires recent versions of bison and flex. I use bison 2.4.3 and flex 2.5.4. It does e.g. not work with bison 1
 
 If you are building from mercurial repository (not from tarball) remember to first run:

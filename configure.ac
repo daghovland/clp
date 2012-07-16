@@ -66,11 +66,6 @@ AC_CHECK_FUNCS([memset atexit strtoul])
 #For not generating files in the maintainer's repo
 AM_MAINTAINER_MODE
 
-AM_GNU_GETTEXT(external)
-AM_GNU_GETTEXT_VERSION([0.16.1])
-BISON_I18N
-
-
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
 AC_OUTPUT

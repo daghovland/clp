@@ -36,7 +36,7 @@
 /**
    Tests that a substitution has a value for all variables in the conjunction
 **/
-bool test_is_conj_instantiation(const conjunction* a, const substitution* sub, const constants*);
+bool test_is_conj_instantiation(const clp_conjunction* a, const substitution* sub, const constants*);
 const term* instantiate_term(const term* orig, const substitution* sub, const constants*);
 void delete_instantiated_term(term* copy);
 const term_list* instantiate_term_list(const term_list* orig, const substitution* sub, const constants*);

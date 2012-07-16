@@ -48,7 +48,7 @@ theory* create_theory(void){
   ret_val->n_axioms =  0;
 
   ret_val->size_init_model = 100;
-  ret_val->init_model = calloc_tester(ret_val->size_axioms, sizeof(conjunction*));
+  ret_val->init_model = calloc_tester(ret_val->size_axioms, sizeof(clp_conjunction*));
   ret_val->n_init_model =  0;
 
   ret_val->size_func_names = 100;
@@ -70,7 +70,7 @@ theory* create_theory(void){
   return ret_val;
 }
 
-void extend_init_model(theory* th, conjunction* fact){
+void extend_init_model(theory* th, clp_conjunction* fact){
   th->n_init_model++;
   if(th->n_init_model >= th->size_init_model){
     th->size_init_model *= 2;
@@ -241,7 +241,7 @@ void print_coq_proof_intro(const theory* th, const constants* cs, FILE* stream){
   fprintf(stream, "\n");
   
   for(i = 0; i < th->n_init_model; i++){
-    conjunction *con = th->init_model[i];
+    clp_conjunction *con = th->init_model[i];
     assert(con->n_args > 0);
     for(j = 0; j < con->n_args; j++){
       fprintf(stream, "Hypothesis init_model_%i_%i : ", i, j);
@@ -267,7 +267,7 @@ void print_coq_proof_ending(const theory* th, FILE* stream){
 /**
    Generic pretty printing function
 **/
-void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const axiom*, const constants*, FILE*) ,  void (*print_conj)(const conjunction*, const constants*, FILE*), const char* init_start, const char* init_end, const char* and_sign ){
+void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const axiom*, const constants*, FILE*) ,  void (*print_conj)(const clp_conjunction*, const constants*, FILE*), const char* init_start, const char* init_end, const char* and_sign ){
   int i;
   if(th->n_init_model > 0){
     fprintf(stream, "%s", init_start);

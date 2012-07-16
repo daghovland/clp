@@ -38,7 +38,7 @@ typedef struct theory_t {
   const axiom** axioms;
   unsigned int n_axioms;
   size_t size_axioms;
-  conjunction ** init_model;
+  clp_conjunction ** init_model;
   unsigned int n_init_model;
   size_t size_init_model;
   freevars* vars;
@@ -80,13 +80,13 @@ atom* create_prop_variable(const char*, theory*);
 
 
 // In con_dis.c
-conjunction* create_empty_conjunction(theory*);
-void fix_equality_vars(conjunction*, theory*);
+clp_conjunction* create_empty_conjunction(theory*);
+void fix_equality_vars(clp_conjunction*, theory*);
 
 
 //In axiom.c
-axiom* create_fact(disjunction*, theory*);
-axiom* create_axiom(conjunction*, disjunction*, theory*);
+axiom* create_fact(clp_disjunction*, theory*);
+axiom* create_axiom(clp_conjunction*, clp_disjunction*, theory*);
 
 
 

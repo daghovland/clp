@@ -37,7 +37,7 @@
    Constructors and destructor
 **/
 
-axiom* create_axiom(conjunction* lhs, disjunction* rhs, theory* th){
+axiom* create_axiom(clp_conjunction* lhs, clp_disjunction* rhs, theory* th){
   int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = normal;
@@ -62,7 +62,7 @@ axiom* create_axiom(conjunction* lhs, disjunction* rhs, theory* th){
   return ret_val;
 }
 
-axiom* create_fact(disjunction *rhs, theory* th){
+axiom* create_fact(clp_disjunction *rhs, theory* th){
   unsigned int i;
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = fact;
@@ -86,7 +86,7 @@ axiom* create_fact(disjunction *rhs, theory* th){
 }
 
 
-axiom* create_goal(conjunction* lhs){
+axiom* create_goal(clp_conjunction* lhs){
   axiom * ret_val = malloc_tester(sizeof(axiom));
   ret_val->type = goal;
   ret_val->lhs = lhs;
@@ -99,10 +99,10 @@ axiom* create_goal(conjunction* lhs){
 
 void delete_axiom(axiom* a){
   if(a->type == fact)
-    free((conjunction*) a->lhs);
+    free((clp_conjunction*) a->lhs);
   else
-    delete_conjunction((conjunction*) a->lhs);
-  delete_disjunction((disjunction*) a->rhs);
+    delete_conjunction((clp_conjunction*) a->lhs);
+  delete_disjunction((clp_disjunction*) a->rhs);
   del_freevars(a->exist_vars);
   free(a);
 }

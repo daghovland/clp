@@ -25,27 +25,27 @@
 #include "conjunction.h"
 
 typedef struct disjunction_t {
-  conjunction **args;
+  clp_conjunction **args;
   size_t n_args;
   size_t size_args;
   freevars *free_vars;
-} disjunction;
+} clp_disjunction;
 
 
-disjunction* create_disjunction(conjunction*);
-disjunction* create_empty_disjunction(void);
-disjunction* extend_disjunction(disjunction*, conjunction*);
+clp_disjunction* create_disjunction(clp_conjunction*);
+clp_disjunction* create_empty_disjunction(void);
+clp_disjunction* extend_disjunction(clp_disjunction*, clp_conjunction*);
 
-bool test_disjunction(const disjunction*, const constants*);
+bool test_disjunction(const clp_disjunction*, const constants*);
 
-void delete_disjunction(disjunction*);
+void delete_disjunction(clp_disjunction*);
 
-void print_fol_disj(const disjunction*, const constants*, FILE*);
-void print_dot_disj(const disjunction*, const constants*, FILE*);
-void print_coq_disj(const disjunction*, const constants*, FILE*);
+void print_fol_disj(const clp_disjunction*, const constants*, FILE*);
+void print_dot_disj(const clp_disjunction*, const constants*, FILE*);
+void print_coq_disj(const clp_disjunction*, const constants*, FILE*);
 
-void print_clpl_disj(const disjunction*, const constants*, FILE*);
-void print_geolog_disj(const disjunction*, const constants*, FILE*);
-void print_tptp_disj(const disjunction*, const constants*, FILE*);
+void print_clpl_disj(const clp_disjunction*, const constants*, FILE*);
+void print_geolog_disj(const clp_disjunction*, const constants*, FILE*);
+void print_tptp_disj(const clp_disjunction*, const constants*, FILE*);
 
 #endif

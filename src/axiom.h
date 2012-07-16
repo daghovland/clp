@@ -45,8 +45,8 @@ enum axiom_type { fact, goal, normal };
 typedef struct axiom_t {
   enum axiom_type type;
   int axiom_no;
-  const conjunction * lhs;
-  const disjunction * rhs;
+  const clp_conjunction * lhs;
+  const clp_disjunction * rhs;
   const char* name;
   bool has_name;
   bool is_existential;
@@ -54,8 +54,8 @@ typedef struct axiom_t {
 } axiom;
 
 
-axiom* create_goal(conjunction*);
-axiom* create_negative(conjunction*);
+axiom* create_goal(clp_conjunction*);
+axiom* create_negative(clp_conjunction*);
 
 void set_axiom_name(axiom*, const char*);
 

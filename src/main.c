@@ -31,6 +31,11 @@
 #include <getopt.h> 
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 // For timer functions
 #include <signal.h>
 #include <time.h>
@@ -39,6 +44,25 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+// For JJParser
+#include "DataTypes.h"
+#include "Utilities.h"
+#include "FileUtilities.h"
+#include "Tokenizer.h"
+#include "Parsing.h"
+#include "Signature.h"
+#include "Examine.h"
+#include "Compare.h"
+#include "Modify.h"
+#include "List.h"
+#include "Tree.h"
+#include "ListStatistics.h"
+#include "PrintTSTP.h"
+#include "PrintDFG.h"
+#include "PrintKIF.h"
+#include "PrintOtter.h"
+#include "PrintXML.h"
+#include "SystemOnTPTP.h"
 
 /**
    The boolean lazy leads to the opposite value for propagate in the 
