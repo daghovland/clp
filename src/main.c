@@ -203,6 +203,8 @@ int file_prover(FILE* f, const char* prefix){
   FILE *fp;
   int retval;
   unsigned int steps;
+  SIGNATURE Signature;
+  LISTNODE Head;
   switch(input_format){
   case clpl_format:
     th = clpl_parser(f);
@@ -211,7 +213,17 @@ int file_prover(FILE* f, const char* prefix){
     th = geolog_parser(f);
     break;
   case tptp_format: 
-    th = tptp_parser(f);
+    
+//----One signature for all testing
+    Signature = NewSignature();
+
+//----Read from file or stdin
+    SetNeedForNonLogicTokens(0);
+    SetAllowFreeVariables(0);
+//----Test duplicate arity warnings
+    SetWarnings(1);
+    Head = ParseREADFILEOfFormulae((READFILE) f,Signature,1,NULL);
+    //    th = tptp_parser(f);
     break;
   default:
     perror("Error in enum for file input type\n");
@@ -220,7 +232,8 @@ int file_prover(FILE* f, const char* prefix){
   if(output_theory){
     switch(output_format){
     case tptp_format:
-      print_tptp_theory(th, th->constants, stdout);
+      PrintListOfAnnotatedTSTPNodes(stdout,Signature,Head,tptp,1);
+      //      print_tptp_theory(th, th->constants, stdout);
       break;
     case clpl_format:
       print_clpl_theory(th, th->constants, stdout);
@@ -278,7 +291,10 @@ int file_prover(FILE* f, const char* prefix){
   delete_theory(th);
   //if(brk(mem_break) != 0)
   //  perror("Error with resetting memory after proving file\n");
-
+  if(input_format == tptp_format){
+    FreeListOfAnnotatedFormulae(&Head);
+    FreeSignature(&Signature);
+  }
   return retval;
 }
 void print_help(char* exec){
