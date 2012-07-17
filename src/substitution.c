@@ -73,11 +73,11 @@ void free_substitution(substitution* sub){
    Must only be accessed through these getters and setters, 
    since there is an offset from the timestamps which has a flexible array member
 **/
-const term* get_sub_value(const substitution* sub, unsigned int no){
+const clp_term* get_sub_value(const substitution* sub, unsigned int no){
   return (sub->sub_values + sub->sub_values_offset)[no];
 }
 
-void set_sub_value(substitution* sub, unsigned int no, const term* t){
+void set_sub_value(substitution* sub, unsigned int no, const clp_term* t){
   (sub->sub_values + sub->sub_values_offset)[no] = t;
 }
 
@@ -129,7 +129,7 @@ substitution* create_substitution(const theory* t, signed int timestamp, substit
    Only called from prover() in prover.c, when creating empty substitutions for facts.
    Inserts a number needed by the coq proof output.
 **/
-substitution* create_empty_fact_substitution(const theory* t, const axiom* a, substitution_store_mt* store, timestamp_store* ts_store, const constants* cs){
+substitution* create_empty_fact_substitution(const theory* t, const clp_axiom* a, substitution_store_mt* store, timestamp_store* ts_store, const constants* cs){
   substitution* sub = create_substitution(t, 1, store, ts_store, cs);
   assert(test_substitution(sub, cs));
   return sub;
@@ -174,7 +174,7 @@ substitution* copy_substitution(const substitution* orig, substitution_store_mt*
 
 
 
-const term* find_substitution(const substitution* sub, const variable* key, const constants* cs){
+const clp_term* find_substitution(const substitution* sub, const clp_variable* key, const constants* cs){
   assert(test_substitution(sub, cs));
   if(sub == NULL)
     return NULL;
@@ -190,8 +190,8 @@ const term* find_substitution(const substitution* sub, const variable* key, cons
    If update_ts is true, the substitution is updated with new timestamps also 
    when the equality fails. It is assumed that the substitution is then discarded
 **/
-bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, constants* cs, timestamp_store* store, bool update_ts){
-  const term* orig_val = get_sub_value(sub, var_no);
+bool _add_substitution_no(substitution* sub, size_t var_no, const clp_term* value, constants* cs, timestamp_store* store, bool update_ts){
+  const clp_term* orig_val = get_sub_value(sub, var_no);
 
   assert(test_term(value, cs));
 
@@ -209,7 +209,7 @@ bool _add_substitution_no(substitution* sub, size_t var_no, const term* value, c
 
 
 
-bool add_substitution(substitution* sub, variable* var, const term* value, constants* cs, timestamp_store* store, bool update_ts){
+bool add_substitution(substitution* sub, clp_variable* var, const clp_term* value, constants* cs, timestamp_store* store, bool update_ts){
   return _add_substitution_no(sub, var->var_no, value, cs, store, update_ts);
 }
 
@@ -219,7 +219,7 @@ bool add_substitution(substitution* sub, variable* var, const term* value, const
 
    Does not fail if the key already occurs with a different value
 **/
-void insert_substitution_value(substitution* sub, variable* var, const term* value, const constants* cs){
+void insert_substitution_value(substitution* sub, clp_variable* var, const clp_term* value, const constants* cs){
   size_t var_no = var->var_no;
   assert(test_term(value, cs));
   if(get_sub_value(sub, var_no) == NULL)
@@ -244,7 +244,7 @@ void insert_substitution_value(substitution* sub, variable* var, const term* val
    I cannot remember now what they are used for, and they were not deleted elsewhere
 **/
 
-bool unify_substitution_terms(const term* value, const term* argument, substitution* sub, constants* cs, timestamp_store* store){
+bool unify_substitution_terms(const clp_term* value, const clp_term* argument, substitution* sub, constants* cs, timestamp_store* store){
   //  freevars* free_arg_vars = init_freevars();
 
   assert(test_substitution(sub, cs));
@@ -301,8 +301,8 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2,
 
 
   for(i = 0; i < sub1->allvars->n_vars; i++){
-    const term* val1 = get_sub_value(sub1, i);
-    const term* val2 = get_sub_value(sub2, i);
+    const clp_term* val1 = get_sub_value(sub1, i);
+    const clp_term* val2 = get_sub_value(sub2, i);
     if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, NULL, NULL, false))
 	return false;
   }
@@ -319,7 +319,7 @@ bool test_substitution(const substitution* sub, const constants* cs){
   
   c = 0;
   for(i = 0; i < sub->allvars->n_vars; i++){
-    const term* t = get_sub_value(sub, i);
+    const clp_term* t = get_sub_value(sub, i);
     if(t != NULL){
       c++;
       assert(test_term(t, cs));
@@ -336,7 +336,7 @@ bool test_substitution(const substitution* sub, const constants* cs){
 bool test_is_instantiation(const freevars* fv, const substitution* sub, const constants* cs){
   freevars_iter iter = get_freevars_iter(fv);
   while(has_next_freevars_iter(&iter)){
-    variable* var = next_freevars_iter(&iter);
+    clp_variable* var = next_freevars_iter(&iter);
     if(find_substitution(sub, var, cs) == NULL)
       return false;
   }
@@ -354,8 +354,8 @@ bool test_is_instantiation(const freevars* fv, const substitution* sub, const co
 bool union_substitutions_struct_terms(substitution* dest, const substitution* orig, constants* cs, timestamp_store* store){
   unsigned int i;
   for(i = 0; i < dest->allvars->n_vars; i++){
-    const term* val1 = get_sub_value(dest, i);
-    const term* val2 = get_sub_value(orig, i);
+    const clp_term* val1 = get_sub_value(dest, i);
+    const clp_term* val2 = get_sub_value(orig, i);
     if(val1 == NULL){
       if(val2 != NULL){
 	dest->n_subs++;
@@ -487,8 +487,8 @@ bool _equal_substitutions(const substitution* a, const substitution* b, const fr
   assert(test_substitution(a, cs));
   assert(test_substitution(b, cs));
   for(i = 0; i < vars->n_vars; i++){
-    const term* t1 = find_substitution(a, vars->vars[i], cs);
-    const term* t2 = find_substitution(b, vars->vars[i], cs);
+    const clp_term* t1 = find_substitution(a, vars->vars[i], cs);
+    const clp_term* t2 = find_substitution(b, vars->vars[i], cs);
     if( t1 == NULL && t2 == NULL)
       continue;
     if ( t1 != NULL && t2 != NULL && (literally ? literally_equal_terms(t1, t2, cs, NULL, NULL, false) : equal_terms(t1, t2, cs, NULL, NULL, false)))

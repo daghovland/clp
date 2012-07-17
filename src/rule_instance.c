@@ -49,7 +49,7 @@ rule_instance* copy_rule_instance(const rule_instance* orig, substitution_size_i
    Only used when commandline option fact-set is on, 
    that is, when RETE is not used
 **/
-rule_instance* create_rule_instance(const axiom* rule, const substitution* sub, substitution_size_info ssi, timestamp_store* ts_store, const constants* cs){
+rule_instance* create_rule_instance(const clp_axiom* rule, const substitution* sub, substitution_size_info ssi, timestamp_store* ts_store, const constants* cs){
   rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));
 
   assert(test_substitution(sub, cs));

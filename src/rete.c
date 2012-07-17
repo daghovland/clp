@@ -68,7 +68,7 @@ rete_node* _create_rete_node(enum rete_node_type type, rete_node* left_parent, c
   Note that these have axiom_no 0 since they do not
   belong to a specific axiom.
 **/
-void init_selector_node(predicate* p, rete_node* n){
+void init_selector_node(clp_predicate* p, rete_node* n){
   init_rete_node(n, selector_node, NULL, init_freevars(), true, 0);
   n->val.selector = p;
   return;
@@ -136,7 +136,7 @@ rete_node* create_beta_left_root(unsigned int axiom_no){
    propagate set to true is the standard "non-lazy" approach
 **/
 
-rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const term* val, const freevars* free_vars, bool propagate, bool in_positive_lhs_part, unsigned int rule_no){
+rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const clp_term* val, const freevars* free_vars, bool propagate, bool in_positive_lhs_part, unsigned int rule_no){
   rete_node* node = _create_rete_node(alpha, left_parent, free_vars, in_positive_lhs_part, rule_no);
   node->val.alpha.argument_no = arg_no;
   node->val.alpha.value = val;
@@ -145,7 +145,7 @@ rete_node* create_alpha_node(rete_node* left_parent, unsigned int arg_no, const 
 }
 
 
-rete_node* create_rete_equality_node(rete_net* net, const term* t1, const term* t2, rete_node* left_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
+rete_node* create_rete_equality_node(rete_net* net, const clp_term* t1, const clp_term* t2, rete_node* left_parent, const freevars* free_vars, bool in_positive_lhs_part, unsigned int rule_no){
   assert(left_parent->type == equality_node || left_parent->type == beta_and || left_parent->type == beta_not || left_parent->type == beta_root || left_parent->type == beta_or);
   rete_node* node = _create_rete_node(equality_node, left_parent, free_vars, in_positive_lhs_part, rule_no);
   node->val.equality.t1 = t1;
@@ -189,7 +189,7 @@ rete_node* create_beta_not_node(rete_net* net, rete_node* left_parent, rete_node
   return  _create_beta_node(net, left_parent, right_parent, beta_not, free_vars, false, rule_no);
 }
 
-rete_node* create_rule_node(rete_net* net, rete_node* parent, const axiom* ax, const freevars* vars, unsigned int rule_no){
+rete_node* create_rule_node(rete_net* net, rete_node* parent, const clp_axiom* ax, const freevars* vars, unsigned int rule_no){
   rete_node* node = _create_rete_node(rule_node, parent, vars, true, rule_no);
   assert(parent->n_children > 0);
   node->val.rule.store_no = net->n_subs++;

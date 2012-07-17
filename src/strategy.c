@@ -54,7 +54,7 @@ rule_instance* normal_next_instance(rule_queue_state state
 					 , unsigned int (*possible_age)(rule_queue_state, unsigned int)
 					 , bool (*may_have)(rule_queue_state, unsigned int)
 					 , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
-					 , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
+					 , void (*add_to_queue) (const clp_axiom*, const substitution*, rule_queue_state)
 					 , unsigned int (*previous_application)(rule_queue_state, unsigned int)
 					 )
 {
@@ -70,7 +70,7 @@ rule_instance* normal_next_instance(rule_queue_state state
   unsigned int axiom_weights[th->n_axioms];
   unsigned int max_weight = 50 * (step_no + 1) * (1 + RAND_RULE_WEIGHT);
   for(i = 0; i < net->th->n_axioms; i++){
-    const axiom* rule = th->axioms[i];
+    const clp_axiom* rule = th->axioms[i];
     unsigned int axiom_no = rule->axiom_no;
     assert(axiom_no == i);
     if(may_have(state, axiom_no)){
@@ -206,7 +206,7 @@ rule_instance* choose_next_instance(rule_queue_state state
 				    , unsigned int (*possible_age)(rule_queue_state, unsigned int)
 				    , bool (*may_have)(rule_queue_state, unsigned int)
 				    , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
-				    , void (*add_to_queue) (const axiom*, const substitution*, rule_queue_state)
+				    , void (*add_to_queue) (const clp_axiom*, const substitution*, rule_queue_state)
 				    , unsigned int (*previous_application)(rule_queue_state, unsigned int)
 				    )
 {

@@ -28,25 +28,25 @@
 
 
 typedef struct atom_t {
-  const predicate* pred;
+  const clp_predicate* pred;
   const term_list * args;
-} atom;
+} clp_atom;
 
 
 
-atom* prover_create_atom(const predicate*, const term_list*);
+clp_atom* prover_create_atom(const clp_predicate*, const term_list*);
 
 
-void delete_atom(atom*);
-freevars* free_atom_variables(const atom*, freevars*);
+void delete_atom(clp_atom*);
+freevars* free_atom_variables(const clp_atom*, freevars*);
 
-bool test_atom(const atom*, const constants*);
-bool test_ground_atom(const atom*, const constants*);
+bool test_atom(const clp_atom*, const constants*);
+bool test_ground_atom(const clp_atom*, const constants*);
 
-void print_fol_atom(const atom*, const constants*, FILE*);
-void print_coq_atom(const atom*, const constants*, FILE*);
-void print_geolog_atom(const atom*, const constants*, FILE*);
+void print_fol_atom(const clp_atom*, const constants*, FILE*);
+void print_coq_atom(const clp_atom*, const constants*, FILE*);
+void print_geolog_atom(const clp_atom*, const constants*, FILE*);
 
-bool equal_atoms(const atom*, const atom*, constants*, timestamps* ts, timestamp_store* store, bool update_ts);
+bool equal_atoms(const clp_atom*, const clp_atom*, constants*, timestamps* ts, timestamp_store* store, bool update_ts);
 
 #endif

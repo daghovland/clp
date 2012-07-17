@@ -75,7 +75,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
 
 
 void insert_rete_net_conjunction_single(rete_state_single* state, 
-					conjunction* con, 
+					clp_conjunction* con, 
 					substitution* sub){
   unsigned int i;
   assert(test_conjunction(con, state->constants));
@@ -83,7 +83,7 @@ void insert_rete_net_conjunction_single(rete_state_single* state,
   assert(test_is_conj_instantiation(con, sub, state->constants));
   for(i = 0; i < con->n_args; i++){
     bool fact_is_new = true;
-    atom* ground = instantiate_atom(con->args[i], sub, state->constants);
+    clp_atom* ground = instantiate_atom(con->args[i], sub, state->constants);
     assert(test_ground_atom(ground, state->constants));
 #ifdef __DEBUG_RETE_STATE
     printf("New fact: ");
@@ -190,7 +190,7 @@ bool run_prover_single(rete_state_single* state){
 **/
 bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* next, timestamp step){
   unsigned int i;
-  const axiom* rule = next->rule;
+  const clp_axiom* rule = next->rule;
   unsigned int n_branches = rule->rhs->n_args;
   rete_state_backup backup = backup_rete_state(state);
   proof_branch* parent_prf_branch = state->current_proof_branch;
@@ -201,7 +201,7 @@ bool start_rete_disjunction_coq_single(rete_state_single* state, rule_instance* 
     if(i > 0)
       restore_rete_state(&backup, state);
     enter_proof_disjunct(state);
-    conjunction *con = rule->rhs->args[i]; 
+    clp_conjunction *con = rule->rhs->args[i]; 
     sub = & (get_historic_rule_instance(state, step.step))->sub;
     tmp_sub = copy_substitution(sub, & state->tmp_subs, state->net->th->sub_size_info, state->timestamp_store, state->constants);
     assert(test_substitution(tmp_sub, state->constants));
@@ -236,7 +236,7 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   FILE* coq_fp = get_coq_fdes();
   timestamp step = branch->end_step;
   rule_instance* end_ri = get_historic_rule_instance(state, step.step);
-  const axiom* rule = end_ri->rule;
+  const clp_axiom* rule = end_ri->rule;
   unsigned int n_branches = branch->n_children;
   timestamp step_ri, pusher;
   rule_queue_state rqs;
@@ -285,7 +285,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   rete_state_single * state = create_rete_state_single(rete, verbose);
   bool has_fact = false;
   unsigned int i, retval;
-  atom * true_atom;
+  clp_atom * true_atom;
   foundproof = true;
   reached_max = false;
   srand(1000);
@@ -296,7 +296,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   }
   if(rete->th->n_init_model == 0){
     for(i = 0; i < rete->th->n_axioms; i++){
-      const axiom * ax = rete->th->axioms[i];
+      const clp_axiom * ax = rete->th->axioms[i];
       if(ax->type == fact){
 	has_fact = true;
 	break;

@@ -37,7 +37,7 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   timestamp_store* ts_store, 
 				   rule_queue_single * rule_queue,
 				   const rete_node* node, 
-				   const atom* fact, 
+				   const clp_atom* fact, 
 				   unsigned int step, 
 				   substitution* sub, 
 				   constants*);

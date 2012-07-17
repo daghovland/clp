@@ -26,7 +26,7 @@
 #include "atom.h" 
 
 typedef struct conjunction_t {
-  const atom **args;
+  const clp_atom **args;
   unsigned int n_args;
   size_t size_args;
   bool is_existential;
@@ -35,8 +35,8 @@ typedef struct conjunction_t {
   freevars *free_vars;
 } clp_conjunction;
 
-clp_conjunction* create_conjunction(const atom*);
-clp_conjunction* extend_conjunction(clp_conjunction*, const atom*);
+clp_conjunction* create_conjunction(const clp_atom*);
+clp_conjunction* extend_conjunction(clp_conjunction*, const clp_atom*);
 
 void delete_conjunction(clp_conjunction*);
 freevars* free_conj_variables(const clp_conjunction*, freevars*);

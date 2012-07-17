@@ -44,7 +44,7 @@ enum term_type { constant_term, variable_term, function_term };
 struct term_t {
   union {
     const char* function;
-    variable* var;
+    clp_variable* var;
     dom_elem  constant;
   } val;
   enum term_type type;
@@ -53,37 +53,37 @@ struct term_t {
 
 
 
-typedef struct term_t term;
+typedef struct term_t clp_term;
 typedef struct term_list_t term_list;
 
 
-term* create_function_term(const char*, const term_list*);
-term* prover_create_constant_term(dom_elem);
+clp_term* create_function_term(const char*, const term_list*);
+clp_term* prover_create_constant_term(dom_elem);
 
-term* copy_term(const term*);
+clp_term* copy_term(const clp_term*);
 term_list* copy_term_list(const term_list*);
 
-term_list* create_term_list(const term*);
-term_list* extend_term_list(term_list*, const term*);
+term_list* create_term_list(const clp_term*);
+term_list* extend_term_list(term_list*, const clp_term*);
 
-bool test_term(const term*, const constants*);
+bool test_term(const clp_term*, const constants*);
 bool test_term_list(const term_list*, const constants*);
 bool test_ground_term_list(const term_list* tl, const constants*);
 
 void delete_term_list(term_list*);
-void delete_term(term*);
+void delete_term(clp_term*);
 
-freevars* free_term_variables(const term*, freevars*);
+freevars* free_term_variables(const clp_term*, freevars*);
 freevars* free_term_list_variables(const term_list*, freevars*);
 
-void print_fol_term(const term*, const constants*, FILE*);
-void print_coq_term(const term*, const constants*, FILE*);
+void print_fol_term(const clp_term*, const constants*, FILE*);
+void print_coq_term(const clp_term*, const constants*, FILE*);
 void print_fol_term_list(const term_list*, const constants*, FILE*);
 void print_coq_term_list(const term_list*, const constants*, FILE*);
 
-void print_geolog_term(const term*, const constants*, FILE*);
+void print_geolog_term(const clp_term*, const constants*, FILE*);
 void print_geolog_term_list(const term_list*, const constants*, FILE*);
 
-bool equal_terms(const term*, const term*, constants*, timestamps*, timestamp_store*, bool update_ts);
-bool literally_equal_terms(const term*, const term*, constants*, timestamps*, timestamp_store*, bool update_ts);
+bool equal_terms(const clp_term*, const clp_term*, constants*, timestamps*, timestamp_store*, bool update_ts);
+bool literally_equal_terms(const clp_term*, const clp_term*, constants*, timestamps*, timestamp_store*, bool update_ts);
 #endif

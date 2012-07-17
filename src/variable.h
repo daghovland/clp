@@ -24,12 +24,12 @@
 typedef struct variable_t {
   const char* name;
   size_t var_no;
-} variable;
+} clp_variable;
 
 typedef struct freevars_t {
   size_t n_vars;
   size_t size_vars;
-  variable* vars[];
+  clp_variable* vars[];
 } freevars;
 
 typedef struct freevars_iter_t {
@@ -38,7 +38,7 @@ typedef struct freevars_iter_t {
 } freevars_iter;
 
 freevars* init_freevars(void);
-freevars* add_freevars(freevars*, variable*);
+freevars* add_freevars(freevars*, clp_variable*);
 void remove_freevars(freevars*, const freevars*);
 int num_freevars(const freevars*);
 void del_freevars(freevars*);
@@ -46,14 +46,14 @@ freevars* plus_freevars(freevars*, const freevars*);
 freevars* copy_freevars(const freevars*);
 void reset_freevars(freevars*);
 freevars_iter get_freevars_iter(const freevars*);
-variable* next_freevars_iter(freevars_iter*);
+clp_variable* next_freevars_iter(freevars_iter*);
 bool has_next_freevars_iter(const freevars_iter*);
-variable* parser_new_variable(freevars**, const char*);
+clp_variable* parser_new_variable(freevars**, const char*);
 bool empty_intersection(const freevars*, const freevars*);
 bool freevars_included(const freevars*, const freevars*);
-bool is_in_freevars(const freevars*, const variable*);
+bool is_in_freevars(const freevars*, const clp_variable*);
 
-bool test_variable(const variable*);
-void print_variable(const variable*, FILE*);
+bool test_variable(const clp_variable*);
+void print_variable(const clp_variable*, FILE*);
 
 #endif

@@ -37,9 +37,9 @@
    Constructors and destructor
 **/
 
-axiom* create_axiom(clp_conjunction* lhs, clp_disjunction* rhs, theory* th){
+clp_axiom* create_axiom(clp_conjunction* lhs, clp_disjunction* rhs, theory* th){
   int i;
-  axiom * ret_val = malloc_tester(sizeof(axiom));
+  clp_axiom * ret_val = malloc_tester(sizeof(clp_axiom));
   ret_val->type = normal;
   ret_val->name = NULL;
   ret_val->has_name = false;
@@ -62,9 +62,9 @@ axiom* create_axiom(clp_conjunction* lhs, clp_disjunction* rhs, theory* th){
   return ret_val;
 }
 
-axiom* create_fact(clp_disjunction *rhs, theory* th){
+clp_axiom* create_fact(clp_disjunction *rhs, theory* th){
   unsigned int i;
-  axiom * ret_val = malloc_tester(sizeof(axiom));
+  clp_axiom * ret_val = malloc_tester(sizeof(clp_axiom));
   ret_val->type = fact;
   ret_val->name = NULL;
   ret_val->has_name = false;
@@ -86,8 +86,8 @@ axiom* create_fact(clp_disjunction *rhs, theory* th){
 }
 
 
-axiom* create_goal(clp_conjunction* lhs){
-  axiom * ret_val = malloc_tester(sizeof(axiom));
+clp_axiom* create_goal(clp_conjunction* lhs){
+  clp_axiom * ret_val = malloc_tester(sizeof(clp_axiom));
   ret_val->type = goal;
   ret_val->lhs = lhs;
   ret_val->rhs = create_empty_disjunction();
@@ -97,7 +97,7 @@ axiom* create_goal(clp_conjunction* lhs){
   return ret_val;
 }
 
-void delete_axiom(axiom* a){
+void delete_axiom(clp_axiom* a){
   if(a->type == fact)
     free((clp_conjunction*) a->lhs);
   else
@@ -120,7 +120,7 @@ void delete_axiom(axiom* a){
    propagate value of alpha nodes in the left hand side to the opposite value
 
 **/
-rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, unsigned int axiom_no, bool use_beta_not){
+rete_node* create_rete_axiom_node(rete_net* net, const clp_axiom* ax, unsigned int axiom_no, bool use_beta_not){
   rete_node* node;
   const freevars* rule_free_vars;
   if(ax->type != goal) {
@@ -145,26 +145,26 @@ rete_node* create_rete_axiom_node(rete_net* net, const axiom* ax, unsigned int a
   return create_rule_node(net, node, ax, rule_free_vars, axiom_no);
 }
     
-void set_axiom_name(axiom* a, const char* name){
+void set_axiom_name(clp_axiom* a, const char* name){
   a->has_name = true;
   a->name = name;
 }
     
-bool axiom_has_name(const axiom* a){
+bool axiom_has_name(const clp_axiom* a){
   return a->has_name;
 }
 
 /**
    The  free variables 
 **/
-freevars* free_axiom_variables(const axiom* axm, freevars* vars){
+freevars* free_axiom_variables(const clp_axiom* axm, freevars* vars){
   return free_conj_variables(axm->lhs, vars);
 }
 
 /**
    For testing of the axiom basic functionality and sanity
 **/
-bool test_axiom(const axiom* a, size_t no, const constants* cs){
+bool test_axiom(const clp_axiom* a, size_t no, const constants* cs){
 #ifndef NDEBUG
   bool found_exist = false;
 #endif
@@ -206,7 +206,7 @@ bool test_axiom(const axiom* a, size_t no, const constants* cs){
 /**
    Pretty printing in standard fol format
 **/
-void print_fol_axiom(const axiom * ax, const constants* cs, FILE* stream){
+void print_fol_axiom(const clp_axiom * ax, const constants* cs, FILE* stream){
   if(ax->type != fact){
     print_fol_conj(ax->lhs, cs, stream);
     if(ax->lhs->n_args > 0)
@@ -222,7 +222,7 @@ void print_fol_axiom(const axiom * ax, const constants* cs, FILE* stream){
 /**
    Pretty printing in dot (graphviz) format
 **/
-void print_dot_axiom(const axiom * ax, const constants* cs, FILE* stream){
+void print_dot_axiom(const clp_axiom * ax, const constants* cs, FILE* stream){
   if(ax->type != fact){
     print_dot_conj(ax->lhs, cs, stream);
     if(ax->lhs->n_args > 0)
@@ -239,7 +239,7 @@ void print_dot_axiom(const axiom * ax, const constants* cs, FILE* stream){
 /**
    Pretty printing in geolog input format
 **/
-void print_geolog_axiom(const axiom* a, const constants* cs, FILE* stream){
+void print_geolog_axiom(const clp_axiom* a, const constants* cs, FILE* stream){
   if(a->type == fact)
     fprintf(stream, "true");
   else 
@@ -255,7 +255,7 @@ void print_geolog_axiom(const axiom* a, const constants* cs, FILE* stream){
 /**
    Pretty printing in CL.pl format
 **/
-void print_clpl_axiom(const axiom* a, const constants* cs, FILE* stream){
+void print_clpl_axiom(const clp_axiom* a, const constants* cs, FILE* stream){
   if(a->type == fact)
     fprintf(stream, "true");
   else 
@@ -268,7 +268,7 @@ void print_clpl_axiom(const axiom* a, const constants* cs, FILE* stream){
   fprintf(stream, " .");
 }
 
-void print_coq_axiom(const axiom* a, const constants* cs, FILE* stream){
+void print_coq_axiom(const clp_axiom* a, const constants* cs, FILE* stream){
   unsigned int i;
   assert(a->has_name);
   fprintf(stream, "Hypothesis %s : ", a->name);
@@ -290,7 +290,7 @@ void print_coq_axiom(const axiom* a, const constants* cs, FILE* stream){
   fprintf(stream, ".\n");
 }
 
-void print_tptp_axiom(const axiom* a, const constants* cs, FILE *stream){
+void print_tptp_axiom(const clp_axiom* a, const constants* cs, FILE *stream){
   freevars* f = a->lhs->free_vars;
   unsigned int i;
   fprintf(stream, "fof(%s,axiom, ", a->name);
@@ -321,9 +321,9 @@ void print_tptp_axiom(const axiom* a, const constants* cs, FILE *stream){
    A definite axiom/rule has no disjunction / splitting in the consequents/rhs
    An existential axiom/rule has at least one disjunct in the consequent with existentially bound variable(s)
 **/
-bool is_definite(axiom* a){
+bool is_definite(clp_axiom* a){
   return(a->rhs->n_args <= 1);
 }
-bool is_existential(axiom* a){
+bool is_existential(clp_axiom* a){
   return(a->is_existential);
 }

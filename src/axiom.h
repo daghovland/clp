@@ -51,29 +51,29 @@ typedef struct axiom_t {
   bool has_name;
   bool is_existential;
   freevars* exist_vars;
-} axiom;
+} clp_axiom;
 
 
-axiom* create_goal(clp_conjunction*);
-axiom* create_negative(clp_conjunction*);
+clp_axiom* create_goal(clp_conjunction*);
+clp_axiom* create_negative(clp_conjunction*);
 
-void set_axiom_name(axiom*, const char*);
+void set_axiom_name(clp_axiom*, const char*);
 
-bool test_axiom(const axiom*, size_t, const constants*);
+bool test_axiom(const clp_axiom*, size_t, const constants*);
 
-void delete_axiom(axiom*);
+void delete_axiom(clp_axiom*);
 
-freevars* free_axiom_variables(const axiom*, freevars*);
+freevars* free_axiom_variables(const clp_axiom*, freevars*);
 
-void print_fol_axiom(const axiom*, const constants*, FILE*);
-void print_dot_axiom(const axiom*, const constants*, FILE*);
-void print_coq_axiom(const axiom*, const constants*, FILE*);
+void print_fol_axiom(const clp_axiom*, const constants*, FILE*);
+void print_dot_axiom(const clp_axiom*, const constants*, FILE*);
+void print_coq_axiom(const clp_axiom*, const constants*, FILE*);
 
-void print_geolog_axiom(const axiom*, const constants*, FILE*);
-void print_clpl_axiom(const axiom*, const constants*, FILE*);
-void print_tptp_axiom(const axiom* , const constants*, FILE *);
+void print_geolog_axiom(const clp_axiom*, const constants*, FILE*);
+void print_clpl_axiom(const clp_axiom*, const constants*, FILE*);
+void print_tptp_axiom(const clp_axiom* , const constants*, FILE *);
 
-bool is_definite(axiom*);
-bool is_existential(axiom*);
+bool is_definite(clp_axiom*);
+bool is_existential(clp_axiom*);
 
 #endif

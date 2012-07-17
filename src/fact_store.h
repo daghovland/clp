@@ -43,7 +43,7 @@
 
 
 typedef struct fact_store_t {
-  atom * store; 
+  clp_atom * store; 
   unsigned int max_n_facts;
   unsigned int n_facts;
 } fact_store;
@@ -61,13 +61,13 @@ typedef struct fact_store_iter_t {
 fact_store init_fact_store(void);
 void destroy_fact_store(fact_store*);
 unsigned int alloc_store_fact(fact_store*);
-void push_fact_store(fact_store*, const atom*);
-const atom* get_fact(unsigned int, fact_store*);
+void push_fact_store(fact_store*, const clp_atom*);
+const clp_atom* get_fact(unsigned int, fact_store*);
 bool is_empty_fact_store(fact_store*);
 
 fact_store_iter get_fact_store_iter(fact_store*);
 bool has_next_fact_store(fact_store_iter*);
-const atom* get_next_fact_store(fact_store_iter*);
+const clp_atom* get_next_fact_store(fact_store_iter*);
 void destroy_fact_store_iter(fact_store_iter*);
 
 

@@ -35,13 +35,13 @@
    that introduced the facts nevessary for the instances.
    TODO: Not finished.
 **/
-bool test_rule_substitution(const axiom* rule, const substitution* sub, const constants* cs){
+bool test_rule_substitution(const clp_axiom* rule, const substitution* sub, const constants* cs){
   unsigned int i = 0;
   timestamps_iter iter = get_timestamps_iter(& sub->sub_ts);
   while(has_next_timestamps_iter(&iter)){
     assert(i < rule->lhs->n_args);
     timestamp ts = get_next_timestamps_iter(&iter);
-    const term* val = get_sub_value(sub,i);
+    const clp_term* val = get_sub_value(sub,i);
     if(val != NULL && !test_term(val, cs))
       return false;
     if(ts.step < 0) 
@@ -53,11 +53,11 @@ bool test_rule_substitution(const axiom* rule, const substitution* sub, const co
 }
 
 /**
-   Gets a constant, either the one in the term *t, or the
+   Gets a constant, either the one in the clp_term *t, or the
    substitution value of the variable.
    Called from insert below
 **/
-dom_elem get_instantiated_constant(const term* t, const substitution* sub, const constants* cs){
+dom_elem get_instantiated_constant(const clp_term* t, const substitution* sub, const constants* cs){
   if(t->type == variable_term)
     t = find_substitution(sub, t->val.var, cs);
   assert(t->type == constant_term);
@@ -87,7 +87,7 @@ void insert_rete_beta_sub_single(const rete_net* net,
 {
   sub_store_iter iter;
   dom_elem c1, c2;
-  const term *t1, *t2;
+  const clp_term *t1, *t2;
   substitution_size_info ssi = net->th->sub_size_info;
   substitution * tmp_sub = create_empty_substitution(net->th, tmp_subs);
 
@@ -313,7 +313,7 @@ bool insert_rete_alpha_fact_children_single(const rete_net* net,
 					    timestamp_store* ts_store, 
 					    rule_queue_single * rule_queue,
 					    const rete_node* node, 
-					    const atom* fact, 
+					    const clp_atom* fact, 
 					    unsigned int step, 
 					    substitution* sub, 
 					    constants* cs){
@@ -354,12 +354,12 @@ bool insert_rete_alpha_fact_single(const rete_net* net,
 				   timestamp_store * ts_store,  
 				   rule_queue_single * rule_queue,
 				   const rete_node* node, 
-				   const atom* fact, 
+				   const clp_atom* fact, 
 				   unsigned int step, 
 				   substitution* sub, 
 				   constants* cs)
 {
-  const term *arg;
+  const clp_term *arg;
   bool ret_val = true;
   assert(test_substitution(sub, cs));
   switch(node->type){

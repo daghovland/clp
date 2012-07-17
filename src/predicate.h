@@ -30,9 +30,9 @@ typedef struct predicate_t {
   bool is_equality;
   size_t arity;
   size_t pred_no;
-} predicate;
+} clp_predicate;
 
-bool test_predicate(const predicate*);
-void print_coq_predicate(const predicate*, FILE*);
+bool test_predicate(const clp_predicate*);
+void print_coq_predicate(const clp_predicate*, FILE*);
 
 #endif

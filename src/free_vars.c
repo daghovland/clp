@@ -31,7 +31,7 @@
 
 freevars* init_freevars(){
   size_t size = 2;
-  freevars* ret_val = malloc_tester(sizeof(freevars) + size * sizeof(variable*));
+  freevars* ret_val = malloc_tester(sizeof(freevars) + size * sizeof(clp_variable*));
   ret_val->n_vars = 0;
   ret_val->size_vars = size;
   return ret_val;
@@ -46,7 +46,7 @@ void reset_freevars(freevars* p){
 }
 
 freevars* copy_freevars(const freevars* orig){
-  size_t size = sizeof(freevars) + orig->size_vars * sizeof(variable*);
+  size_t size = sizeof(freevars) + orig->size_vars * sizeof(clp_variable*);
   freevars* copy = malloc_tester(size);
   memcpy(copy, orig, size);
   assert(copy->n_vars == 0 || strncmp(copy->vars[copy->n_vars-1]->name, orig->vars[orig->n_vars-1]->name, strlen(orig->vars[orig->n_vars-1]->name)) == 0);
@@ -75,7 +75,7 @@ freevars* plus_freevars(freevars* orig, const freevars* add){
   return orig;
 }
 
-freevars* add_freevars(freevars* orig, variable* new){
+freevars* add_freevars(freevars* orig, clp_variable* new){
   int i;
   for(i = 0; i < orig->n_vars; i++){
     if(orig->vars[i]->var_no == new->var_no)
@@ -83,7 +83,7 @@ freevars* add_freevars(freevars* orig, variable* new){
   }
   if(orig->n_vars+1 >= orig->size_vars){
     orig->size_vars *= 2;
-    orig = realloc_tester(orig, sizeof(freevars) + (orig->size_vars+1) * sizeof(variable*));
+    orig = realloc_tester(orig, sizeof(freevars) + (orig->size_vars+1) * sizeof(clp_variable*));
   }
   orig->vars[orig->n_vars] = new;
 
@@ -98,15 +98,15 @@ freevars* add_freevars(freevars* orig, variable* new){
 
    Identity of variables is based on the string name
 **/
-variable* parser_new_variable(freevars** vars, const char* new){
+clp_variable* parser_new_variable(freevars** vars, const char* new){
   freevars_iter iter = get_freevars_iter(*vars);
-  variable * next;
+  clp_variable * next;
   while(has_next_freevars_iter(&iter)){
     next = next_freevars_iter(&iter);
     if(strcmp(next->name, new) == 0)
       return next;
   }
-  next = malloc(sizeof(variable));
+  next = malloc(sizeof(clp_variable));
   next->name = new;
   next->var_no = (*vars)->n_vars;
   *vars = add_freevars(*vars, next);
@@ -122,7 +122,7 @@ freevars_iter get_freevars_iter(const freevars* fv){
   return retval;
 }
 
-variable* next_freevars_iter(freevars_iter* i){
+clp_variable* next_freevars_iter(freevars_iter* i){
   assert(i->next < i->vars->n_vars);
   return(i->vars->vars[i->next++]);
 }
@@ -171,7 +171,7 @@ bool freevars_included(const freevars* fv1, const freevars* fv2){
 /**
    returns true iff the var is in fv
 **/
-bool is_in_freevars(const freevars* fv, const variable* var){
+bool is_in_freevars(const freevars* fv, const clp_variable* var){
   unsigned int i;
   for(i = 0; i < fv->n_vars; i++){
     if (var->var_no == fv->vars[i]->var_no)
@@ -202,6 +202,6 @@ void remove_freevars(freevars* orig, const freevars* subtract){
 
 /**
  **/
-void print_variable(const variable* var, FILE* f){
+void print_variable(const clp_variable* var, FILE* f){
   fprintf(f, "%s", var->name);
 }

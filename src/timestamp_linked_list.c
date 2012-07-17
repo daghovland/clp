@@ -252,7 +252,7 @@ substitution_size_info init_sub_size_info(unsigned int n_vars, unsigned int max_
   substitution_size_info ssi;
   unsigned int size_vars, size_timestamps;
   ssi.max_n_timestamps = max_lhs_conjuncts + 1;
-  size_vars = n_vars * sizeof(term*);
+  size_vars = n_vars * sizeof(clp_term*);
   size_timestamps = 0;
   ssi.size_substitution = sizeof(substitution) + size_vars;
   ssi.size_rule_instance = sizeof(rule_instance) + size_vars;

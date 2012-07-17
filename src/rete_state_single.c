@@ -307,7 +307,7 @@ rule_instance* transfer_from_rule_queue_to_history(rete_state_single* state, siz
   return next;
 }
 
-void add_rule_to_queue_single(const axiom* rule, const substitution* sub, rule_queue_state rqs){
+void add_rule_to_queue_single(const clp_axiom* rule, const substitution* sub, rule_queue_state rqs){
   rete_state_single* state = rqs.single;
   assert(test_is_instantiation(rule->rhs->free_vars, sub, state->constants));
   push_rule_instance_single((state->rule_queues[rule->axiom_no])
@@ -342,7 +342,7 @@ rule_instance* peek_axiom_rule_queue_single_state(rete_state_single * state, siz
 
    Note that sub is changed if it returns true.
 **/
-bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const conjunction* con, unsigned int conjunct, const substitution* sub){
+bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const clp_conjunction* con, unsigned int conjunct, const substitution* sub){
   fact_store_iter iter;
   unsigned int pred_no;
   substitution* tmp_sub;
@@ -360,7 +360,7 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
   tmp_sub = create_empty_substitution(state->net->th, & state->tmp_subs);
 
   while(!found_true && has_next_fact_store(&iter)){
-    const atom* fact = get_next_fact_store(&iter);
+    const clp_atom* fact = get_next_fact_store(&iter);
     copy_substitution_struct(tmp_sub, sub, state->net->th->sub_size_info, state->timestamp_store, false, state->constants);
     if(find_instantiate_sub(con->args[conjunct], fact, tmp_sub, state->constants)){
       if(remaining_conjunction_true_in_fact_store(state, con, conjunct+1, tmp_sub)){
@@ -380,11 +380,11 @@ bool remaining_conjunction_true_in_fact_store(rete_state_single* state, const co
 
    Note that timestamp info is not added
 **/
-bool conjunction_true_in_fact_store(rete_state_single* state, const conjunction* con, const substitution* sub){
+bool conjunction_true_in_fact_store(rete_state_single* state, const clp_conjunction* con, const substitution* sub){
   return remaining_conjunction_true_in_fact_store(state, con, 0, sub);
 }
 
-bool disjunction_true_in_fact_store(rete_state_single* state, const disjunction* dis, const substitution* sub){
+bool disjunction_true_in_fact_store(rete_state_single* state, const clp_disjunction* dis, const substitution* sub){
   int i;
   for(i = 0; i < dis->n_args; i++){
     if(conjunction_true_in_fact_store(state, dis->args[i], sub))
@@ -520,7 +520,7 @@ bool axiom_has_new_instance_single(rule_queue_state rqs, unsigned int axiom_no){
    Note that calling this function may invalidate any rule_instance pointer, since these all 
    point to members of the rule_queue_single arrays, which may be realloced as a consqequence of this call
 **/
-void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
+void insert_state_rete_net_fact(rete_state_single* state, const clp_atom* fact){
   unsigned int i;
   substitution * tmp_sub = create_empty_substitution(state->net->th, &state->tmp_subs);
   const rete_node* sel = get_const_selector(fact->pred->pred_no, state->net);
@@ -545,12 +545,12 @@ void insert_state_rete_net_fact(rete_state_single* state, const atom* fact){
 /**
    Factset functions
 **/
-bool insert_state_factset_single(rete_state_single* state, const atom* ground){
+bool insert_state_factset_single(rete_state_single* state, const clp_atom* ground){
   bool already_in_factset = false;
   unsigned int pred_no = ground->pred->pred_no;
   fact_store_iter iter = get_fact_store_iter(& state->factsets[pred_no]);
   while(has_next_fact_store(&iter)){
-    const atom* fact = get_next_fact_store(&iter);
+    const clp_atom* fact = get_next_fact_store(&iter);
     if(equal_atoms(fact, ground, state->constants, NULL, NULL, false)){
       already_in_factset = true;
       break;

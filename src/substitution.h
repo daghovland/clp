@@ -55,7 +55,7 @@ void init_substitution(substitution*, const theory*, signed int, timestamp_store
 substitution* create_substitution(const theory*, signed int, substitution_store_mt*, timestamp_store*, const constants* cs);
 substitution* copy_substitution(const substitution*, substitution_store_mt*, substitution_size_info, timestamp_store*, const constants*);
 void copy_substitution_struct(substitution*, const substitution*, substitution_size_info, timestamp_store*, bool permanent, const constants*);
-substitution* create_empty_fact_substitution(const theory*, const axiom*, substitution_store_mt*, timestamp_store*, const constants* cs);
+substitution* create_empty_fact_substitution(const theory*, const clp_axiom*, substitution_store_mt*, timestamp_store*, const constants* cs);
 
 unsigned int get_sub_n_timestamps(const substitution*);
 timestamps_iter get_sub_timestamps_iter(const substitution*);
@@ -70,10 +70,10 @@ void free_sub_list_iter(sub_list_iter*);
 
 void free_substitution(substitution*);
 //void copy_timestamps(substitution* into, const substitution* orig, substitution_size_info);
-const term* find_substitution(const substitution*, const variable*, const constants*);
-bool add_substitution(substitution*, variable*, const term*, constants*, timestamp_store*, bool update_ts);
-void insert_substitution_value(substitution*, variable*, const term*, const constants*);
-bool unify_substitution_terms(const term*, const term*, substitution*, constants*, timestamp_store*);
+const clp_term* find_substitution(const substitution*, const clp_variable*, const constants*);
+bool add_substitution(substitution*, clp_variable*, const clp_term*, constants*, timestamp_store*, bool update_ts);
+void insert_substitution_value(substitution*, clp_variable*, const clp_term*, const constants*);
+bool unify_substitution_terms(const clp_term*, const clp_term*, substitution*, constants*, timestamp_store*);
 bool unify_substitution_term_lists(const term_list*, const term_list*, substitution*, constants*, timestamp_store*);
 bool equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);
 bool literally_equal_substitutions(const substitution*, const substitution*, const freevars*, constants*);

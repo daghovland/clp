@@ -32,7 +32,7 @@
 
 typedef struct worker_queue_elem_t {
   unsigned int step;
-  const atom* fact;
+  const clp_atom* fact;
   const rete_node * alpha;
 } worker_queue_elem;
 
@@ -66,8 +66,8 @@ rete_worker_queue* init_rete_worker_queue(void);
 void destroy_rete_worker_queue(rete_worker_queue*);
 
 
-void push_rete_worker_queue(rete_worker_queue*, const atom*, const rete_node*, unsigned int); 
-void pop_rete_worker_queue(rete_worker_queue*, const atom**, const rete_node**, unsigned int*);
+void push_rete_worker_queue(rete_worker_queue*, const clp_atom*, const rete_node*, unsigned int); 
+void pop_rete_worker_queue(rete_worker_queue*, const clp_atom**, const rete_node**, unsigned int*);
 unsigned int get_timestamp_rete_worker_queue(rete_worker_queue*);
 void unpop_rete_worker_queue(rete_worker_queue*);
 

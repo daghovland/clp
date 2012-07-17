@@ -34,7 +34,7 @@
 
 dom_elem parser_new_constant(constants*, const char*);
 void print_coq_constants(const constants*,FILE* stream);
-const term* get_fresh_constant(variable*, constants*);
+const clp_term* get_fresh_constant(clp_variable*, constants*);
 const char* get_constant_name(dom_elem, const constants*);
 constants* init_constants(unsigned int);
 void destroy_constants(constants*);

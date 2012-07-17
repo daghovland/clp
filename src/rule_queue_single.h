@@ -71,7 +71,7 @@ typedef struct rule_queue_single_backup_t {
 rule_queue_single* initialize_queue_single(substitution_size_info, unsigned int, bool permanent, bool multi_rule_queue);
 void destroy_rule_queue_single(rule_queue_single*);
 
-rule_instance* push_rule_instance_single(rule_queue_single*, const axiom*, const substitution*, unsigned int, bool, timestamp_store*, const constants*);
+rule_instance* push_rule_instance_single(rule_queue_single*, const clp_axiom*, const substitution*, unsigned int, bool, timestamp_store*, const constants*);
 rule_instance* pop_rule_queue_single(rule_queue_single*, unsigned int, const constants*);
 rule_instance* peek_rule_queue_single(rule_queue_single*, const constants*);
 rule_instance* get_rule_instance_single(rule_queue_single*, unsigned int);

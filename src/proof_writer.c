@@ -200,7 +200,7 @@ void write_proof_edge(const char*  proof_branch_1, unsigned int step_no_1, const
 void write_exist_vars_intro(freevars* ev, const substitution* sub, const constants* cs){
   freevars_iter iter = get_freevars_iter(ev);
   while(has_next_freevars_iter(&iter)){
-    variable* var = next_freevars_iter(&iter);
+    clp_variable* var = next_freevars_iter(&iter);
     fp_err( fprintf(coq_fp, "intro "), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     print_coq_term(get_sub_value(sub, var->var_no), cs, coq_fp);
     fp_err( fprintf(coq_fp, ".\n"), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
@@ -228,7 +228,7 @@ void write_disj_proof_start(const rule_instance* ri, timestamp ts, int branch, c
     unsigned int var_no = 0;
     fp_err( fprintf(coq_fp, "(* Introducing existential variables from branch %i of step %i*)\n", branch, ts.step), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
     while(var_no++, has_next_freevars_iter(&iter)){
-      variable* var = next_freevars_iter(&iter);
+      clp_variable* var = next_freevars_iter(&iter);
       fp_err( fprintf(coq_fp, "intro H_%i_tmp_%i.\n", ts.step, var_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       fp_err( fprintf(coq_fp, "elim H_%i_tmp_%i.\n", ts.step, var_no), "proof_writer.c: write_proof_node: Could not write to coq proof file.");
       fp_err( fprintf(coq_fp, "intro "), "proof_writer.c: write_proof_node: Could not write to coq proof file.");

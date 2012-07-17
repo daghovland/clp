@@ -35,10 +35,10 @@
     conjunction constructors and destructors
 **/
 
-clp_conjunction* create_conjunction(const atom *at){
+clp_conjunction* create_conjunction(const clp_atom *at){
   clp_conjunction * ret_val = malloc_tester(sizeof(clp_conjunction));
   ret_val->size_args = 20;
-  ret_val->args = calloc_tester(ret_val->size_args,  sizeof(atom*));
+  ret_val->args = calloc_tester(ret_val->size_args,  sizeof(clp_atom*));
   ret_val->n_args = 1;
   (ret_val->args)[0] = at;
   ret_val->free_vars = init_freevars();
@@ -53,7 +53,7 @@ clp_conjunction* create_empty_conjunction(theory* th){
   clp_conjunction * ret_val = malloc_tester(sizeof(clp_conjunction));
   ret_val->n_args = 1;
   ret_val->size_args = 1;
-  ret_val->args =  calloc_tester(ret_val->size_args,  sizeof(atom*));
+  ret_val->args =  calloc_tester(ret_val->size_args,  sizeof(clp_atom*));
   (ret_val->args)[0] = create_prop_variable("true", th);
   ret_val->free_vars = init_freevars();
   ret_val->bound_vars = init_freevars();
@@ -64,11 +64,11 @@ void increase_conjunction_size(clp_conjunction *conj){
   conj->n_args++;
   if(conj->n_args >= conj->size_args){
     conj->size_args *= 2;
-    conj->args = realloc_tester(conj->args, (conj->size_args + 1) * sizeof(atom));
+    conj->args = realloc_tester(conj->args, (conj->size_args + 1) * sizeof(clp_atom));
   }
 }
 
-clp_conjunction* extend_conjunction(clp_conjunction *conj, const atom* at){
+clp_conjunction* extend_conjunction(clp_conjunction *conj, const clp_atom* at){
   increase_conjunction_size(conj);
   conj->args[conj->n_args - 1] = at;
   conj->free_vars = free_atom_variables(at, conj->free_vars);
@@ -82,7 +82,7 @@ void delete_conjunction(clp_conjunction *conj){
   int i;
   assert(conj->n_args >= 0);
   for(i = 0; i < conj->n_args; i++)
-    delete_atom((atom*) conj->args[i]);
+    delete_atom((clp_atom*) conj->args[i]);
   if(conj->args != NULL)
     free(conj->args);
   del_freevars(conj->bound_vars);
@@ -160,7 +160,7 @@ bool test_disjunction(const clp_disjunction* d, const constants* cs){
    Checks that if the term t is a variable, then it either occurs in left, 
    or a dom(t->val.var) is inserted into the conjunction
 **/
-unsigned int test_equality_var(clp_conjunction* con, theory* th, unsigned int i, freevars* left, const term* t){
+unsigned int test_equality_var(clp_conjunction* con, theory* th, unsigned int i, freevars* left, const clp_term* t){
   if(t->type == variable_term && !is_in_freevars(left, t->val.var)){
     unsigned int j;
     term_list* tl = create_term_list(copy_term(t));
@@ -186,8 +186,8 @@ void fix_equality_vars(clp_conjunction *con, theory* th){
   unsigned int i;
   for(i = 0; i < con->n_args; i++){
     if(con->args[i]->pred->is_equality){
-      const term* t1 = con->args[i]->args->args[0];
-      const term* t2 = con->args[i]->args->args[1];
+      const clp_term* t1 = con->args[i]->args->args[0];
+      const clp_term* t2 = con->args[i]->args->args[1];
       i = test_equality_var(con, th, i, left, t1);
       i = test_equality_var(con, th, i, left, t2);
     }
@@ -352,7 +352,7 @@ void print_disj(const clp_disjunction *dis, const constants* cs, FILE* stream, c
 
 }
 
-void print_conj(const clp_conjunction * con, const constants* cs, FILE* stream, char* and_sep, void (*print_atom)(const atom*, const constants*, FILE*)){
+void print_conj(const clp_conjunction * con, const constants* cs, FILE* stream, char* and_sep, void (*print_atom)(const clp_atom*, const constants*, FILE*)){
   int i;
   for(i = 0; i < con->n_args-1; i++){
     print_fol_atom(con->args[i], cs, stream);

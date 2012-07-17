@@ -35,7 +35,7 @@
    then know the exact size
 **/
 typedef struct theory_t {
-  const axiom** axioms;
+  const clp_axiom** axioms;
   unsigned int n_axioms;
   size_t size_axioms;
   clp_conjunction ** init_model;
@@ -46,7 +46,7 @@ typedef struct theory_t {
   bool has_name;
   size_t n_predicates;
   size_t size_predicates;
-  predicate** predicates;
+  clp_predicate** predicates;
   size_t n_func_names;
   size_t size_func_names;
   const char** func_names;
@@ -62,7 +62,7 @@ typedef struct theory_t {
 
 
 theory* create_theory(void);
-void extend_theory(theory*, axiom*);
+void extend_theory(theory*, clp_axiom*);
 void set_theory_name(theory*, const char*);
 bool has_theory_name(const theory*);
 void finalize_theory(theory*);
@@ -71,12 +71,12 @@ void print_coq_proof_intro(const theory*, const constants*, FILE*);
 void print_coq_proof_ending(const theory*, FILE*);
 
 /* In atom_and_term.c */
-term* create_variable(const char*, theory*);
-atom* parser_create_atom(const char*, const term_list*, theory*);
-atom* parser_create_equality(const term*, const term*, theory*);
-atom* create_dom_atom(const term*, theory*);
-term* parser_create_constant_term(theory*, const char*);
-atom* create_prop_variable(const char*, theory*);
+clp_term* create_variable(const char*, theory*);
+clp_atom* parser_create_atom(const char*, const term_list*, theory*);
+clp_atom* parser_create_equality(const clp_term*, const clp_term*, theory*);
+clp_atom* create_dom_atom(const clp_term*, theory*);
+clp_term* parser_create_constant_term(theory*, const char*);
+clp_atom* create_prop_variable(const char*, theory*);
 
 
 // In con_dis.c
@@ -85,8 +85,8 @@ void fix_equality_vars(clp_conjunction*, theory*);
 
 
 //In axiom.c
-axiom* create_fact(clp_disjunction*, theory*);
-axiom* create_axiom(clp_conjunction*, clp_disjunction*, theory*);
+clp_axiom* create_fact(clp_disjunction*, theory*);
+clp_axiom* create_axiom(clp_conjunction*, clp_disjunction*, theory*);
 
 
 
@@ -97,6 +97,6 @@ void print_fol_theory(const theory*, const constants*, FILE*);
 void print_clpl_theory(const theory*, const constants*, FILE*);
 void print_geolog_theory(const theory*, const constants*, FILE*);
 void print_tptp_theory(const theory*, const constants*, FILE*);
-const predicate* parser_new_predicate(theory*, const char*, size_t);
+const clp_predicate* parser_new_predicate(theory*, const char*, size_t);
 
 #endif

@@ -71,9 +71,9 @@ enum rete_node_type { alpha, beta_and, beta_root, beta_not, beta_or, equality_no
 struct rete_node_t {
   enum rete_node_type type;
   union {
-    predicate * selector;
+    clp_predicate * selector;
     struct alpha_t {
-      const term* value;
+      const clp_term* value;
       unsigned int argument_no;
       bool propagate;
     } alpha;
@@ -84,12 +84,12 @@ struct rete_node_t {
       unsigned int b_store_no;
     } beta;
     struct equality_t {
-      const term* t1;
-      const term* t2;
+      const clp_term* t1;
+      const clp_term* t2;
       unsigned int b_store_no;
     } equality;
     struct rule_t {
-      const axiom* axm;
+      const clp_axiom* axm;
       unsigned int store_no;
     } rule;
   } val;

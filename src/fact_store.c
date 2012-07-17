@@ -32,7 +32,7 @@ fact_store init_fact_store(){
   fact_store new_store;
   new_store.max_n_facts = INIT_FACT_STORE_SIZE;
   new_store.n_facts = 0;
-  new_store.store = calloc_tester(new_store.max_n_facts, sizeof(atom));
+  new_store.store = calloc_tester(new_store.max_n_facts, sizeof(clp_atom));
   return new_store;
 }
 
@@ -40,7 +40,7 @@ void destroy_fact_store(fact_store* store){
 #if false
   fact_store_iter fi = get_fact_store_iter(store);
   while(has_next_fact_store(&fi)){
-    delete_instantiated_atom((atom*) get_next_fact_store(&fi));
+    delete_instantiated_atom((clp_atom*) get_next_fact_store(&fi));
   }
   destroy_fact_store_iter(&fi);
 #endif
@@ -51,7 +51,7 @@ unsigned int alloc_store_fact(fact_store* store){
   store->n_facts ++;
   if(store->n_facts >= store->max_n_facts){
     store->max_n_facts *= 2;
-    store->store = realloc_tester(store->store, store->max_n_facts * sizeof(atom));
+    store->store = realloc_tester(store->store, store->max_n_facts * sizeof(clp_atom));
   }
   return store->n_facts - 1;
 }
@@ -59,12 +59,12 @@ unsigned int alloc_store_fact(fact_store* store){
 /**
   Adds a copy of the fact and all its substructures to the store
 **/
-void push_fact_store(fact_store* store, const atom* new_fact){
+void push_fact_store(fact_store* store, const clp_atom* new_fact){
   unsigned int fact_no = alloc_store_fact(store);
   store->store[fact_no] = * new_fact;
 }
 
-const atom* get_fact(unsigned int i, fact_store* store){
+const clp_atom* get_fact(unsigned int i, fact_store* store){
   assert(i < store->max_n_facts);
   return & store->store[i];
 }
@@ -84,8 +84,8 @@ bool has_next_fact_store(fact_store_iter* iter){
   return iter->n < iter->store->n_facts;
 }
 
-const atom* get_next_fact_store(fact_store_iter* iter){
-  const atom* a = get_fact(iter->n, iter->store);
+const clp_atom* get_next_fact_store(fact_store_iter* iter){
+  const clp_atom* a = get_fact(iter->n, iter->store);
   assert(iter->n < iter->store->n_facts);
   iter->n ++;
   return a;

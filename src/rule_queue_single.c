@@ -165,7 +165,7 @@ void destroy_rule_queue_single(rule_queue_single* rq){
 /**
    Assigns position pos in the rule queue the according values.
 **/
-void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const axiom* rule, const substitution* sub, unsigned int step, timestamp_store* ts_store, const constants* cs){
+void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const clp_axiom* rule, const substitution* sub, unsigned int step, timestamp_store* ts_store, const constants* cs){
   assert(pos < rq->end);
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
@@ -201,7 +201,7 @@ bool test_rule_queue_single(rule_queue_single* rq, const constants* cs){
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-rule_instance* push_rule_instance_single(rule_queue_single * rq, const axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store, const constants* cs){
+rule_instance* push_rule_instance_single(rule_queue_single * rq, const clp_axiom* rule, const substitution* sub, unsigned int step, bool clpl_sorted, timestamp_store* ts_store, const constants* cs){
   unsigned int pos;
   assert(test_substitution(sub, cs));
 #ifdef DEBUG_RETE_INSERT

@@ -40,11 +40,11 @@ theory* create_theory(void){
 
   ret_val->size_predicates = 100;
   ret_val->n_predicates = 0;
-  ret_val->predicates = calloc_tester(sizeof(predicate*),ret_val->size_predicates);
+  ret_val->predicates = calloc_tester(sizeof(clp_predicate*),ret_val->size_predicates);
 
 
   ret_val->size_axioms = 100;
-  ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(axiom*));
+  ret_val->axioms = calloc_tester(ret_val->size_axioms, sizeof(clp_axiom*));
   ret_val->n_axioms =  0;
 
   ret_val->size_init_model = 100;
@@ -74,12 +74,12 @@ void extend_init_model(theory* th, clp_conjunction* fact){
   th->n_init_model++;
   if(th->n_init_model >= th->size_init_model){
     th->size_init_model *= 2;
-    th->init_model = realloc_tester(th->init_model, th->size_init_model * sizeof(axiom*));
+    th->init_model = realloc_tester(th->init_model, th->size_init_model * sizeof(clp_axiom*));
   }
   th->init_model[th->n_init_model-1] = fact;
 }
 
-void extend_theory(theory *th, axiom *ax){
+void extend_theory(theory *th, clp_axiom *ax){
   unsigned int i;
   if(ax->type == fact && ax->rhs->n_args == 1){
     extend_init_model(th, ax->rhs->args[0]);
@@ -97,7 +97,7 @@ void extend_theory(theory *th, axiom *ax){
   th->n_axioms++;
   if(th->n_axioms >= th->size_axioms){
     th->size_axioms *= 2;
-    th->axioms = realloc_tester(th->axioms, th->size_axioms * sizeof(axiom*));
+    th->axioms = realloc_tester(th->axioms, th->size_axioms * sizeof(clp_axiom*));
   }
   th->axioms[th->n_axioms-1] = ax;
   if(ax->lhs->n_args > th->max_lhs_conjuncts)
@@ -113,7 +113,7 @@ void extend_theory(theory *th, axiom *ax){
 void delete_theory(theory* t){
   int i;
   for(i = 0; i < t->n_axioms; i++)
-    delete_axiom((axiom*) t->axioms[i]);
+    delete_axiom((clp_axiom*) t->axioms[i]);
   free(t->axioms);
   for(i = 0; i < t->n_predicates; i++)
     free(t->predicates[i]);
@@ -180,7 +180,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
   net->rule_nodes = calloc_tester(th->n_axioms, sizeof(rete_node*));
   for(i = 0; i < th->n_axioms; i++){
 #ifndef NDEBUG
-    const axiom* ax = th->axioms[i];
+    const clp_axiom* ax = th->axioms[i];
 #endif
     assert(!(ax->type == fact && ax->rhs->n_args == 1));
     net->rule_nodes[i] = create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
@@ -267,7 +267,7 @@ void print_coq_proof_ending(const theory* th, FILE* stream){
 /**
    Generic pretty printing function
 **/
-void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const axiom*, const constants*, FILE*) ,  void (*print_conj)(const clp_conjunction*, const constants*, FILE*), const char* init_start, const char* init_end, const char* and_sign ){
+void print_theory(const theory * th, const constants* cs, FILE* stream, void (*print_axiom)(const clp_axiom*, const constants*, FILE*) ,  void (*print_conj)(const clp_conjunction*, const constants*, FILE*), const char* init_start, const char* init_end, const char* and_sign ){
   int i;
   if(th->n_init_model > 0){
     fprintf(stream, "%s", init_start);

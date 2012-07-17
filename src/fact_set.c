@@ -57,7 +57,7 @@ void split_fact_set(fact_set* f){
    Returns true iff the fact is inserted (Not seen before)
 **/
 
-bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step, constants* cs){
+bool insert_state_fact_set(fact_set ** f, const clp_atom* a, unsigned int step, constants* cs){
   unsigned int pred_no = a->pred->pred_no;
   fact_set * new_fs = insert_in_fact_set(f[pred_no], a, step, cs);
   if(new_fs != f[pred_no]){
@@ -68,7 +68,7 @@ bool insert_state_fact_set(fact_set ** f, const atom* a, unsigned int step, cons
 }
 
 
-fact_set* insert_in_fact_set(fact_set* f, const atom* a, unsigned int ts, constants* cs){
+fact_set* insert_in_fact_set(fact_set* f, const clp_atom* a, unsigned int ts, constants* cs){
   fact_set* new;
   if(is_in_fact_set(f, a, cs))
     return f;
@@ -111,7 +111,7 @@ void print_fact_set(fact_set* fs, const constants* cs,  FILE* f){
    Used by unit testing to test that an inserted fact is not already in the factset
    Note that facts are per definition ground
 **/
-bool is_in_fact_set(const fact_set* fs, const atom* fact, constants* cs){
+bool is_in_fact_set(const fact_set* fs, const clp_atom* fact, constants* cs){
   while(fs != NULL){
     assert(fact->pred->pred_no == fs->fact->pred->pred_no);
     if(equal_atoms(fs->fact, fact, cs, NULL, NULL, false))
@@ -126,7 +126,7 @@ bool is_in_fact_set(const fact_set* fs, const atom* fact, constants* cs){
    This is not finished, just skeletons
 **/
 
-bool atom_true_in_fact_set(const fact_set* fs, const atom* a, substitution* sub, constants* cs){
+bool atom_true_in_fact_set(const fact_set* fs, const clp_atom* a, substitution* sub, constants* cs){
   while(fs != NULL){
     assert(a->pred->pred_no == fs->fact->pred->pred_no);
     if(equal_atoms(fs->fact, a, cs, NULL, NULL, false)){

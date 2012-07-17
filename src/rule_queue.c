@@ -223,7 +223,7 @@ unsigned int axiom_queue_previous_application(rule_queue_state rqs, unsigned int
   return (rqs.state)->axiom_inst_queue[axiom_no]->previous_appl;
 }
 
-void add_rule_to_queue_state(const axiom* rule, const substitution* sub, rule_queue_state rqs){
+void add_rule_to_queue_state(const clp_axiom* rule, const substitution* sub, rule_queue_state rqs){
   add_rule_to_queue(rule, sub, rqs.state);
 }
 
@@ -234,7 +234,7 @@ void add_rule_to_queue_state(const axiom* rule, const substitution* sub, rule_qu
    The substitution is stored in a rule queue in the state, and deleted upon popping.
    The calling function must not touch sub after passing it to this function
 **/
-void add_rule_to_queue(const axiom* rule, const substitution* sub, rete_net_state* state){
+void add_rule_to_queue(const clp_axiom* rule, const substitution* sub, rete_net_state* state){
   substitution_size_info ssi = state->net->th->sub_size_info;
 
   rule_instance* ins = malloc_tester(get_size_rule_instance(ssi));

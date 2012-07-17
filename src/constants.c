@@ -89,10 +89,10 @@ dom_elem insert_constant_name(constants * consts, const char* name){
 /**
    Creates a new domain element. Called from instantiate.c
 **/
-const term* get_fresh_constant(variable* var, constants* constants){
+const clp_term* get_fresh_constant(clp_variable* var, constants* constants){
   dom_elem new_const;
   char* name;
-  const term* t;
+  const clp_term* t;
   assert(constants->fresh != NULL);
   unsigned int const_no = next_fresh_const_no(constants->fresh, var->var_no);
   constants->n_constants ++;

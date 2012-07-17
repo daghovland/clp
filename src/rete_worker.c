@@ -78,7 +78,7 @@ void set_recheck_net(rete_worker* w){
    Called from rete_worker.
    Waits for new elements to be added to the queue
 **/
-void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, const rete_node ** alpha, unsigned int * step){
+void worker_thread_pop_worker_queue(rete_worker* worker, const clp_atom** fact, const rete_node ** alpha, unsigned int * step){
   lock_worker_queue(worker->work, __FILE__, __LINE__);
   while(worker_wait_for_pop(worker))
     wait_worker_queue(worker->work, __FILE__, __LINE__);
@@ -98,7 +98,7 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const atom** fact, cons
 
    This queue does not require locking, since it is only accessed by the one worker using it
 **/
-insert_worker_uninserted_queue(rete_worker* worker, const atom * fact, const rete_node * alpha, unsigned int step){
+insert_worker_uninserted_queue(rete_worker* worker, const clp_atom * fact, const rete_node * alpha, unsigned int step){
   push_rete_worker_queue(worker->uninserted, fact, alpha, step);
 }
 
@@ -107,7 +107,7 @@ insert_worker_uninserted_queue(rete_worker* worker, const atom * fact, const ret
 **/
 worker_reinsert_uninserted(rete_worker* worker){
   unsigned int start_size;
-  const atom* fact;
+  const clp_atom* fact;
   const rete_node* node;
   unsigned int step;
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);
@@ -135,7 +135,7 @@ worker_reinsert_uninserted(rete_worker* worker){
 **/
 void * queue_worker_routine(void* arg){
   const rete_node* alpha;
-  const atom* fact;
+  const clp_atom* fact;
   unsigned int step;
   rete_worker * worker = arg;
   substitution* tmp_sub = create_empty_substitution(worker->net->th, worker->tmp_subs);

@@ -60,12 +60,12 @@
 
 %union{
   char* str;
-  atom* atom;
-  term* term;
+  clp_atom* atom;
+  clp_term* term;
   term_list* terms;
   clp_conjunction* conj;
   clp_disjunction* disj;
-  axiom* axiom;
+  clp_axiom* axiom;
   theory* theory;
 }
 

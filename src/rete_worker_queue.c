@@ -140,7 +140,7 @@ void destroy_rete_worker_queue(rete_worker_queue* rq){
 /**
    Assigns position pos in the rule queue the according values.
 **/
-void assign_worker_queue_elem(rete_worker_queue* rq, unsigned int pos, const atom* fact, const rete_node* alpha, unsigned int step){
+void assign_worker_queue_elem(rete_worker_queue* rq, unsigned int pos, const clp_atom* fact, const rete_node* alpha, unsigned int step){
   assert(pos < rq->end);
   worker_queue_elem* el = get_worker_queue_elem(rq, pos);
   el->fact = fact;
@@ -152,7 +152,7 @@ void assign_worker_queue_elem(rete_worker_queue* rq, unsigned int pos, const ato
    Inserts a copy of the substitution into a new entry in the rule queue.
    The original substitution is not changed
 **/
-void push_rete_worker_queue(rete_worker_queue * rq, const atom* fact, const rete_node * alpha, unsigned int step){
+void push_rete_worker_queue(rete_worker_queue * rq, const clp_atom* fact, const rete_node * alpha, unsigned int step){
   unsigned int pos;
 #ifdef HAVE_PTHREAD
   lock_worker_queue(rq, __FILE__, __LINE__ );
@@ -184,7 +184,7 @@ bool rete_worker_queue_is_empty(rete_worker_queue* rq){
    Note that this pointer may be invalidated on the next call to insert_.. or pop_...
    and the data maybe destroyed on the first backtracking
 **/
-void  pop_rete_worker_queue(rete_worker_queue* rq, const atom** fact, const rete_node** alpha, unsigned int* step){
+void  pop_rete_worker_queue(rete_worker_queue* rq, const clp_atom** fact, const rete_node** alpha, unsigned int* step){
   worker_queue_elem* el = get_worker_queue_elem(rq, rq->first);
   *fact = el->fact;
   *alpha = el->alpha;

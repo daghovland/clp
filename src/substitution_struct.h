@@ -51,10 +51,10 @@ typedef struct substitution_t {
   const freevars* allvars;
   unsigned int sub_values_offset;
   timestamps sub_ts;
-  const term* sub_values[];
+  const clp_term* sub_values[];
 } substitution;
 
-const term* get_sub_value(const substitution*, unsigned int);
-void set_sub_value(substitution*, unsigned int, const term*);
+const clp_term* get_sub_value(const substitution*, unsigned int);
+void set_sub_value(substitution*, unsigned int, const clp_term*);
 
 #endif

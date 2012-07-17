@@ -40,7 +40,7 @@ typedef struct fact_set_t {
   struct fact_set_t * prev;
   unsigned int timestamp;
   bool split_point;
-  const atom* fact;
+  const clp_atom* fact;
 } fact_set;
 
 void delete_fact_set_below(fact_set*, fact_set*);
@@ -49,12 +49,12 @@ void split_fact_set(fact_set*);
 
 void delete_fact_set(fact_set*);
 
-bool insert_state_fact_set(fact_set**, const atom*, unsigned int step, constants*);
-fact_set* insert_in_fact_set(fact_set*, const atom*, unsigned int, constants*);
+bool insert_state_fact_set(fact_set**, const clp_atom*, unsigned int step, constants*);
+fact_set* insert_in_fact_set(fact_set*, const clp_atom*, unsigned int, constants*);
 
 void print_state_fact_set(fact_set**, const constants*, FILE*, unsigned int n_predicates);
 void print_fact_set(fact_set*, const constants*, FILE*);
-bool is_in_fact_set(const fact_set*, const atom*, constants*);
-bool atom_true_in_fact_set(const fact_set*, const atom*, substitution* sub, constants*);
+bool is_in_fact_set(const fact_set*, const clp_atom*, constants*);
+bool atom_true_in_fact_set(const fact_set*, const clp_atom*, substitution* sub, constants*);
 unsigned int get_fact_set_timestamp(const fact_set*);
 #endif

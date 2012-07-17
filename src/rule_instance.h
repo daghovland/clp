@@ -30,12 +30,12 @@
 **/
 typedef struct rule_instance_t {
   unsigned int timestamp;
-  const axiom * rule;
+  const clp_axiom * rule;
   bool used_in_proof;
   substitution sub;
 } rule_instance;
 
-rule_instance* create_rule_instance(const axiom*, const substitution*, substitution_size_info, timestamp_store*, const constants* cs);
+rule_instance* create_rule_instance(const clp_axiom*, const substitution*, substitution_size_info, timestamp_store*, const constants* cs);
 rule_instance* create_dummy_rule_instance(substitution_size_info);
 void delete_dummy_rule_instance(rule_instance*);
 void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store*, bool permanent, const constants*);

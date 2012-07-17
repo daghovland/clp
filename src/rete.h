@@ -41,19 +41,19 @@
 #include "rule_instance.h"
 
 typedef unsigned int domain_iter;
-void insert_domain_elem(rete_net_state*, const term*);
+void insert_domain_elem(rete_net_state*, const clp_term*);
 domain_iter get_domain_iter(rete_net_state*);
 bool domain_iter_has_next(rete_net_state*, domain_iter*);
-const term* domain_iter_get_next(rete_net_state*, domain_iter*);
-void insert_constants_elem(rete_net_state*, const term*);
+const clp_term* domain_iter_get_next(rete_net_state*, domain_iter*);
+void insert_constants_elem(rete_net_state*, const clp_term*);
 
 // Called from prover.c
-void insert_rete_net_fact(rete_net_state*, const atom*);
+void insert_rete_net_fact(rete_net_state*, const clp_atom*);
 
 
 
 //Called from lazy_rule_queue.c
-void insert_rete_alpha_fact_children(rete_net_state*, const rete_node*, const atom*, substitution*, bool);
+void insert_rete_alpha_fact_children(rete_net_state*, const rete_node*, const clp_atom*, substitution*, bool);
 
 // Creates root of network
 // Initializes the rete_net_state structure
@@ -69,14 +69,14 @@ bool inc_proof_step_counter(rete_net_state*);
 
 rete_node* create_beta_left_root(unsigned int axiom_no);
 
-rete_node* create_alpha_node(rete_node*, unsigned int, const term*, const freevars*, bool propagate, bool  in_positive_lhs_part, unsigned int axiom_no);
+rete_node* create_alpha_node(rete_node*, unsigned int, const clp_term*, const freevars*, bool propagate, bool  in_positive_lhs_part, unsigned int axiom_no);
 /*rete_node* create_store_node(rete_net*, rete_node*, const freevars*);*/
 rete_node* create_beta_and_node(rete_net*, rete_node*, rete_node*, const freevars*, bool in_positive_lhs_part, unsigned int axiom_no);
 rete_node* create_beta_or_node(rete_net*, rete_node*, rete_node*, const freevars*, bool in_positive_lhs_part, unsigned int axiom_no);
 rete_node* create_beta_not_node(rete_net*, rete_node*, rete_node*, const freevars*, unsigned int axiom_no);
 rete_node* create_selector_node(rete_net*, const char*, unsigned int, const freevars*);
-rete_node* create_rule_node(rete_net*, rete_node*, const axiom*, const freevars*, unsigned int axiom_no);
-rete_node* create_rete_equality_node(rete_net* , const term* , const term* , rete_node* , const freevars*, bool , unsigned int);
+rete_node* create_rule_node(rete_net*, rete_node*, const clp_axiom*, const freevars*, unsigned int axiom_no);
+rete_node* create_rete_equality_node(rete_net* , const clp_term* , const clp_term* , rete_node* , const freevars*, bool , unsigned int);
 
 rete_net_state* create_rete_state(const rete_net*, bool);
 
@@ -98,14 +98,14 @@ rete_node* get_selector(unsigned int, rete_net*);
 const rete_node* get_const_selector(unsigned int, const rete_net*);
 
 // Updates network with possibly new predicate name, returns the bottom alpha node for this atom
-rete_node* create_rete_atom_node(rete_net*, const atom*, const freevars*, bool propagate, bool in_positive_lhs_part, unsigned int axiom_no);
-rete_node* create_rete_axiom_node(rete_net*, const axiom*, unsigned int axiom_no, bool);
+rete_node* create_rete_atom_node(rete_net*, const clp_atom*, const freevars*, bool propagate, bool in_positive_lhs_part, unsigned int axiom_no);
+rete_node* create_rete_axiom_node(rete_net*, const clp_axiom*, unsigned int axiom_no, bool);
 rete_net* create_rete_net(const theory*, unsigned long, bool, strategy, bool, bool, bool, bool, bool, bool, bool, bool);
 rete_node* create_rete_conj_node(rete_net*, const clp_conjunction*, const freevars*, bool propagate, bool in_postive_lhs_part, unsigned int axiom_no);
 rete_node* create_rete_disj_node(rete_net*, rete_node*, const clp_disjunction*, unsigned int axiom_no);
 rete_node * insert_beta_not_nodes(rete_net* net, const clp_conjunction* con, const clp_disjunction* dis, rete_node* beta_node, unsigned int axiom_no);
 
-bool true_ground_equality(const term*, const term*, const substitution*, constants*, timestamps*, timestamp_store*, bool update_ts);
+bool true_ground_equality(const clp_term*, const clp_term*, const substitution*, constants*, timestamps*, timestamp_store*, bool update_ts);
 
 // Defined in strategy.c
 rule_instance* choose_next_instance(rule_queue_state
@@ -118,7 +118,7 @@ rule_instance* choose_next_instance(rule_queue_state
 				    , unsigned int (*possible_age)(rule_queue_state, unsigned int)
 				    , bool (*may_have)(rule_queue_state, unsigned int)
 				    , rule_instance* (*pop_axiom)(rule_queue_state, unsigned int)
-				    , void (*) (const axiom*, const substitution*, rule_queue_state)
+				    , void (*) (const clp_axiom*, const substitution*, rule_queue_state)
 				    , unsigned int (*previous_application)(rule_queue_state, unsigned int)
 				    );
 
@@ -156,8 +156,8 @@ rule_instance* pop_youngest_axiom_rule_queue(rule_queue_state, unsigned int);
 rule_instance* peek_axiom_rule_queue_state(rule_queue_state, unsigned int);
 rule_instance* peek_axiom_rule_queue(rete_net_state*, unsigned int);
 void remove_rule_instance(rete_net_state*, const substitution*, unsigned int);
-void add_rule_to_queue_state(const axiom*, const substitution*, rule_queue_state);
-void add_rule_to_queue(const axiom*, const substitution*, rete_net_state*);
+void add_rule_to_queue_state(const clp_axiom*, const substitution*, rule_queue_state);
+void add_rule_to_queue(const clp_axiom*, const substitution*, rete_net_state*);
 bool is_empty_axiom_rule_queue(rete_net_state*, unsigned int);
 bool is_empty_axiom_rule_queue_state(rule_queue_state, unsigned int);
 

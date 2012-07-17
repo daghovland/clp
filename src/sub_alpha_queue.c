@@ -48,7 +48,7 @@ sub_alpha_queue init_sub_alpha_queue(void){
    call, this will point to the new sub_alpha_queue.
 **/
 bool insert_in_sub_alpha_queue(sub_alpha_queue * queue,
-			       const atom * fact, 
+			       const clp_atom * fact, 
 			       substitution* a, 
 			       const rete_node* alpha_node){
   sub_alpha_queue_elem* sub_list = queue->end;
@@ -108,7 +108,7 @@ bool is_empty_sub_alpha_queue(sub_alpha_queue* root){
    Assume the "root" has a non-null prev pointer. This element replaces the root
    The adress of the current root substitution and fact are put into the given addresses
  **/
-void pop_sub_alpha_queue_mt(sub_alpha_queue* queue, substitution** sub, const atom** fact, const rete_node** alpha_node){
+void pop_sub_alpha_queue_mt(sub_alpha_queue* queue, substitution** sub, const clp_atom** fact, const rete_node** alpha_node){
   assert(queue->root->next == NULL);
   *sub = queue->root->sub;
   *fact = queue->root->fact;
