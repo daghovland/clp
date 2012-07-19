@@ -25,6 +25,7 @@
 #include "common.h"
 #include "constants.h"
 #include "theory.h"
+#include "error_handling.h"
 
 constants* init_constants(unsigned int init_size){
   constants * new_c = malloc_tester(sizeof(constants));

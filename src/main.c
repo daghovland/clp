@@ -197,7 +197,7 @@ void start_wallclock_timer(unsigned long int maxtimer){
     start_timer(maxtimer, CLOCK_REALTIME);
 }
 
-int file_prover(FILE* f, const char* prefix){
+int file_prover(FILE* f, const char* prefix, char* filename){
   theory* th;
   rete_net* net;
   FILE *fp;
@@ -222,7 +222,15 @@ int file_prover(FILE* f, const char* prefix){
     SetAllowFreeVariables(0);
 //----Test duplicate arity warnings
     SetWarnings(1);
-    Head = ParseREADFILEOfFormulae((READFILE) f,Signature,1,NULL);
+    printf("Opening file\n");
+    if(f == stdin)
+      Head = ParseFILEOfFormulae(stdin, Signature,1,NULL);
+    else {
+      assert(f == NULL);
+      Head = ParseFileOfFormulae(filename,NULL, Signature,1,NULL);
+    }
+    PrintListOfAnnotatedTSTPNodes(stdout,Signature,Head,tptp,1);
+    return false;
     //    th = tptp_parser(f);
     break;
   default:
@@ -232,8 +240,7 @@ int file_prover(FILE* f, const char* prefix){
   if(output_theory){
     switch(output_format){
     case tptp_format:
-      PrintListOfAnnotatedTSTPNodes(stdout,Signature,Head,tptp,1);
-      //      print_tptp_theory(th, th->constants, stdout);
+      print_tptp_theory(th, th->constants, stdout);
       break;
     case clpl_format:
       print_clpl_theory(th, th->constants, stdout);
@@ -365,7 +372,7 @@ int main(int argc, char *argv[]){
     {"cputimer", required_argument, NULL, 't'}, 
     {"wallclocktimer", required_argument, NULL, 'w'}, 
     {"print_model", no_argument, NULL, 'o'},
-    {"TPTP", no_argument, NULL, 'T'},
+    {"tptp", no_argument, NULL, 'T'},
     {"substitution_store", no_argument, NULL, 's'}, 
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {"single-threaded-rete", no_argument, NULL, 'S'},
@@ -476,32 +483,38 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
       exit(EXIT_FAILURE);
     }
+    printf("optind: %i, argc: %i\n", optind, argc);
   } 
   if(optind < argc){
     retval = EXIT_SUCCESS;
     while( optind < argc ) {
-      FILE* f = fopen(argv[optind], "r");
-      if(f == NULL){
-	perror("main: Could not open theory file");
-	fprintf(stderr, "%s\n", argv[optind]); 
-	exit(EXIT_FAILURE);
-      }
-      if(file_prover(f, basename(argv[optind])) == EXIT_FAILURE)
-	retval = EXIT_FAILURE;
-
-      
-      if(fclose(f) != 0){
-	perror("main(): Could not close theory file\n");
-	fprintf(stderr, "File name: %s\n", argv[optind]); 
-	exit(EXIT_FAILURE);
+      FILE* f;
+      if(input_format == clpl_format || input_format == geolog_format){
+	f = fopen(argv[optind], "r");
+	if(f == NULL){
+	  perror("main: Could not open theory file");
+	  fprintf(stderr, "Filename: '%s'\n", argv[optind]); 
+	  exit(EXIT_FAILURE);
+	}
+	if(file_prover(f, basename(argv[optind]), NULL) == EXIT_FAILURE)
+	  retval = EXIT_FAILURE;
+	if(fclose(f) != 0){
+	  perror("main(): Could not close theory file\n");
+	  fprintf(stderr, "File name: %s\n", argv[optind]); 
+	  exit(EXIT_FAILURE);
+	}
+      } else {
+	assert(input_format == tptp_format);
+	if(file_prover(NULL, basename(argv[optind]), argv[optind]) == EXIT_FAILURE)
+	  retval = EXIT_FAILURE;
       }
       optind++;
     } // end for
-    } else {
-  //    assert(optind == argc);
-    retval =  file_prover(stdin, "STDIN");
+  } else {
+    assert(optind == argc);
+    retval =  file_prover(stdin, "STDIN", "STDIN");
   }
-
+  
   return retval;
 }
 

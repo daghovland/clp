@@ -26,6 +26,7 @@
 #include "fresh_constants.h"
 #include "rete.h"
 #include "theory.h"
+#include "error_handling.h"
 #include "substitution.h"
 #include "substitution_store_mt.h"
 #include "substitution_size_info.h"

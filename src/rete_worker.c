@@ -98,14 +98,14 @@ void worker_thread_pop_worker_queue(rete_worker* worker, const clp_atom** fact, 
 
    This queue does not require locking, since it is only accessed by the one worker using it
 **/
-insert_worker_uninserted_queue(rete_worker* worker, const clp_atom * fact, const rete_node * alpha, unsigned int step){
+void insert_worker_uninserted_queue(rete_worker* worker, const clp_atom * fact, const rete_node * alpha, unsigned int step){
   push_rete_worker_queue(worker->uninserted, fact, alpha, step);
 }
 
 /**
    Reinserts all elements from the uninserted queue. Called when rechecking net
 **/
-worker_reinsert_uninserted(rete_worker* worker){
+void worker_reinsert_uninserted(rete_worker* worker){
   unsigned int start_size;
   const clp_atom* fact;
   const rete_node* node;

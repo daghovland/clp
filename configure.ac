@@ -39,7 +39,7 @@ AC_CHECK_LIB([fl], [main])
 #FIXME: What is this library?
 AC_CHECK_LIB([l], [main])
 
-#FIXME: What is this library?
+#Tests for glibc math library
 AC_CHECK_LIB([m], [main])
 
 # Checks for header files.
