@@ -1,7 +1,9 @@
-\documentclass{report}
+\documentclass[a4paper]{article}
+\usepackage{url}
 \author{Dag Hovland}
 \title{Report on the prover \emph{clp}}
 \begin{document}
+\maketitle
 \begin{abstract}
   \emph{clp} (Coherent Logic Prover) is a prover for coherent logic developed by the author. . It takes as input first order logic theories in coherent form. The present report first explains the usage of clp, then turns to a more detailed description of its internals.
 \end{abstract}
@@ -16,9 +18,18 @@ There are three command-line options for limiting how long the prover runs. If n
 
 \subsection{Output}
 If the ``--verbose'' option is given, the prover outputs information about each step taken. More information may be given by combinations of the ``--debug'' option and uncommenting definitions in ``src/common.h''. 
-If the ``--coq'' option is given and a proof is found, the proof is translated to the coq format and output as a ``.v'' file. ``--print_model'' prints the model if one is found
+If the ``--coq'' option is given and a proof is found, the proof is translated to the coq format and output as a ``.v'' file. ``--print\underline{ }model'' prints the model if one is found
 
 The remaining options are mainly for experimenting with different variations of the prover internals. 
-\section{Overview of the Source Code}
+\section{Internals of the Prover}
+
+\subsection{Parsing}
+Parsing and lexing is done by bison and flex, respectively, and the source code is in the files with suffix .l and .y for the different formats: geolog, clpl and tptp. The parser returns a \verb|theory| (defined in theory.h) which contains all the axioms, and also auxiliary information like the names of all variables, constants, function names, and predicates occurring in the theory. 
+
+\subsection{Datatypes for logical expressions}
+A term is a constant, a variable, or a function applied to a list of terms. Terms are defined in term.h and the functions are in atom_and_term.c. Initially, the domain is assumed to be exactly the constants appearing in the theory. These are stored in the struct \verb|constants|. When the prover applies existential clauses, new elements may be added to this structure. 
+
+\section{Strategies}
+With a strategy for the prover, we mean how the next rule instance application is chosen. The code for this choice is in strategy.c
 
 \end{document}
