@@ -24,12 +24,26 @@ The remaining options are mainly for experimenting with different variations of 
 \section{Internals of the Prover}
 
 \subsection{Parsing}
-Parsing and lexing is done by bison and flex, respectively, and the source code is in the files with suffix .l and .y for the different formats: geolog, clpl and tptp. The parser returns a \verb|theory| (defined in theory.h) which contains all the axioms, and also auxiliary information like the names of all variables, constants, function names, and predicates occurring in the theory. 
+Parsing and lexing is done by bison and flex, respectively, and the source code is in the files with suffix .l and .y for the different formats: geolog, clpl and tptp. 
+
+The parser returns a \verb|theory| (defined in theory.h) which contains all the axioms, and also auxiliary information like the names of all variables, constants, function names, and predicates occurring in the theory. 
+
+\subsection{Construction of the RETE network}
+The \verb|theory| struct is passed to the function \verb|create|\underline{ }\verb|rete|\underline{ }\verb|net| (together with info about commandline options.) This construction is sketched in other papers, but some points will be noted: The net is accessed by through the struct \verb|rete|\underline{ }\verb|net| defined in rete\underline{ }net.h. The latter structure contains a pointer to each selector (top-level $\alpha$-node) and to each rule-node. In addition information about many command-line switches is stored in this structure. 
+
+\subsection{The Proof Search}
+The function \verb|prover|\underline{ }\verb|single| in prover.c represents the proof search itself, and is passed a \verb|rete|\underline{ }\verb|net| as its single argument. The latter is never changed inside this function. Instead, a different struct \verb|rete_state_single| is used to store all iThe \verb|rete|\underline{ }\verb|net| After some initial setup (initializing the fact-set etc.) the function passes control to  \verb|run|\underline{ }\verb|prover|\underline{ }\verb|single| which contains the main loop of the program;: a while-loop which iterates once for each \emph{step} taken by the prover. Each such step starts with determining the next rule instance to apply. This is done by a call to the function \verb|choose_next_instance_single|, which is mainly a wrapper to a call to the function in strategy.c coresponding to the chosen strategy. See more about strategy.c below.
 
 \subsection{Datatypes for logical expressions}
-A term is a constant, a variable, or a function applied to a list of terms. Terms are defined in term.h and the functions are in atom_and_term.c. Initially, the domain is assumed to be exactly the constants appearing in the theory. These are stored in the struct \verb|constants|. When the prover applies existential clauses, new elements may be added to this structure. 
+A term is a constant, a variable, or a function applied to a list of terms. Terms are defined in term.h and the functions are in atom\underline{ }and\underline{ }term.c. 
+
+Atoms are defined in atom.h and the functions are in atom\underline{ }and\underline{ }term.c
+
+Initially, the domain is assumed to be exactly the constants appearing in the theory. These are stored in the struct \verb|constants|. When the prover applies existential clauses, new elements may be added to this structure. 
 
 \section{Strategies}
-With a strategy for the prover, we mean how the next rule instance application is chosen. The code for this choice is in strategy.c
+With a strategy for the prover, we mean how the next rule instance application is chosen. The code for this choice is in the function \verb|normal|\underline{ }\verb|next|\underline{ }\verb|instance| in strategy.c. The present strategy is based on some rather intuitive heuristics. \verb|clpl|\underline{ }\verb|next|\underline{ }\verb|instance| implements a depth-first strategy, trying to simulate the strategy used by the prover CL.pl. Adding more strategies should not be hard.
+
+
 
 \end{document}
