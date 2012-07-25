@@ -102,5 +102,5 @@ typedef struct timestamp_store_backup_t {
 
 timestamp_linked_list* get_timestamp_memory(timestamp_store* store, bool permanent);
 
-
+void init_empty_timestamp_linked_list(timestamps*, bool);
 #endif

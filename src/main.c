@@ -79,7 +79,7 @@ bool output_theory;
 bool verbose, debug, proof, text, existdom, factset_lhs, coq, multithreaded, use_beta_not, print_model, all_disjuncts, dry_run, multithread_rete;
 strategy strat;
 unsigned long maxsteps;
-typedef enum format_type_t {tptp_format, clpl_format, geolog_format} format_type;
+typedef enum format_type_t {coherent_tptp_format, full_tptp_format, clpl_format, geolog_format} format_type;
 format_type input_format;
 format_type output_format;
 
@@ -106,7 +106,7 @@ format_type get_format_arg_opt(){
   switch(optarg[0]){
   case 't':
   case 'T':
-    out = tptp_format;
+    out = coherent_tptp_format;
     break;
   case 'g':
   case 'G':
@@ -212,7 +212,7 @@ int file_prover(FILE* f, const char* prefix, char* filename){
   case geolog_format:
     th = geolog_parser(f);
     break;
-  case tptp_format: 
+  case full_tptp_format: 
     
 //----One signature for all testing
     Signature = NewSignature();
@@ -231,7 +231,8 @@ int file_prover(FILE* f, const char* prefix, char* filename){
     }
     PrintListOfAnnotatedTSTPNodes(stdout,Signature,Head,tptp,1);
     return false;
-    //    th = tptp_parser(f);
+  case coherent_tptp_format:
+    th = tptp_parser(f);
     break;
   default:
     perror("Error in enum for file input type\n");
@@ -239,7 +240,10 @@ int file_prover(FILE* f, const char* prefix, char* filename){
   }
   if(output_theory){
     switch(output_format){
-    case tptp_format:
+    case full_tptp_format:
+      assert(false);
+      break;
+    case coherent_tptp_format:
       print_tptp_theory(th, th->constants, stdout);
       break;
     case clpl_format:
@@ -298,7 +302,7 @@ int file_prover(FILE* f, const char* prefix, char* filename){
   delete_theory(th);
   //if(brk(mem_break) != 0)
   //  perror("Error with resetting memory after proving file\n");
-  if(input_format == tptp_format){
+  if(input_format == full_tptp_format){
     FreeListOfAnnotatedFormulae(&Head);
     FreeSignature(&Signature);
   }
@@ -362,6 +366,7 @@ int main(int argc, char *argv[]){
     {"max", required_argument, NULL, 'm'}, 
     {"depth-first", no_argument, NULL, 'd'}, 
     {"dry-run", no_argument, NULL, 'D'}, 
+    {"tptp", no_argument, NULL, 'T'},
     {"eager", no_argument, NULL, 'e'}, 
     {"multithreaded", no_argument, NULL, 'M'}, 
     {"CL.pl", no_argument, NULL, 'C'}, 
@@ -372,13 +377,13 @@ int main(int argc, char *argv[]){
     {"cputimer", required_argument, NULL, 't'}, 
     {"wallclocktimer", required_argument, NULL, 'w'}, 
     {"print_model", no_argument, NULL, 'o'},
-    {"tptp", no_argument, NULL, 'T'},
     {"substitution_store", no_argument, NULL, 's'}, 
     {"all-disjuncts", no_argument, NULL, 'a'}, 
     {"single-threaded-rete", no_argument, NULL, 'S'},
+    {"full-tptp", no_argument, NULL, 'F'},
     {0,0,0,0}
   };
-  char shortargs[] = "w:vfVphgdoat:cCSsDP:aT:GeqMnm:";
+  char shortargs[] = "w:vfVphgdoat:cCSsDP:aTGeqMnm:F";
   int longindex;
   char argval;
   verbose = false;
@@ -399,7 +404,6 @@ int main(int argc, char *argv[]){
   strat = normal_strategy;
   maxsteps = MAX_PROOF_STEPS;
   dry_run = false;
-  
   while( ( argval = getopt_long(argc, argv, shortargs, &longargs[0], &longindex )) != -1){
     switch(argval){
       unsigned long int maxtimer;
@@ -420,6 +424,12 @@ int main(int argc, char *argv[]){
       break;
     case 'q':
       coq = true;
+      break;
+    case 'T':
+      input_format = coherent_tptp_format;
+      break;
+    case 'F':
+      input_format = full_tptp_format;
       break;
     case 't':
       maxtimer = get_ui_arg_opt();
@@ -470,9 +480,6 @@ int main(int argc, char *argv[]){
     case 'C':
       input_format = clpl_format;
       break;
-    case 'T':
-      input_format = tptp_format;
-      break;
     case 'G':
       input_format = geolog_format;
       break;
@@ -483,13 +490,12 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
       exit(EXIT_FAILURE);
     }
-    printf("optind: %i, argc: %i\n", optind, argc);
   } 
   if(optind < argc){
     retval = EXIT_SUCCESS;
     while( optind < argc ) {
       FILE* f;
-      if(input_format == clpl_format || input_format == geolog_format){
+      if(input_format == clpl_format || input_format == geolog_format || input_format == coherent_tptp_format){
 	f = fopen(argv[optind], "r");
 	if(f == NULL){
 	  perror("main: Could not open theory file");
@@ -504,7 +510,7 @@ int main(int argc, char *argv[]){
 	  exit(EXIT_FAILURE);
 	}
       } else {
-	assert(input_format == tptp_format);
+	assert(input_format == full_tptp_format);
 	if(file_prover(NULL, basename(argv[optind]), argv[optind]) == EXIT_FAILURE)
 	  retval = EXIT_FAILURE;
       }
@@ -512,6 +518,7 @@ int main(int argc, char *argv[]){
     } // end for
   } else {
     assert(optind == argc);
+    printf("Reading theory from standard input\n");
     retval =  file_prover(stdin, "STDIN", "STDIN");
   }
   

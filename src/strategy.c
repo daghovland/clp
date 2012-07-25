@@ -164,7 +164,8 @@ rule_instance* normal_next_instance(rule_queue_state state
    This reads the strategy from a file. The file format constains the number of the axiom and the instantiation/substitution
  **/
 rule_instance* force_next_instance(rete_net* net){
-  
+  assert(false);
+  return NULL;
 }
 
 

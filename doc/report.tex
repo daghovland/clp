@@ -5,13 +5,15 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  \emph{clp} (Coherent Logic Prover) is a prover for coherent logic developed by the author. . It takes as input first order logic theories in coherent form. The present report first explains the usage of clp, then turns to a more detailed description of its internals.
+  \emph{clp} (Coherent Logic Prover) is a prover for coherent logic developed by the author. It takes as input first order logic theories in coherent form. The present report first explains the usage of clp, then turns to a more detailed description of its internals.
 \end{abstract}
+\section{Overview and Features}
+The prover takes as input coherent theories. Function symbols are supported in terms. Equality is not supported by the prover and must be axiomatized or treated in the theory. The CL.pl and geolog format assumes theories with no rigid variables. To remove rigid variables from theories it is usual to introduce a domain predicate. The prover assumes that ``dom'' is the name of this predicate. (This can be changed in the file common.h). The prover will still work when using other names for the domain predicate, but it might be slower. 
 \section{Usage}
 \subsection{Obtaining clp}
 The source code of clp can be download from \url{http://code.google.com/p/clp}. It has only been tested on GNU/linux. For compilation it reuired recent versions of bison and flex. It is compiled with the usual configure and make scripts, as describe in the files ``README'' and ``INSTALL''. make all compiles the main executable clp, while make check also compiles clpdebug and clpmemdebug which are used for debugging purposes
 \subsection{Running clp}
-clp is run from the commandline. An overview of the commandline options is seen when giving the option ``--help''. The name of the file with the coherent theory comes after the options. clp recognizes three different syntaxes for the input, which are chosen by the argument ``--tptp'', ``--CL.pl'', and ``--geolog''. tptp is the format as used by TPTP, but note that the theory must be in coherent form, so only a small subset of actual tptp is supported. CL.pl is a prolog-like format also used by the prover CL.pl by Marc Bezem. This is the default input format. The strategy information supported by CL.pl is though not supported by clp, and is ignored. geolog is the format used by the prover Geolog, by John Fisher.
+clp is run from the commandline. An overview of the commandline options is seen when giving the option ``--help''. The name of the file with the coherent theory comes after the options. clp recognizes three different syntaxes for the input, which are chosen by the argument ``--CL.pl'' or ``--geolog''. CL.pl is a prolog-like format also used by the prover CL.pl by Marc Bezem. This is the default input format. The strategy information supported by CL.pl is though not supported by clp, and is ignored. geolog is the format used by the prover Geolog, by John Fisher.
 
 \subsection{Limiting the Prover}
 There are three command-line options for limiting how long the prover runs. If none of these limits are set, the prover runs until it either finds a proof of contradiction, if finds a model of the theory, it runs out of memory or is aborted by other means. ``--wallclocktimer'' limits the number of seconds that may pass from the prover is started until it is halted. ``--cputimer'' limits the number of second of cpu time the prover may use. ``--max'' limits the number of inference steps that may be taken, $0$ means unlimited. The latter is by default set to $300$.
@@ -24,7 +26,7 @@ The remaining options are mainly for experimenting with different variations of 
 \section{Internals of the Prover}
 
 \subsection{Parsing}
-Parsing and lexing is done by bison and flex, respectively, and the source code is in the files with suffix .l and .y for the different formats: geolog, clpl and tptp. 
+Parsing and lexing is done by bison and flex, respectively, and the source code is in the files with suffix .l and .y for the different formats: geolog and clpl. 
 
 The parser returns a \verb|theory| (defined in theory.h) which contains all the axioms, and also auxiliary information like the names of all variables, constants, function names, and predicates occurring in the theory. 
 
