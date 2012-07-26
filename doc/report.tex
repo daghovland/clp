@@ -32,7 +32,11 @@ There are three command-line options for limiting how long the prover runs. If n
 
 \subsection{Output}
 If the ``--verbose'' option is given, the prover outputs information about each step taken. More information may be given by combinations of the ``--debug'' option and uncommenting definitions in ``src/common.h''. 
+<<<<<<< local
+If the ``--coq'' option is given and a proof is found, the proof is translated to the coq format and output as a ``.v'' file. ``--print model'' prints the model if one is found
+=======
 If the ``--coq'' option is given and a proof is found, the proof is translated to the coq format and output as a ``.v'' file. ``--print\underline{ }model'' prints the model if one is found
+>>>>>>> other
 
 The remaining options are mainly for experimenting with different variations of the prover internals. 
 \section{Internals of the Prover}
