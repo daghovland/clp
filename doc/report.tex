@@ -8,6 +8,8 @@
   \emph{clp} (Coherent Logic Prover) is a prover for coherent logic developed by the author. It takes as input first order logic theories in coherent form. The present report first explains the usage of clp, then turns to a more detailed description of its internals.
 \end{abstract}
 \section{Overview and Features}
+Motivation and theoretical background can be found in \emph{Efficient Rule-Matching for Hyper-Tableaux
+}, available at \url{heim.ifi.uio.no/martingi/pub/iwil12.pdf}.
 \subsection{Running clp}
 clp is run from the command-line. An overview of the command-line options is seen when giving the option \verb|--help|. The name of the file with the coherent theory comes after the options. 
 
@@ -20,7 +22,7 @@ Equality is not supported by the prover and must be axiomatized or treated other
 \subsection{Output}
 The prover can be configured to output information about every rule instance application, or to give no output at all during the proof search. (See information about running clp below.) If the prover in some branch cannot apply any rule instance, it will halt, and output the present fact-set / model. The latter output may be suppressed by command-line options. 
 
-If all branches end with a contradiction, a proof of contradiction in coq format may be output. The proof in coq is based on use of the tactics \verb|apply|, \verb|elim|, \verb|intro|, \verb|split| and \verb|assumption|. The proof processes in coq and coherent provers go in opposite directions: Coq starts with the goal, and then applies axioms backwards to find the necessary premises, while coherent logic provers start with the premises and try to infer the goal. This makes it necessary to do some restructuring of the proof to enable coq output. The code for this is found in the files \verb|prover|\underline{ }\verb|single.c| and \verb|proof|\underline{ }\verb|writer.c|. Proof output is disabled by default.
+If all branches end with a contradiction, a proof of contradiction in coq format may be output. The proof in coq is based on use of the tactics \verb|apply|, \verb|elim|, \verb|intro|, \verb|split| and \verb|assumption|. The proof processes in coherent provers and using tactics in coq go in opposite directions: Coq starts with the goal, and then tactics can be used to apply axioms backwards to find the necessary premises, while coherent logic provers start with the premises and try to infer the goal. This makes it necessary to do some restructuring of the proof to enable coq output. The code for this is found in the files \verb|prover|\underline{ }\verb|single.c| and \verb|proof|\underline{ }\verb|writer.c|. Proof output is disabled by default.
 
 \subsection{The Proof Search}
 The prover uses the Rete algorithm for the matching during the proof search. This is explained in the paper, but some comments are in order. The matching inside Rete is somewhat parallelized: The nodes that are connected to a single axiom (not shared between several axioms) are treated by separate threads. There is one thread running for each axiom, and this thread reads from a queue of inserted matches, and outputs a list of applicable instances. These threads are also \emph{lazy} in the sense that they only read from the input queue if there are no instances on the output queue. This laziness may prevent the construction of large queues of applicable rule instances. The output queues from these threads are read by the prover to find what new applicable instance are available. The choice of which instance to apply is determined by the strategy, defined in \verb|strategy.c|.
@@ -31,6 +33,10 @@ A rule instance in the prover contains a link to an axiom and to a substitution.
 
 \subsubsection{Pruning}
 Each applied rule instance is stored in an array during the proof. Together with the axiom and substitution is also information about which previous steps enabled this rule to be applied. This information is necessary for the construction of the coq proof, which goes in the opposite direction of the coherent proof, and for what is commonly called pruning. Whenever a contradiction is reached, the links to previous rule instances are followed recursively, and each instance that is met, is marked as used. Whenever a branch finishes, the prover checks whether the disjunction itself is marked as used. If it is not, then the contradiction can be proved without use of the instance of the disjunction, and the remaining branches need not be treated. The other branches are \emph{pruned}.
+
+\subsection{Backtracking}
+When a branch is finished, the prover \emph{backtracks} up to the previous disjunction. Almost all data structures allocated when treating the branch are deallocated. Since all the data that can be deallocated is stored in large arrays, the deallocation reduces to decrementing the indices to the next free elements in these arrays. This index value is stored by the prover when starting to treat a disjunction.
+
 \section{Usage}
 This section contains practical information about obtaining and running clp.
 \subsection{Obtaining clp}
@@ -67,7 +73,7 @@ Atoms are defined in atom.h and the functions are in atom\underline{ }and\underl
 
 Initially, the domain is assumed to be exactly the constants appearing in the theory. These are stored in the struct \verb|constants|. When the prover applies existential clauses, new elements may be added to this structure. 
 
-\section{Strategies}
+\subsection{Strategies}
 With a strategy for the prover, we mean how the next rule instance application is chosen. The code for this choice is in the function \verb|normal|\underline{ }\verb|next|\underline{ }\verb|instance| in strategy.c. The present strategy is based on some rather intuitive heuristics. \verb|clpl|\underline{ }\verb|next|\underline{ }\verb|instance| implements a depth-first strategy, trying to simulate the strategy used by the prover CL.pl. Adding more strategies should not be hard.
 
 
