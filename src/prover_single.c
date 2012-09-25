@@ -264,9 +264,13 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
 	write_disj_proof_start(end_ri, step, i, state->constants);
       write_single_coq_proof(state, branch->children[i]);
     }
-    fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step.step);
-    write_premiss_proof(end_ri, step, state->net, get_history_single, rqs, state->constants);
-    fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step.step);
+    if(is_fact(end_ri->rule)){
+      fprintf(coq_fp, "(* disjunction at %i is a fact, no lhs to prove *)\n", step.step);
+    } else {
+      fprintf(coq_fp, "(* Proving lhs of disjunction at %i *)\n", step.step);
+      write_premiss_proof(end_ri, step, state->net, get_history_single, rqs, state->constants);
+      fprintf(coq_fp, "(* Finished proof of lhs of step %i *)\n", step.step);
+    }
   }
   while(!is_empty_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_ri_stack(branch->elim_stack, &step_ri, &pusher).step);

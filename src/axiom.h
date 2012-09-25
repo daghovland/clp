@@ -75,5 +75,6 @@ void print_tptp_axiom(const clp_axiom* , const constants*, FILE *);
 
 bool is_definite(clp_axiom*);
 bool is_existential(clp_axiom*);
+bool is_fact(const clp_axiom*);
 
 #endif

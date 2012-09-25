@@ -332,3 +332,7 @@ bool is_definite(clp_axiom* a){
 bool is_existential(clp_axiom* a){
   return(a->is_existential);
 }
+
+bool is_fact(const clp_axiom* a){
+  return(a->type == fact);
+}
