@@ -145,9 +145,14 @@ rete_node* create_rete_axiom_node(rete_net* net, const clp_axiom* ax, unsigned i
   return create_rule_node(net, node, ax, rule_free_vars, axiom_no);
 }
     
+/**
+   The axiom name must be given a prefix, to remove the overlap between predicate names and axiom names
+   that exist in some theories
+**/
 void set_axiom_name(clp_axiom* a, const char* name){
+  a->name = malloc(strlen(name) + 5);
   a->has_name = true;
-  a->name = name;
+  sprintf((char *) a->name, "H_%s", name);
 }
     
 bool axiom_has_name(const clp_axiom* a){
