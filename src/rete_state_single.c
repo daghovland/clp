@@ -96,11 +96,11 @@ rete_state_backup backup_rete_state(rete_state_single* state){
   backup.new_facts_backups = calloc(state->net->th->n_predicates, sizeof(fact_store_iter));
   copy_fact_iter_array(backup.new_facts_backups, state->new_facts_iters, state->net->th->n_predicates);
   backup.state = state;
-  backup.constants = backup_constants(state->constants, state->timestamp_store);
 #ifdef HAVE_PTHREAD
   for(i = 0; i < state->net->th->n_axioms; i++)
     wait_for_worker_to_pause(state->workers[i]);
 #endif
+  backup.constants = backup_constants(state->constants, state->timestamp_store);
   backup.node_sub_backups = backup_substitution_store_array(state->node_subs);
   backup.timestamp_backup = backup_timestamp_store(state->timestamp_store);
   backup.rq_backups = calloc_tester(state->net->th->n_axioms, sizeof(rule_queue_single_backup));
@@ -110,6 +110,7 @@ rete_state_backup backup_rete_state(rete_state_single* state){
     backup.worker_backups[i] = backup_rete_worker_queue(state->worker_queues[i]);
   }
 #ifdef HAVE_PTHREAD
+
   for(i = 0; i < state->net->th->n_axioms; i++)
     continue_rete_worker(state->workers[i]);
 #endif
