@@ -3,7 +3,7 @@
 # Not tested with autoconf < 2.59, hence this is a prerequisite
 
 AC_PREREQ([2.59])
-AC_INIT([clp], [0.1], [hovland@ifi.uio.no])
+AC_INIT([clp], [0.2], [hovland@ifi.uio.no])
 AC_COPYRIGHT([Copyright (C) 2011 University of Oslo, Norway. Author: Dag Hovland])
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
