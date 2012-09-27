@@ -61,6 +61,7 @@ unsigned int alloc_store_fact(fact_store* store){
 **/
 void push_fact_store(fact_store* store, const clp_atom* new_fact){
   unsigned int fact_no = alloc_store_fact(store);
+  assert(new_fact->args->n_args == 0 || new_fact->args->args[0] != NULL);
   store->store[fact_no] = * new_fact;
 }
 

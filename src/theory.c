@@ -81,7 +81,7 @@ void extend_init_model(theory* th, clp_conjunction* fact){
 
 void extend_theory(theory *th, clp_axiom *ax){
   unsigned int i;
-  if(ax->type == fact && ax->rhs->n_args == 1){
+  if(ax->type == fact && ax->rhs->n_args == 1  && !ax->rhs->args[0]->is_existential){
     extend_init_model(th, ax->rhs->args[0]);
     return;
   }
@@ -182,7 +182,7 @@ rete_net* create_rete_net(const theory* th, unsigned long maxsteps, bool existdo
 #ifndef NDEBUG
     const clp_axiom* ax = th->axioms[i];
 #endif
-    assert(!(ax->type == fact && ax->rhs->n_args == 1));
+    assert(!(ax->type == fact && ax->rhs->n_args == 1 && !ax->rhs->args[0]->is_existential));
     net->rule_nodes[i] = create_rete_axiom_node(net, th->axioms[i], i, use_beta_not);
   }
   net->th = th;

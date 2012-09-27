@@ -274,9 +274,11 @@ void write_single_coq_proof(rete_state_single* state, proof_branch* branch){
   }
   while(!is_empty_ri_stack(branch->elim_stack)){
     rule_instance* ri = get_historic_rule_instance(state, pop_ri_stack(branch->elim_stack, &step_ri, &pusher).step);
-    fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri.step, pusher.step);
-    write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs, state->constants);
-    fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri.step);
+    if(!is_fact(ri->rule)){
+      fprintf(coq_fp, "(* Proving lhs of existential at %i (Used by step %i)*)\n", step_ri.step, pusher.step);
+      write_premiss_proof(ri, step_ri, state->net, get_history_single, rqs, state->constants);
+      fprintf(coq_fp, "(* Finished proving lhs of existential at %i *)\n", step_ri.step);
+    }
   }
   fprintf(coq_fp, "(* Finished with branch %s *)\n", branch->name);
 }
@@ -294,6 +296,7 @@ unsigned int prover_single(const rete_net* rete, bool multithread){
   reached_max = false;
   srand(1000);
   for(i = 0; i < rete->th->n_init_model; i++){
+    assert(!rete->th->init_model[i]->is_existential);
     has_fact = true;
     substitution* sub = create_empty_substitution(rete->th, & state->tmp_subs);
     insert_rete_net_conjunction_single(state, rete->th->init_model[i], sub);
