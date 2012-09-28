@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 info_TEXINFOS = clp.texinfo
 
-SUBDIRS = src
+SUBDIRS = . src
 
 # Workaround for autoconf < 2.60
 docdir = ${datadir}/doc/${PACKAGE} 

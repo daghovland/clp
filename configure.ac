@@ -4,10 +4,10 @@
 
 AC_PREREQ([2.59])
 AC_INIT([clp], [0.2], [hovland@ifi.uio.no])
-AC_COPYRIGHT([Copyright (C) 2011 University of Oslo, Norway. Author: Dag Hovland])
-AM_INIT_AUTOMAKE([1.9 -Wall -Werror dist-bzip2])
+AC_COPYRIGHT([Copyright (C) 2011, 2012 University of Oslo, Norway. Author: Dag Hovland])
+AM_INIT_AUTOMAKE([1.9 -Wall -Werror parallel-tests dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
-AC_CONFIG_SRCDIR([src/prover.c])
+AC_CONFIG_SRCDIR([src/prover_single.c])
 AC_CONFIG_HEADERS([config.h])
 
 
