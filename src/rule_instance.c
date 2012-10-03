@@ -24,6 +24,7 @@
 
 void copy_rule_instance_struct(rule_instance* dest, const rule_instance* orig, substitution_size_info ssi, timestamp_store* ts_store, bool permanent, const constants* cs){
   copy_substitution_struct(& dest->sub, & orig->sub, ssi, ts_store, permanent, cs);
+  dest->sub_values_ptr = get_sub_values_ptr(&dest->sub);
   dest->rule = orig->rule;
   dest->timestamp = orig->timestamp;
   dest->used_in_proof = orig->used_in_proof;
@@ -59,6 +60,7 @@ rule_instance* create_rule_instance(const clp_axiom* rule, const substitution* s
   ins->rule = rule;
 
   copy_substitution_struct(&(ins->sub), sub, ssi, ts_store, false, cs);
+  ins->sub_values_ptr = get_sub_values_ptr(&ins->sub);
   ins->used_in_proof = false;
   return ins;
 }

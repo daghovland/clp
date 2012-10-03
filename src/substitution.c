@@ -75,14 +75,24 @@ void free_substitution(substitution* sub){
    since there is an offset from the timestamps which has a flexible array member
 **/
 const clp_term* get_sub_value(const substitution* sub, unsigned int no){
-  return (sub->sub_values + sub->sub_values_offset)[no];
+  const clp_term* const * values = sub->sub_values;
+  values += sub->sub_values_offset;
+  return values[no];
+  //  return (sub->sub_values + sub->sub_values_offset)[no];
 }
 
 void set_sub_value(substitution* sub, unsigned int no, const clp_term* t){
   (sub->sub_values + sub->sub_values_offset)[no] = t;
 }
 
-
+/**
+   Called when initializing a rule instance. Stores the actual pointer of the
+   substitution values array, such that these can be accessed without 
+   dereferencing anything else in the substitution
+*/
+const clp_term* const * get_sub_values_ptr(const substitution* sub){
+  return sub->sub_values + sub->sub_values_offset;
+}
 
 /**
    Initializes already allocated substitution
@@ -291,6 +301,22 @@ bool unify_substitution_term_lists(const term_list* value, const term_list* arg,
   return true;
 }
 
+
+/**
+   Tests whether two substitution value lists map the intersection of their domains to the same values
+**/
+bool sub_value_lists_equal_intersection(const clp_term*const * value_list1, const clp_term* const * value_list2, unsigned int n_vars, constants* cs){
+  unsigned int i;
+
+  for(i = 0; i < n_vars; i++){
+    const clp_term* val1 = value_list1[i];
+    const clp_term* val2 = value_list2[i];
+    if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, NULL, NULL, false))
+	return false;
+  }
+  return true;
+}
+
 /**
    Tests whether two substitutions map the intersection of their domains to the same values
 **/
@@ -300,15 +326,17 @@ bool subs_equal_intersection(const substitution* sub1, const substitution* sub2,
   assert(test_substitution(sub1, cs));
   assert(test_substitution(sub2, cs));
 
-
-  for(i = 0; i < sub1->allvars->n_vars; i++){
+  return sub_value_lists_equal_intersection(get_sub_values_ptr(sub1), get_sub_values_ptr(sub2), sub1->allvars->n_vars, cs);
+  /*for(i = 0; i < sub1->allvars->n_vars; i++){
     const clp_term* val1 = get_sub_value(sub1, i);
     const clp_term* val2 = get_sub_value(sub2, i);
     if(val1 != NULL && val2  != NULL && !equal_terms(val1, val2, cs, NULL, NULL, false))
 	return false;
   }
-  return true;
+  return true;*/
 }
+
+
 
 /**
    Tests that a substitution is correct

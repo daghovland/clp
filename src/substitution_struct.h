@@ -45,6 +45,9 @@
 
    sub_values_offset is the offset of the sub_values, caused by the dynamic array member in sub_ts. 
    This is fixed for each theory, since it depends on the number of premises of a clause.
+   At the moment this is 0
+
+   Recall that sizeof(substitution) is not correct because of 
 **/
 typedef struct substitution_t {
   unsigned int n_subs;

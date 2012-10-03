@@ -32,6 +32,7 @@ typedef struct rule_instance_t {
   unsigned int timestamp;
   const clp_axiom * rule;
   bool used_in_proof;
+  const clp_term * const * sub_values_ptr;
   substitution sub;
 } rule_instance;
 

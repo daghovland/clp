@@ -61,7 +61,7 @@ unsigned int get_sub_n_timestamps(const substitution*);
 timestamps_iter get_sub_timestamps_iter(const substitution*);
 int compare_sub_timestamps(const substitution*, const substitution*);
 
-
+const clp_term* const * get_sub_values_ptr(const substitution*);
 
 sub_list_iter* get_sub_list_iter(substitution_list*);
 bool has_next_sub_list(const sub_list_iter*);

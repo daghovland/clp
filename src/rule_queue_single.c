@@ -170,6 +170,7 @@ void assign_rule_queue_instance(rule_queue_single* rq, unsigned int pos, const c
   rule_instance* ri = get_rule_instance_single(rq, pos);
   ri->rule = rule;
   copy_substitution_struct(& ri->sub, sub, rq->ssi, ts_store, rq->permanent, cs);
+  ri->sub_values_ptr = get_sub_values_ptr(&ri->sub);
   ri->timestamp = step;
   ri->used_in_proof = false;
 }
