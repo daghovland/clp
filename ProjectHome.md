@@ -1,0 +1,1 @@
+A prover for coherent logic using RETE. Inspired by cop and CL.pl
