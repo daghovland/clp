@@ -13,7 +13,7 @@ Information about compiling and installing
 
 Requires recent versions of bison and flex. I use bison 2.4.3 and flex 2.5.4. It does e.g. not work with bison 1
 
-If you are building from mercurial repository (not from tarball) remember to first run:
+If you are building from github repository (not from tarball) remember to first run:
 autoreconf --install
 
 Note also that the macro AM_MAINTAINER_MODE has been added to configure.ac. If you need to regenerate some of the autotools-generated stuff, you must give configure the option "--enable-maintainer-mode".
